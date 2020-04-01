@@ -137,6 +137,12 @@ public:
      */
     bool isProcessingAppQuitEvent() const;
 
+    // TODO: docs
+    MultiSplitterLayout* layoutForItem(const Item *) const;
+
+    // TODO: docs
+    bool itemIsInMainWindow(const Item *) const;
+
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 private:

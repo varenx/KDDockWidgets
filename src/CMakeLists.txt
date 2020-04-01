@@ -25,12 +25,10 @@ set(DOCKSLIBS_SRCS
     private/ObjectViewer.cpp
     private/DropIndicatorOverlayInterface.cpp
     private/indicators/ClassicIndicators.cpp
-    private/indicators/AnimatedIndicators.cpp
+    # private/indicators/AnimatedIndicators.cpp
     private/DropArea.cpp
-    private/multisplitter/Item.cpp
     private/multisplitter/MultiSplitter.cpp
     private/multisplitter/Anchor.cpp
-    private/multisplitter/AnchorGroup.cpp
     private/multisplitter/Separator.cpp
     private/multisplitter/MultiSplitterLayout.cpp
     private/TabWidget.cpp
@@ -118,6 +116,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 else()
     set(IS_CLANG_BUILD FALSE)
 endif()
+
+
+add_subdirectory(private/multisplitter)
 
 qt5_add_resources(RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/resources.qrc)
 

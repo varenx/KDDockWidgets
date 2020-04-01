@@ -34,7 +34,6 @@
 
 #include "../Frame_p.h"
 #include "Anchor_p.h"
-#include "AnchorGroup_p.h"
 #include "docks_export.h"
 #include "KDDockWidgets.h"
 #include "Item_p.h"
@@ -45,7 +44,6 @@
 namespace KDDockWidgets {
 
 class MultiSplitter;
-class Length;
 
 namespace Debug {
 class DebugWindow;
@@ -80,22 +78,6 @@ inline Anchor::Side sideForLocation(Location loc)
     }
 
     return Anchor::Side_None;
-}
-
-inline Qt::Orientation orientationForLocation(Location loc)
-{
-    switch (loc) {
-    case KDDockWidgets::Location_OnLeft:
-    case KDDockWidgets::Location_OnRight:
-        return Qt::Vertical;
-    case KDDockWidgets::Location_OnTop:
-    case KDDockWidgets::Location_OnBottom:
-        return Qt::Horizontal;
-    default:
-        break;
-    }
-
-    return Qt::Vertical;
 }
 
 /**
@@ -221,6 +203,8 @@ public:
      */
     const ItemList items() const;
 
+    Item* rootItem() const;
+
     /**
      * Called by the indicators, so they draw the drop rubber band at the correct place.
      * The rect for the rubberband when dropping a widget at the specified location.
@@ -311,22 +295,7 @@ public:
     bool validateInputs(QWidgetOrQuick *widget, KDDockWidgets::Location location, const Frame *relativeToFrame, AddingOption option) const;
     // For debug/hardening
 
-    enum AnchorSanityOption {
-        AnchorSanity_Normal = 0,
-        AnchorSanity_Intersections = 1,
-        AnchorSanity_WidgetMinSizes = 2,
-        AnchorSanity_WidgetInvalidSizes = 4,
-        AnchorSanity_Followers = 8,
-        AnchorSanity_WidgetGeometry = 16,
-        AnchorSanity_Visibility = 32,
-        AnchorSanity_All = AnchorSanity_Intersections | AnchorSanity_WidgetMinSizes | AnchorSanity_WidgetInvalidSizes | AnchorSanity_Followers | AnchorSanity_WidgetGeometry | AnchorSanity_Visibility
-    };
-    Q_ENUM(AnchorSanityOption)
-
-    bool checkSanity(AnchorSanityOption o = AnchorSanity_All) const;
-    void maybeCheckSanity();
-
-    void restorePlaceholder(Item *item);
+    bool checkSanity() const;
 
     /**
      * @brief Removes unneeded placeholder items when adding new frames.
@@ -361,14 +330,6 @@ public:
      * @brief Returns a list of DockWidget objects contained in this layout
      */
     QVector<DockWidgetBase*> dockWidgets() const;
-
-    /**
-     * @brief Creates an AnchorGroup suited for adding a dockwidget to @location relative to @relativeToItem
-     *
-     * Returns the AnchorGroup and a new Anchor, if it was needed.
-     * If relativeTo is null then it returns the static anchor group.
-     */
-    QPair<AnchorGroup, Anchor *> createTargetAnchorGroup(Location location, Item *relativeToItem);
 
     struct Length {
         Length() = default;
@@ -429,15 +390,10 @@ Q_SIGNALS:
 
 public:
     bool eventFilter(QObject *o, QEvent *e) override;
-    AnchorGroup anchorsForPos(QPoint pos) const;
-    AnchorGroup staticAnchorGroup() const;
     Anchor::List anchors(Qt::Orientation, bool includeStatic = false, bool includePlaceholders = true) const;
-    Anchor *newAnchor(AnchorGroup &group, KDDockWidgets::Location location);
-    friend QDebug operator<<(QDebug d, const AnchorGroup &group);
     static const QString s_magicMarker;
     void ensureAnchorsBounded();
 private:
-    friend struct AnchorGroup;
     friend class Item;
     friend class Anchor;
     friend class TestDocks;
@@ -526,97 +482,37 @@ private:
     QSize availableSize() const;
 
     /**
-     * @brief Increases the layout size if @ref availableSize is less than @needed
-     */
-    void ensureHasAvailableSize(QSize needed);
-
-    /**
-     * Removes the widgets associated with oldAnchor and gives them to newAnchor.
-     * Called when removing a widget results in unneeded anchors.
-     */
-    void updateAnchorsFromTo(Anchor *oldAnchor, Anchor *newAnchor);
-
-    void clearAnchorsFollowing();
-    void updateAnchorFollowing(const AnchorGroup &groupBeingRemoved = {});
-    QHash<Anchor *, Anchor *> anchorsShouldFollow() const;
-
-    /**
-     * Positions the static anchors at their correct places. Called when the MultiSplitter is resized.
-     * left and top anchor are at position 0, while right/bottom are at position= width/height.
-     * (Approx, due to styling margins and whatnot)
-     */
-    void positionStaticAnchors();
-
-    /**
-     * When this MultiSplitter is resized, it gives or steals the less/extra space evenly through
-     * all widgets.
-     **/
-    void redistributeSpace();
-    void redistributeSpace(QSize oldSize, QSize newSize);
-    void redistributeSpace_recursive(Anchor *fromAnchor, int minAnchorPos);
-
-    /**
      * Returns the width (if orientation = Horizontal), or height that is occupied by anchors.
      * For example, an horizontal anchor has 2 or 3 px of width, so that's space that can't be
      * occupied by child widgets.
      */
     int wastedSpacing(Qt::Orientation) const;
 
-    /**
-     * Called by addWidget().
-     *
-     * When adding a widget to a layout, it will steal space from the widgets on the left (or top) (@p direction being Anchor::Side1),
-     * and from the widgets on the right (or bottom) (@p direction being Anchor::Side2).
-     *
-     * @param delta the amount of space we're stealing in the specified side
-     * @param fromAnchor The anchor we're starting from
-     * @param direction if we're going left/top (Side1) or right/bottom (Side2)
-     */
-    void propagateResize(int delta, Anchor *fromAnchor, Anchor::Side direction);
-
-    // Helper function for propagateResize()
-    void collectPaths(QVector<Anchor::List> &paths, Anchor *fromAnchor, Anchor::Side direction);
-
     // convenience for the unit-tests
     // Moves the widget's bottom or right anchor, to resize it.
     void resizeItem(Frame *frame, int newSize, Qt::Orientation);
 
-    void ensureItemsMinSize();
-
     ///@brief returns whether we're inside setSize();
     bool isResizing() const { return m_resizing; }
     bool isRestoringPlaceholder() const { return m_restoringPlaceholder; }
-    bool isAddingItem() const { return m_addingItem; }
 
     QString affinityName() const;
 
     MultiSplitter *const m_multiSplitter;
     Anchor::List m_anchors;
 
-    Anchor *m_leftAnchor = nullptr;
-    Anchor *m_topAnchor = nullptr;
-    Anchor *m_rightAnchor = nullptr;
-    Anchor *m_bottomAnchor = nullptr;
-
     ItemList m_items;
     bool m_inCtor = true;
     bool m_inDestructor = false;
-    bool m_beingMergedIntoAnotherMultiSplitter = false;
+    bool m_beingMergedIntoAnotherMultiSplitter = false; // TODO
     bool m_restoringPlaceholder = false;
     bool m_resizing = false;
-    bool m_addingItem = false;
 
     QSize m_minSize = QSize(0, 0);
-    AnchorGroup m_staticAnchorGroup;
     QPointer<Anchor> m_anchorBeingDragged;
     QSize m_size;
+    Item *const m_rootItem;
 };
-
-inline QDebug operator<<(QDebug d, const AnchorGroup &group) {
-    d << "AnchorGroup: top=" << group.top << "; left=" << group.left
-      << "; right=" << group.right << "; bottom=" << group.bottom;
-    return d;
-}
 
 /**
  * Returns the widget's min-width if orientation is Vertical, the min-height otherwise.

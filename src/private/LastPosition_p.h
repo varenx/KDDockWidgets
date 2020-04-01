@@ -31,11 +31,14 @@
 #include "multisplitter/Item_p.h"
 #include "Logging_p.h"
 #include "LayoutSaver_p.h"
+#include "QWidgetAdapter.h"
 
 #include <QPointer>
 #include <memory>
 
 namespace KDDockWidgets {
+
+class MultiSplitterLayout;
 
 // Just a RAII class so we don't forget to unref
 struct ItemRef

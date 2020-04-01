@@ -33,6 +33,7 @@
 #include "KDDockWidgets.h"
 #include "QWidgetAdapter.h"
 #include "LayoutSaver_p.h"
+#include "multisplitter/Item_p.h"
 
 #include <QVector>
 

@@ -66,7 +66,7 @@ public:
 
     void debug_updateItemNamesForGammaray();
 
-    bool checkSanity(MultiSplitterLayout::AnchorSanityOption o = MultiSplitterLayout::AnchorSanity_All);
+    bool checkSanity();
     bool contains(DockWidgetBase *) const;
 
     QString affinityName() const;

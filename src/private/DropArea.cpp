@@ -75,7 +75,7 @@ Frame *DropArea::frameContainingPos(QPoint globalPos) const
 {
     const ItemList &items = m_layout->items();
     for (Item *item : items) {
-        auto frame = item->frame();
+        auto frame = static_cast<Frame*>(item->frame());
         if (!frame || !frame->isVisible()) {
             continue;
         }
@@ -89,7 +89,7 @@ Frame *DropArea::frameContainingPos(QPoint globalPos) const
 Item *DropArea::centralFrame() const
 {
     for (Item *item : m_layout->items()) {
-        if (auto f = item->frame()) {
+        if (auto f = static_cast<Frame*>(item->frame())) {
             if (f->isCentralFrame())
                 return item;
         }
@@ -142,7 +142,7 @@ void DropArea::addDockWidget(DockWidgetBase *dw, Location location, DockWidgetBa
 void DropArea::debug_updateItemNamesForGammaray()
 {
     for (Item *item : m_layout->items()) {
-        if (auto frame = item->frame()) {
+        if (auto frame = static_cast<Frame*>(item->frame())) {
             if (!frame->dockWidgets().isEmpty())
                 frame->setObjectName(frame->dockWidgets().at(0)->uniqueName());
         }
@@ -152,9 +152,9 @@ void DropArea::debug_updateItemNamesForGammaray()
         a->debug_updateItemNames();
 }
 
-bool DropArea::checkSanity(MultiSplitterLayout::AnchorSanityOption o)
+bool DropArea::checkSanity()
 {
-    return m_layout->checkSanity(o);
+    return m_layout->checkSanity();
 }
 
 bool DropArea::contains(DockWidgetBase *dw) const

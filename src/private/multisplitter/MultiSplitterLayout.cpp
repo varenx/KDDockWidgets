@@ -44,20 +44,11 @@ using namespace KDDockWidgets;
 
 const QString MultiSplitterLayout::s_magicMarker = QStringLiteral("bac9948e-5f1b-4271-acc5-07f1708e2611");
 
-static Qt::Orientation anchorOrientationForLocation(Location l)
-{
-    return (l == Location_OnLeft || l == Location_OnRight) ? Qt::Vertical
-                                                           : Qt::Horizontal;
-}
 
 MultiSplitterLayout::MultiSplitterLayout(MultiSplitter *parent)
     : QObject(parent)
     , m_multiSplitter(parent)
-    , m_leftAnchor(new Anchor(Qt::Vertical, this, Anchor::Type_LeftStatic))
-    , m_topAnchor(new Anchor(Qt::Horizontal, this, Anchor::Type_TopStatic))
-    , m_rightAnchor(new Anchor(Qt::Vertical, this, Anchor::Type_RightStatic))
-    , m_bottomAnchor(new Anchor(Qt::Horizontal, this, Anchor::Type_BottomStatic))
-    , m_staticAnchorGroup(this)
+    , m_rootItem(new Item())
 {
     Q_ASSERT(parent);
 
@@ -70,29 +61,7 @@ MultiSplitterLayout::MultiSplitterLayout(MultiSplitter *parent)
         Q_EMIT visibleWidgetCountChanged(visibleCount());
     });
 
-    m_leftAnchor->setObjectName(QStringLiteral("left"));
-    m_rightAnchor->setObjectName(QStringLiteral("right"));
-    m_bottomAnchor->setObjectName(QStringLiteral("bottom"));
-    m_topAnchor->setObjectName(QStringLiteral("top"));
-
-    m_leftAnchor->setFrom(m_topAnchor);
-    m_leftAnchor->setTo(m_bottomAnchor);
-    m_rightAnchor->setFrom(m_topAnchor);
-    m_rightAnchor->setTo(m_bottomAnchor);
-
-    m_topAnchor->setFrom(m_leftAnchor);
-    m_topAnchor->setTo(m_rightAnchor);
-    m_bottomAnchor->setFrom(m_leftAnchor);
-    m_bottomAnchor->setTo(m_rightAnchor);
-
-    m_staticAnchorGroup.left = m_leftAnchor;
-    m_staticAnchorGroup.right = m_rightAnchor;
-    m_staticAnchorGroup.top = m_topAnchor;
-    m_staticAnchorGroup.bottom = m_bottomAnchor;
-
     clear();
-
-    positionStaticAnchors();
 
     // Initialize min size
     updateSizeConstraints();
@@ -105,6 +74,7 @@ MultiSplitterLayout::~MultiSplitterLayout()
     m_inDestructor = true;
     const auto anchors = m_anchors;
     qDeleteAll(anchors);
+    delete m_rootItem;
     DockRegistry::self()->unregisterLayout(this);
 }
 
@@ -230,7 +200,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
                        << "; relativeTo=" << relativeToWidget
                        << "; size=" << size()
                        << "; w.size=" << w->size()
-                       << "; w.min=" << KDDockWidgets::widgetMinLength(w, anchorOrientationForLocation(location))
+                       << "; w.min=" << widgetMinLength(w, orientationForLocation(location))
                        << "; frame=" << frame
                        << "; option=" << option;
 
@@ -246,157 +216,8 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
         return;
 
     unrefOldPlaceholders(framesFrom(w));
+    //Item *relativeToItem = itemForFrame(relativeToWidget);
 
-    Item *relativeToItem = itemForFrame(relativeToWidget);
-
-    ensureEnoughSize(w, location, relativeToItem);
-
-    if (option & AddingOption_StartHidden) {
-        addAsPlaceholder(qobject_cast<DockWidgetBase*>(w), location, relativeToItem);
-        return;
-    }
-
-    Anchor *newAnchor = nullptr;
-    const QRect dropRect = rectForDrop(w, location, relativeToItem);
-
-    if (dropRect.size().isNull() || dropRect.x() < 0 || dropRect.y() < 0) {
-        qWarning() << Q_FUNC_INFO << "Invalid drop rect" << dropRect
-                   << "\n    size=" << m_multiSplitter->size() << "; size="<< m_size
-                   << "\n    location=" << location
-                   << "\n    window=" << m_multiSplitter->window()
-                   << "\n    this=" << this
-                   << "\n    availableHeight=" << availableLengthForOrientation(Qt::Horizontal)
-                   << "\n    availableWidth=" << availableLengthForOrientation(Qt::Vertical)
-                   << "\n    widget.minSize=" << widgetMinLength(w, anchorOrientationForLocation(location));
-        return;
-    }
-
-    m_addingItem = true;
-
-    auto result = this->createTargetAnchorGroup(location, relativeToItem);
-    AnchorGroup targetAnchorGroup = result.first;
-    newAnchor = result.second;
-
-    if (newAnchor && !newAnchor->isFollowing()) {
-        const int anchorThickness = Anchor::thickness(/*static=*/false);
-        qCDebug(sizing) << "Drop rect" << dropRect;
-
-        int posForExistingAnchor = 0;
-        int posForNewAnchor = 0;
-        Anchor *existingAnchor = targetAnchorGroup.anchor(location);
-        Anchor *direction1Anchor = nullptr;
-        Anchor *direction2Anchor = nullptr;
-
-        switch (location) {
-        case Location_OnLeft:
-            posForExistingAnchor = dropRect.left() - existingAnchor->thickness();
-            posForNewAnchor = dropRect.right() + 1;
-            break;
-        case Location_OnTop:
-            posForExistingAnchor = dropRect.top() - existingAnchor->thickness();
-            posForNewAnchor = dropRect.bottom() + 1;
-            break;
-        case Location_OnBottom:
-            posForExistingAnchor = dropRect.bottom() + 1;
-            posForNewAnchor = dropRect.top() - anchorThickness;
-            break;
-        case Location_OnRight:
-            posForExistingAnchor = dropRect.right() + 1;
-            posForNewAnchor = dropRect.left() - anchorThickness;
-            break;
-        case Location_None:
-            Q_ASSERT(false);
-            break;
-        }
-
-        int delta1 = 0;
-        int delta2 = 0;
-        const int originalExistingAnchorPos = existingAnchor->position();
-
-        switch (location) {
-        case Location_OnLeft:
-        case Location_OnTop:
-            direction1Anchor = existingAnchor;
-            direction2Anchor = newAnchor;
-            std::tie(posForExistingAnchor, posForNewAnchor) = boundInterval(posForExistingAnchor, existingAnchor, posForNewAnchor, newAnchor);
-            delta1 = originalExistingAnchorPos - posForExistingAnchor;
-            delta2 = posForNewAnchor - posForExistingAnchor;
-            break;
-        case Location_OnRight:
-        case Location_OnBottom:
-            direction1Anchor = newAnchor;
-            direction2Anchor = existingAnchor;
-            std::tie(posForNewAnchor, posForExistingAnchor) = boundInterval(posForNewAnchor, newAnchor, posForExistingAnchor, existingAnchor);
-            delta1 = posForExistingAnchor - posForNewAnchor;
-            delta2 = posForExistingAnchor - originalExistingAnchorPos;
-            break;
-        case Location_None:
-            qWarning() << Q_FUNC_INFO << "Location can't be none";
-            return;
-        }
-
-        newAnchor->setPosition(posForNewAnchor);
-
-        if (posForExistingAnchor != originalExistingAnchorPos) {
-            if (existingAnchor->isStatic()) {
-                qWarning() << "Trying to move static anchor from" << originalExistingAnchorPos << "to"
-                         << posForExistingAnchor << "; location=" << location
-                         << "; dropRect=" << dropRect
-                         << "; existingAnchor=" << existingAnchor
-                         << "; size=" << m_size
-                         << "; Qt::WA_PendingResizeEvent=" << m_multiSplitter->testAttribute(Qt::WA_PendingResizeEvent)
-                         << "; Qt::WA_WState_Created=" << m_multiSplitter->testAttribute(Qt::WA_WState_Created);
-            }
-            existingAnchor->setPosition(posForExistingAnchor);
-        }
-
-        // Make sure not just the side1/side2 adjacent widgets are contributing space for our new widget
-        // the ones adjacents to the adjacents (recursive) must also give.
-        // The code would work fine without this, it's just that it wouldn't look fair.
-        propagateResize(delta1, direction1Anchor, Anchor::Side1);
-        propagateResize(delta2, direction2Anchor, Anchor::Side2);
-    }
-
-    if (newAnchor) {
-        // Also ensure the widget has a minimum size in the other direction. So, when adding to
-        // left/right, it will still have its minimum height honoured, and vice-versa.
-        QPair<Anchor*, Anchor*> adjacentAnchors = targetAnchorGroup.adjacentAnchors(newAnchor);
-
-        const int bound1 = boundPositionForAnchor(adjacentAnchors.first, Anchor::Side1);
-        const int bound2 = boundPositionForAnchor(adjacentAnchors.second, Anchor::Side2);
-
-        const Qt::Orientation otherOrientation = adjacentAnchors.first->orientation();
-        const int min = widgetMinLength(w, otherOrientation);
-        const int has = targetAnchorGroup.itemSize(otherOrientation);
-        const int needs = min - has;
-        if (needs > 0) {
-            const int pos1 = qMax(bound1, adjacentAnchors.first->position() - needs);
-            const int pos2 = pos1 + adjacentAnchors.first->thickness() + min;
-            Q_ASSERT(pos2 <= bound2);
-            adjacentAnchors.first->setPosition(pos1);
-            adjacentAnchors.second->setPosition(pos2);
-        }
-    }
-
-    auto sourceMultiSplitter = qobject_cast<MultiSplitter *>(w);
-    auto sourceMultiSplitterLayout = sourceMultiSplitter ? sourceMultiSplitter->multiSplitterLayout()
-                                                         : nullptr;
-
-    if (sourceMultiSplitterLayout) {
-        auto items = sourceMultiSplitterLayout->items();
-        targetAnchorGroup.addItem(sourceMultiSplitterLayout);
-        addItems_internal(items);
-    } else {
-        Q_ASSERT(frame);
-        auto item = new Item(frame, this);
-        targetAnchorGroup.addItem(item);
-        addItems_internal(ItemList{ item });
-    }
-
-    updateAnchorFollowing();
-    m_addingItem = false;
-
-    maybeCheckSanity();
 }
 
 void MultiSplitterLayout::addItems_internal(const ItemList &items, bool updateConstraints, bool emitSignal)
@@ -1015,24 +836,6 @@ Anchor *MultiSplitterLayout::staticAnchor(Anchor::Type type) const
     return nullptr;
 }
 
-Anchor *MultiSplitterLayout::staticAnchor(Anchor::Side side, Qt::Orientation orientation) const
-{
-    if (orientation == Qt::Vertical) {
-        return side == Anchor::Side1 ? m_leftAnchor : m_rightAnchor;
-    } else {
-        return side == Anchor::Side1 ? m_topAnchor : m_bottomAnchor;
-    }
-}
-
-AnchorGroup MultiSplitterLayout::anchorsForPos(QPoint pos) const
-{
-    Item *item = itemAt(pos);
-    if (!item)
-        return AnchorGroup(const_cast<MultiSplitterLayout *>(this));
-
-    return item->anchorGroup();
-}
-
 void MultiSplitterLayout::dumpDebug() const
 {
     Q_EMIT aboutToDumpDebug();
@@ -1193,51 +996,6 @@ Anchor::List MultiSplitterLayout::anchors(Qt::Orientation orientation, bool incl
     return result;
 }
 
-Anchor *MultiSplitterLayout::newAnchor(AnchorGroup &group, Location location)
-{
-    qCDebug(::anchors) << "MultiSplitterLayout::newAnchor" << location;
-    Anchor *newAnchor = nullptr;
-    Anchor *donor = nullptr;
-    switch (location) {
-    case Location_OnLeft:
-        donor = group.left;
-        newAnchor = Anchor::createFrom(donor);
-        group.right = newAnchor;
-        break;
-    case Location_OnTop:
-        donor = group.top;
-        newAnchor = Anchor::createFrom(donor);
-        group.bottom = newAnchor;
-        break;
-    case Location_OnRight:
-        donor = group.right;
-        newAnchor = Anchor::createFrom(donor);
-        group.left = newAnchor;
-        break;
-    case Location_OnBottom:
-        donor = group.bottom;
-        newAnchor = Anchor::createFrom(donor);
-        group.top = newAnchor;
-        break;
-    default:
-        qWarning() << "MultiSplitterLayout::newAnchor invalid location!";
-        return nullptr;
-    }
-
-    Q_ASSERT(newAnchor);
-    Q_ASSERT(donor);
-    Q_ASSERT(donor != newAnchor);
-
-    updateAnchorsFromTo(donor, newAnchor);
-
-    qCDebug(::anchors()) << newAnchor->hasNonPlaceholderItems(Anchor::Side1)
-                         << newAnchor->hasNonPlaceholderItems(Anchor::Side2)
-                         << newAnchor->side1Items() << newAnchor->side2Items()
-                         << "; donor" << donor
-                         << "; follows=" << newAnchor->followee();
-    return newAnchor;
-}
-
 void MultiSplitterLayout::blockItemPropagateGeo(bool block)
 {
     for (Item *item : m_items) {
@@ -1300,253 +1058,9 @@ QVector<DockWidgetBase *> MultiSplitterLayout::dockWidgets() const
     return result;
 }
 
-QPair<AnchorGroup,Anchor*> MultiSplitterLayout::createTargetAnchorGroup(KDDockWidgets::Location location, Item *relativeToItem)
+bool MultiSplitterLayout::checkSanity() const
 {
-    const bool relativeToThis = relativeToItem == nullptr;
-    AnchorGroup group = relativeToThis ? staticAnchorGroup()
-                                       : anchorsForPos(relativeToItem->geometry().center());
-
-    if (!group.isValid()) {
-        qWarning() << Q_FUNC_INFO << "Invalid anchor group:" << group
-                   << "; staticAnchorGroup=" << staticAnchorGroup()
-                   << "; relativeTo=" << relativeToItem;
-
-        dumpDebug();
-    }
-
-    Anchor *newAnchor = nullptr;
-    if (relativeToThis) {
-        if (!isEmpty())
-            newAnchor = this->newAnchor(group, location);
-    } else {
-        newAnchor = group.createAnchorFrom(location, relativeToItem);
-        group.setAnchor(newAnchor, KDDockWidgets::oppositeLocation(location));
-    }
-
-    return { group, newAnchor };
-}
-
-bool MultiSplitterLayout::checkSanity(AnchorSanityOption options) const
-{
-    if (m_inCtor || LayoutSaver::restoreInProgress())
-        return true;
-
-    auto check = [this, options] (Item *item, Qt::Orientation orientation) {
-        int numSide1 = 0;
-        int numSide2 = 0;
-        const auto &anchors = this->anchors(orientation, /*includeStatic=*/ true);
-        for (Anchor *anchor : anchors) {
-            if (anchor->containsItem(item, Anchor::Side1))
-                numSide1++;
-            if (anchor->containsItem(item, Anchor::Side2))
-                numSide2++;
-        }
-
-        if (numSide1 != 1 || numSide2 != 1) {
-            dumpDebug();
-            qWarning() << "MultiSplitterLayout::checkSanity:" << "Problem detected! while processing"
-                       << orientation << "anchors"
-                       << "; numSide1=" << numSide1
-                       << "; numSide2=" << numSide2;
-            for (Anchor *anchor : anchors) {
-                if (anchor->containsItem(item, Anchor::Side1))
-                    qDebug() << "Anchor" << anchor << "contains said widget on side1";
-                if (anchor->containsItem(item, Anchor::Side2))
-                    qDebug() << "Anchor" << anchor << "contains said widget on side2";
-            }
-            qWarning() << "MultiSplitterLayout::checkSanity:" << numSide1 << numSide2 << item
-                       << "\n" << m_topAnchor->items(Anchor::Side2)
-                       << "\n" << m_bottomAnchor->items(Anchor::Side1)
-                       << "\n" << m_leftAnchor->items(Anchor::Side2)
-                       << "\n" << m_rightAnchor->items(Anchor::Side1);
-            return false;
-        }
-
-        if ((options & AnchorSanity_WidgetInvalidSizes) && !item->isPlaceholder()) {
-            if (item->width() <= 0 || item->height() <= 0) {
-                dumpDebug();
-                qWarning() << "Invalid size for widget" << item << item->size() << "; isPlaceholder=" << item->isPlaceholder()
-                           << "; minSize=" << item->minimumSize();
-                return false;
-            }
-        }
-
-        return true;
-    };
-
-    if (!m_topAnchor || !m_leftAnchor || !m_rightAnchor || !m_bottomAnchor) {
-        qWarning() << Q_FUNC_INFO << "Invalid static anchors"
-                   << m_leftAnchor << m_topAnchor << m_rightAnchor << m_bottomAnchor;
-        return false;
-    }
-
-    if (m_topAnchor->position() != 0 || m_leftAnchor->position() != 0 ||
-            m_rightAnchor->position() != width() - m_rightAnchor->thickness() ||
-            m_bottomAnchor->position() != height() - m_bottomAnchor->thickness()) {
-        qWarning() << Q_FUNC_INFO << "Invalid anchor position"
-                    << " left=" << m_leftAnchor->position()
-                    << " top=" << m_topAnchor->position()
-                    << " right=" << m_rightAnchor->position()
-                    << " bottom=" << m_bottomAnchor->position()
-                    << "; size=" << m_size
-                    << "; min=" << m_minSize;
-        return false;
-    }
-
-
-    for (Anchor *anchor : qAsConst(m_anchors)) {
-        if (!anchor->isValid()) {
-            dumpDebug();
-            qWarning() << "invalid anchor" << anchor;
-            return false;
-        }
-
-        auto checkSides = [this, anchor] (Anchor::Side side) {
-            for (Item *item : anchor->items(side)) {
-                if (!contains(item)) {
-                    dumpDebug();
-                    qWarning() << "MultiSplitterLayout::checkSanity: Anchor has" << item << "but multi splitter does not";
-                    return false;
-                }
-            }
-            return true;
-        };
-
-        if (!checkSides(Anchor::Side1) || !checkSides(Anchor::Side2))
-            return false;
-
-        if (anchor->isFollowing() && !qobject_cast<Anchor*>(anchor->followee())) {
-            qWarning() << "Anchor is following but followee was deleted already";
-            return false;
-        }
-
-        if (options & AnchorSanity_Followers) {
-            const bool hasItemsOnBothSides = anchor->hasNonPlaceholderItems(Anchor::Side1) && anchor->hasNonPlaceholderItems(Anchor::Side2);
-            if (!anchor->isStatic() && !anchor->isFollowing() && !hasItemsOnBothSides && anchorsFollowing(anchor).isEmpty()) {
-                qWarning() << "Non static anchor should have items on both sides unless it's following or being followed" << anchor;
-            }
-        }
-
-        if (!anchor->isFollowing() &&anchor->geometry() != anchor->separatorWidget()->geometry()) {
-            qWarning() << Q_FUNC_INFO << anchor << anchor->separatorWidget()
-                       << "Inconsistent anchor geometry" << anchor->geometry() << "; " << anchor->separatorWidget()->geometry();
-            return false;
-        }
-
-        if (options & AnchorSanity_Visibility) {
-            if (multiSplitter()->isVisible() && !anchor->isFollowing() && !anchor->separatorWidget()->isVisible()) {
-                qWarning() << Q_FUNC_INFO << "Anchor should be visible" << anchor;
-                return false;
-            }
-        }
-    }
-
-    for (Item *item : qAsConst(m_items)) {
-        if (!check(item, Qt::Vertical))
-            return false;
-
-        if (!check(item, Qt::Horizontal))
-            return false;
-    }
-
-    // Check that no widget intersects with an anchor
-    if (options & AnchorSanity_Intersections) {
-        for (Item *item: items()) {
-            for (Anchor *a : anchors()) {
-                if (!item->isPlaceholder() && item->geometry().intersects(a->geometry())) {
-                    dumpDebug();
-                    qWarning() << "MultiSplitterLayout::checkSanity: Widget" << item << "with rect" << item->geometry()
-                               << "Intersects anchor" << a << "with rect" << a->geometry()
-                               << "; a.visible|following|valid|unneeded=" << a->separatorWidget()->isVisible()<< a->isFollowing() << a->isValid() << a->isUnneeded();
-                    return false;
-                }
-            }
-        }
-    }
-
-    if (options & AnchorSanity_WidgetGeometry) {
-        for (Item *item: items()) {
-
-            if (!item->isPlaceholder() && item->geometry() != item->frame()->geometry()) {
-                qWarning() << Q_FUNC_INFO << "Invalid geometry for item" << item << item->geometry() << item->frame()->geometry();
-                return false;
-            }
-
-            if (!item->anchorGroup().isValid()) {
-                qWarning() << Q_FUNC_INFO << "Invalid item group for item" << item->anchorGroup();
-                return false;
-            }
-
-            if (!item->isPlaceholder() && item->anchorGroup().itemSize() != item->size()) {
-                qWarning() << Q_FUNC_INFO << "Invaild item size="
-                           << item->size()
-                           << "group size="
-                           << item->anchorGroup().itemSize();
-                return false;
-            }
-        }
-    }
-
-    if (options & AnchorSanity_WidgetMinSizes) {
-        for (Item *item : items()) {
-
-            if (item->isPlaceholder())
-                continue;
-
-            const int minWidth = item->minLength(Qt::Vertical);
-            const int minHeight = item->minLength(Qt::Horizontal);
-
-            if (item->width() < minWidth) {
-                qWarning() << "MultiSplitterLayout::checkSanity: Widget has width=" << item->width()
-                           << "but minimum is" << minWidth
-                           << item;
-                return false;
-            }
-
-            if (item->height() < minHeight) {
-                qWarning() << "MultiSplitterLayout::checkSanity: Widget has height=" << item->height()
-                           << "but minimum is" << minHeight
-                           << item;
-                return false;
-            }
-        }
-    }
-
-    for (DockWidgetBase *dw : DockRegistry::self()->dockwidgets()) {
-        Frame *frame = dw->frame();
-        auto tabWidgetParent = frame ? frame->tabWidget() : nullptr;
-        const bool shouldBeChecked = dw->isVisible() || tabWidgetParent;
-
-        if (shouldBeChecked != dw->toggleAction()->isChecked()) {
-            qWarning() << Q_FUNC_INFO << "Invalid state for DockWidgetBase::toggleAction()"
-                       << dw->toggleAction()->isChecked();
-            return false;
-        }
-    }
-
-/* TODO: uncomment when all tests pass
-    if (m_topAnchor->position() != 0 || m_leftAnchor->position() != 0) {
-        qWarning() << Q_FUNC_INFO << "Invalid top or left anchor position"
-                   << m_topAnchor->position() << m_leftAnchor->position();
-        return false;
-    }
-
-    if (m_rightAnchor->position() != m_size.width() - 1 || m_bottomAnchor->position() != m_size.height() - 1) {
-        qWarning() << Q_FUNC_INFO << "Invalid right or bottom anchor position"
-                   << m_rightAnchor->position() << m_bottomAnchor->position()
-                   << "; m_size=" << m_size;
-        return false;
-    }
-*/
-    return true;
-}
-
-void MultiSplitterLayout::maybeCheckSanity()
-{
-#if defined(DOCKS_DEVELOPER_MODE)
-    if (!isRestoringPlaceholder() && !checkSanity(AnchorSanityOption(AnchorSanity_All & ~AnchorSanity_Visibility)))
-        qWarning() << Q_FUNC_INFO << "Sanity check failed";
-#endif
+    return m_rootItem->checkSanity();
 }
 
 void MultiSplitterLayout::ensureHasAvailableSize(QSize needed)
@@ -1563,132 +1077,6 @@ void MultiSplitterLayout::ensureHasAvailableSize(QSize needed)
 
     const QSize newSize = size() + QSize(deltaWidth, deltaHeight);
     setSize(newSize);
-}
-
-void MultiSplitterLayout::restorePlaceholder(Item *item)
-{
-    QScopedValueRollback<bool> restoring(m_restoringPlaceholder, true);
-
-    AnchorGroup anchorGroup = item->anchorGroup();
-
-    const QSize availableSize = this->availableSize();
-    const QSize hardcodedMinSize = MultiSplitterLayout::hardcodedMinimumSize();
-
-    const QSize widgetMinSize = { qMax(hardcodedMinSize.width(), KDDockWidgets::widgetMinLength(item->frame(), Qt::Vertical)),
-                                  qMax(hardcodedMinSize.height(), KDDockWidgets::widgetMinLength(item->frame(), Qt::Horizontal)) };
-
-    const QSize newSize = {qMax(qMin(item->length(Qt::Vertical), availableSize.width()), widgetMinSize.width()),
-                           qMax(qMin(item->length(Qt::Horizontal), availableSize.height()), widgetMinSize.height()) };
-
-    // Our layout has enough size for the dock widget
-    ensureHasAvailableSize(newSize);
-
-    item->setIsPlaceholder(false);
-    item->beginBlockPropagateGeo();
-    updateSizeConstraints();
-
-    Anchor::List anchorsFollowing = anchorGroup.anchorsFollowingInwards();
-    if (anchorsFollowing.isEmpty()) {
-        // There's no separator to move, it means it's a static anchor group (layout is empty, so the anchors
-        // are the actual borders of the window
-        // dumpDebug();
-        Q_ASSERT(anchorGroup.isStaticOrFollowsStatic());
-        anchorGroup.updateItemSizes();
-        maybeCheckSanity();
-        item->endBlockPropagateGeo();
-        return;
-    }
-
-    clearAnchorsFollowing();
-    QHash<Anchor*,Anchor*> anchorsThatWillFollowOthers = anchorsShouldFollow();
-
-    if (!anchorsFollowing.contains(anchorGroup.top) && !anchorsFollowing.contains(anchorGroup.bottom)) {
-        anchorGroup.top->updateItemSizes();
-        anchorGroup.bottom->updateItemSizes();
-    }
-    if (!anchorsFollowing.contains(anchorGroup.left) && !anchorsFollowing.contains(anchorGroup.right)) {
-        anchorGroup.left->updateItemSizes();
-        anchorGroup.right->updateItemSizes();
-    }
-
-
-    for (Anchor *anchorFollowingInwards : anchorsFollowing) {
-        const Qt::Orientation orientation = anchorFollowingInwards->orientation();
-        Anchor *side1Anchor = anchorGroup.anchorAtSide(Anchor::Side1, orientation); // returns the left if vertical, otherwise top
-        Anchor *side2Anchor = anchorGroup.anchorAtSide(Anchor::Side2, orientation); // returns the right if vertical, otherwise bottom
-
-        if (anchorsThatWillFollowOthers.contains(side1Anchor)) {
-            Anchor *followee = anchorsThatWillFollowOthers.value(side1Anchor);
-            side1Anchor->setFollowee(followee);
-            side1Anchor = followee;
-        }
-
-        if (anchorsThatWillFollowOthers.contains(side2Anchor)) {
-            Anchor *followee = anchorsThatWillFollowOthers.value(side2Anchor);
-            side2Anchor->setFollowee(followee);
-            side2Anchor = followee;
-        }
-
-        const int oldPosition1 = side1Anchor->position();
-        const int oldPosition2 = side2Anchor->position();
-        const int boundPosition1 = side1Anchor->isStatic() ? side1Anchor->position()
-                                                           : boundPositionForAnchor(side1Anchor, Anchor::Side1);
-
-        const int boundPosition2 = side2Anchor->isStatic() ? side2Anchor->position()
-                                                           : boundPositionForAnchor(side2Anchor, Anchor::Side2);
-
-        const int newLength = anchorFollowingInwards->isVertical() ? newSize.width() : newSize.height();
-        // Let's try that each anchor contributes 50%, so that the widget appears centered
-        const int suggestedLength1 = qMin(newLength, qCeil(newLength / 2) + side1Anchor->thickness() + 1);
-        const int maxPos1 = boundPosition2 - newLength - side1Anchor->thickness();
-        const int newPosition1 = qMax(qMin(maxPos1, oldPosition1 - suggestedLength1), boundPosition1); // Honour the bound
-        const int newPosition2 = newPosition1 + side1Anchor->thickness() + newLength; // No need to check bound2, we have enough space afterall
-
-        qCDebug(placeholder) << Q_FUNC_INFO
-                             << "; oldPos1=" << oldPosition1
-                             << "; oldPos2=" << oldPosition2
-                             << "; newPosition1=" << newPosition1
-                             << "; newPosition2=" << newPosition2
-                             << "; bounds1=" << boundPosition1
-                             << "; bounds2=" << boundPosition2
-                             << "; item.geo=" << item->geometry()
-                             << "; newSize=" << newSize
-                             << "; side1Anchor=" << side1Anchor
-                             << "; side2Anchor=" << side2Anchor
-                             << side1Anchor->followee() << side2Anchor->followee()
-                             << "; anchorFollowing=" << anchorFollowingInwards
-                             << "; size=" << m_size
-                             << "; minSize=" << m_minSize
-                             << "; widgetMinSize=" << widgetMinSize
-                             << "; available_old=" << availableSize
-                             << "; available_new=" << availableLengthForOrientation(orientation)
-                             << "; item.size=" << item->size();
-
-        if (newPosition1 < boundPosition1 || newPosition2 > boundPosition2) {
-            qWarning() << Q_FUNC_INFO << "Out of bounds"
-                       // << "bounds.anchor1=" << boundPositionsForAnchor(side1Anchor)
-                       << "bounds.anchor2=" << boundPositionsForAnchor(side2Anchor)
-                       << "; side1Anchor.thickness" << side1Anchor->thickness()
-                       << "; side2Anchor.thickness" << side2Anchor->thickness();
-        }
-
-        // We don't want item to resize the anchors while setting newPosition1, we already calculated it
-        if (side1Anchor->isStatic()) {
-            side1Anchor->updateItemSizes();
-        } else {
-            side1Anchor->setPosition(newPosition1);
-        }
-
-        if (side2Anchor->isStatic()) {
-            side2Anchor->updateItemSizes();
-        } else {
-            side2Anchor->setPosition(newPosition2);
-        }
-    }
-    item->endBlockPropagateGeo();
-
-    updateAnchorFollowing();
-    maybeCheckSanity();
 }
 
 void MultiSplitterLayout::unrefOldPlaceholders(const Frame::List &framesBeingAdded) const
@@ -1761,31 +1149,6 @@ void MultiSplitterLayout::setMinimumSize(QSize sz)
         Q_EMIT minimumSizeChanged(sz);
     }
     qCDebug(sizing) << Q_FUNC_INFO << "minSize = " << m_minSize;
-}
-
-void MultiSplitterLayout::updateAnchorsFromTo(Anchor *oldAnchor, Anchor *newAnchor)
-{
-    // Update the from/to of other anchors
-    for (Anchor *other : qAsConst(m_anchors)) {
-        Q_ASSERT(other);
-        Q_ASSERT(other->isValid());
-        if (!other->isStatic() && other->orientation() != newAnchor->orientation()) {
-            if (other->to() == oldAnchor) {
-                other->setTo(newAnchor);
-            } else if (other->from() == oldAnchor) {
-                other->setFrom(newAnchor);
-            }
-
-            if (!other->isValid()) {
-                qDebug() << "MultiSplitterLayout::updateAnchorsFromTo: anchor is now invalid."
-                         << "\n    old=" << oldAnchor
-                         << "\n    new=" << newAnchor
-                         << "\n    from=" << other->from()
-                         << "\n    to=" << other->to()
-                         << "\n    other=" << other;
-            }
-        }
-    }
 }
 
 void MultiSplitterLayout::clearAnchorsFollowing()
@@ -1892,6 +1255,11 @@ void MultiSplitterLayout::insertAnchor(Anchor *anchor)
 const ItemList MultiSplitterLayout::items() const
 {
     return m_items;
+}
+
+Item *MultiSplitterLayout::rootItem() const
+{
+    return m_rootItem;
 }
 
 bool MultiSplitterLayout::eventFilter(QObject *o, QEvent *e)

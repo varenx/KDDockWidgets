@@ -232,24 +232,6 @@ DebugWindow::DebugWindow(QWidget *parent)
     });
 
     button = new QPushButton(this);
-    button->setText(QStringLiteral("EnsureAnchorsBounded"));
-    layout->addWidget(button);
-    connect(button, &QPushButton::clicked, this, [] {
-        const auto layouts = DockRegistry::self()->layouts();
-        for (auto l : layouts)
-            l->ensureAnchorsBounded();
-    });
-
-    button = new QPushButton(this);
-    button->setText(QStringLiteral("RedistributeSpace"));
-    layout->addWidget(button);
-    connect(button, &QPushButton::clicked, this, [] {
-        const auto layouts = DockRegistry::self()->layouts();
-        for (auto l : layouts)
-            l->redistributeSpace();
-    });
-
-    button = new QPushButton(this);
     button->setText(QStringLiteral("resize by 1x1"));
     layout->addWidget(button);
     connect(button, &QPushButton::clicked, this, [] {
@@ -258,24 +240,6 @@ DebugWindow::DebugWindow(QWidget *parent)
             QWidget *tlw = l->multiSplitter()->window();
             tlw->resize(tlw->size() + QSize(1, 1));
         }
-    });
-
-    button = new QPushButton(this);
-    button->setText(QStringLiteral("PositionStaticAnchors()"));
-    layout->addWidget(button);
-    connect(button, &QPushButton::clicked, this, [] {
-        const auto layouts = DockRegistry::self()->layouts();
-        for (auto l : layouts)
-            l->positionStaticAnchors();
-    });
-
-    button = new QPushButton(this);
-    button->setText(QStringLiteral("UpdateAnchorFollowing"));
-    layout->addWidget(button);
-    connect(button, &QPushButton::clicked, this, [] {
-        const auto layouts = DockRegistry::self()->layouts();
-        for (auto l : layouts)
-            l->updateAnchorFollowing();
     });
 
     button = new QPushButton(this);

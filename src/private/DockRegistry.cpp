@@ -24,6 +24,7 @@
 #include "DebugWindow_p.h"
 #include "LastPosition_p.h"
 #include "multisplitter/MultiSplitterLayout_p.h"
+#include "multisplitter/MultiSplitter_p.h"
 #include "quick/QmlTypes.h"
 
 #include <QPointer>
@@ -75,6 +76,25 @@ void DockRegistry::checkSanityAll()
 bool DockRegistry::isProcessingAppQuitEvent() const
 {
     return m_isProcessingAppQuitEvent;
+}
+
+MultiSplitterLayout *DockRegistry::layoutForItem(const Item *item) const
+{
+    Item *root = item->root();
+    for (MultiSplitterLayout *layout : m_layouts) {
+        if (layout->rootItem() == root)
+            return layout;
+    }
+
+    return nullptr;
+}
+
+bool DockRegistry::itemIsInMainWindow(const Item *item) const
+{
+    if (auto layout = layoutForItem(item))
+        return layout->multiSplitter()->isInMainWindow();
+
+    return false;
 }
 
 DockRegistry *DockRegistry::self()

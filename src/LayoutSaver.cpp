@@ -221,31 +221,6 @@ bool LayoutSaver::restoreLayout(const QByteArray &data)
     if (data.isEmpty())
         return true;
 
-    struct EnsureItemsAtCorrectPlace {
-
-        EnsureItemsAtCorrectPlace(LayoutSaver *ls)
-            : layoutSaver(ls)
-        {
-        }
-
-        ~EnsureItemsAtCorrectPlace()
-        {
-            // When using RestoreOption_RelativeToMainWindow we'll have many rounding errors so the layout won't be exact.
-            // Make sure to run a relayout at the end
-            // (Using RAII to make sure it runs after Private::RAIIIsRestoring went out of scope, since "isRestoring= true" inhibits relayout
-            if (ensure) {
-                for (auto layout : DockRegistry::self()->layouts()) {
-                    if (layoutSaver->d->matchesAffinity(layout->affinityName()))
-                        layout->redistributeSpace();
-                }
-            }
-        }
-
-        bool ensure = false;
-        LayoutSaver *const layoutSaver;
-    };
-
-    EnsureItemsAtCorrectPlace ensureItemsAtCorrectPlace(this);
     Private::RAIIIsRestoring isRestoring;
 
     struct FrameCleanup {
@@ -326,9 +301,6 @@ bool LayoutSaver::restoreLayout(const QByteArray &data)
             qWarning() << Q_FUNC_INFO << "Couldn't find dock widget" << dw->uniqueName;
         }
     }
-
-    // our raii class will run when
-    ensureItemsAtCorrectPlace.ensure = d->m_restoreOptions & RestoreOption_RelativeToMainWindow;
 
     return true;
 }

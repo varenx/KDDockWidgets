@@ -59,10 +59,6 @@ Anchor::~Anchor()
     m_separatorWidget->deleteLater();
     qCDebug(multisplittercreation) << "~Anchor; this=" << this << "; m_to=" << m_to << "; m_from=" << m_from;
     m_layout->removeAnchor(this);
-    for (Item *item : items(Side1))
-        item->anchorGroup().setAnchor(nullptr, m_orientation, Side1);
-    for (Item *item : items(Side2))
-        item->anchorGroup().setAnchor(nullptr, m_orientation, Side2);
 }
 
 void Anchor::setFrom(Anchor *from)
@@ -200,57 +196,6 @@ Qt::Orientation Anchor::orientation() const
 
 void Anchor::setPosition(int p, SetPositionOptions options)
 {
-    qCDebug(anchors) << Q_FUNC_INFO << this << "; visible="
-                     << m_separatorWidget->isVisible() << "; p=" << p;
-
-    const int max = m_layout->length(orientation()) - Anchor::thickness(true);
-    const bool outOfBounds = max != -1 && (p < 0  || p > max);
-
-    if (outOfBounds) {
-        if (m_layout->isRestoringPlaceholder() || m_layout->isAddingItem() || m_layout->isResizing()) {
-            // Don't do anything here, it will call ensureAnchorsBounded() when finished
-            return;
-        } else if (!LayoutSaver::restoreInProgress()) {
-            m_layout->dumpDebug();
-            qWarning() << Q_FUNC_INFO << "Out of bounds position=" << p
-                       << "; oldPosition=" << position()
-                       << "; this=" << this
-                       << "; size=" << m_layout->size()
-                       << "; max=" << max
-                       << m_layout->multiSplitter()->window();
-        }
-    }
-
-    m_initialized = true;
-    if (position() == p) {
-        updateItemSizes();
-        return;
-    }
-
-    if (isVertical()) {
-        m_geometry.moveLeft(p);
-    } else {
-        m_geometry.moveTop(p);
-    }
-
-    /**
-     * If we're in the middle of a resize then remember the relative positions, so we can do
-     * a redistribution so that relatively all widgets occupy the same amount
-     */
-    const bool recalculatePercentage = !(options & SetPositionOption_DontRecalculatePercentage) && !m_layout->isResizing();
-
-    m_separatorWidget->move(p);
-    if (recalculatePercentage) {
-        // We keep the percentage, so we don't constantly recalculate it during a resize, which introduces rounding errors
-        updatePositionPercentage();
-    }
-
-    // Note: Position can be slightly negative if the main window isn't big enougn to host the new size.
-    // In that case the window will be resized shortly after
-    //Q_ASSERT(p >= 0); - commented out, as it's normal
-
-    Q_EMIT positionChanged(position());
-    updateItemSizes();
 }
 
 void Anchor::updatePositionPercentage()
