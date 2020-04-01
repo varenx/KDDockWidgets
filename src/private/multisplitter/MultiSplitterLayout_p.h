@@ -58,28 +58,6 @@ inline int widgetLength(const T *w, Qt::Orientation orientation)
     return (orientation == Qt::Vertical) ? w->width() : w->height();
 }
 
-inline int lengthFromSize(QSize sz, Qt::Orientation orientation)
-{
-    return orientation == Qt::Vertical ? sz.width()
-                                       : sz.height();
-}
-
-inline Anchor::Side sideForLocation(Location loc)
-{
-    switch (loc) {
-    case KDDockWidgets::Location_OnLeft:
-    case KDDockWidgets::Location_OnTop:
-        return Anchor::Side1;
-    case KDDockWidgets::Location_OnRight:
-    case KDDockWidgets::Location_OnBottom:
-        return Anchor::Side2;
-    default:
-        break;
-    }
-
-    return Anchor::Side_None;
-}
-
 /**
  * A MultiSplitter is like a QSplitter but supports mixing vertical and horizontal splitters in
  * any combination.
@@ -223,21 +201,8 @@ public:
     ///@brief returns list of separators
     const Anchor::List anchors() const { return m_anchors; }
 
-    /**
-     * @brief Returns the list of anchors that are following @p followee
-     */
-    Anchor::List anchorsFollowing(Anchor *followee) const;
-
-    ///@brief returns the number of anchors that are following others, just for tests.
-    int numAchorsFollowing() const;
-
     ///@brief returns the number of anchors that are following others, just for tests.
     int numVisibleAnchors() const;
-
-    ///@brief returns either the left, top, right or bottom separator, depending on the @p type
-    Anchor *staticAnchor(Anchor::Type type) const;
-
-    Anchor *staticAnchor(Anchor::Side side, Qt::Orientation orientation) const;
 
     ///@brief a function that all code paths adding Items will call.
     ///It's mostly for code reuse, so we don't duplicate what's done here. But it's also nice to
@@ -420,47 +385,6 @@ private:
     void setMinimumSize(QSize);
 
     void emitVisibleWidgetCountChanged();
-
-    /**
-     * @brief Returns the size that the widget will get when dropped at this specific location.
-     *
-     * When location is Left or Right then the length represents a width, otherwise an height.
-     * This function is also called to know the size of the rubberband when hovering over a location.
-     */
-    MultiSplitterLayout::Length lengthForDrop(const QWidgetOrQuick *widget, KDDockWidgets::Location location,
-                                              const Item *relativeTo) const;
-
-
-    /**
-     * @brief Ensures that this layout's size is enough for dropping @p widget to @p location,
-     * relative to @p relativeToItem.
-     *
-     * It may increase size or do notying, never decrease.
-     */
-    void ensureEnoughSize(const QWidgetOrQuick *widget, KDDockWidgets::Location location,
-                                  const Item *relativeToItem);
-
-
-    void insertAnchor(Anchor *);
-    void removeAnchor(Anchor *);
-
-    /**
-     * Returns the min or max position that an anchor can go to (due to minimum size restriction on the widgets).
-     * For example, if the anchor is vertical and direction is Side1 then it returns the minimum x
-     * that the anchor can have. If direction is Side2 then it returns the maximum width. If horizontal
-     * then the height.
-     */
-    int boundPositionForAnchor(Anchor *, Anchor::Side direction) const;
-
-    /**
-     * Similar to boundPositionForAnchor, but returns both the min and the max width (or height)
-     */
-    QPair<int, int> boundPositionsForAnchor(Anchor *) const;
-
-    /**
-     * @brief similar to @ref boundPositionsForAnchor but returns for all anchors
-     */
-    QHash<Anchor*, QPair<int,int>> boundPositionsForAllAnchors() const;
 
     /** Returns how much is available for the new drop. It already counts with the space for new anchor that will be created.
      * So it returns this layout's width() (or height), minus the minimum-sizes of all widgets, minus the thickness of all anchors

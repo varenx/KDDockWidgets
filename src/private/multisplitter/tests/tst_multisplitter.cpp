@@ -18,7 +18,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Item.h"
+#include "Item_p.h"
 #include <QtTest/QtTest>
 #include <memory.h>
 
@@ -83,7 +83,7 @@ void TestMultiSplitter::tst_insertOne()
 {
     auto root = createRoot();
     auto item = createItem("1");
-    root->insertItem(item, Location_Top);
+    root->insertItem(item, Location_OnTop);
     QCOMPARE(root->numChildren(), 1);
     QVERIFY(item->isWidget());
     QVERIFY(!item->isContainer());
@@ -104,9 +104,9 @@ void TestMultiSplitter::tst_insertThreeSideBySide()
     auto item2 = new Item();
     auto item3 = new Item();
 
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    root->insertItem(item3, Location_Right);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    root->insertItem(item3, Location_OnRight);
 
     QVERIFY(root->checkSanity());
     QCOMPARE(root->numChildren(), 3);
@@ -121,9 +121,9 @@ void TestMultiSplitter::tst_insertOnWidgetItem1()
     auto item1 = new Item();
     auto item2 = new Item();
     auto item3 = new Item();
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item3, Location_Right);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnRight);
 
     QVERIFY(item3->x() > item2->x());
     QCOMPARE(item3->y(), item2->y());
@@ -140,9 +140,9 @@ void TestMultiSplitter::tst_insertOnWidgetItem2()
     auto item1 = new Item();
     auto item2 = new Item();
     auto item3 = new Item();
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item3, Location_Left);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnLeft);
 
     QVERIFY(item1->x() < item3->x());
     QVERIFY(item3->x() < item2->x());
@@ -162,10 +162,10 @@ void TestMultiSplitter::tst_insertOnWidgetItem1DifferentOrientation()
     auto item2 = createItem("2");
     auto item3 = createItem("3");
     auto item31 = createItem("3.2");
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item3, Location_Right);
-    item3->insertItem(item31, Location_Bottom);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnRight);
+    item3->insertItem(item31, Location_OnBottom);
 
     auto container3 = item3->parentContainer();
     QVERIFY(container3->isContainer());
@@ -204,12 +204,12 @@ void TestMultiSplitter::tst_insertOnWidgetItem2DifferentOrientation()
     auto item3 = createItem("3");
     auto item31 = createItem("3.1");
     auto item32 = createItem("3.2");
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item3, Location_Right);
-    item3->insertItem(item31, Location_Bottom);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnRight);
+    item3->insertItem(item31, Location_OnBottom);
     auto container3Parent = item3->parentContainer();
-    item3->insertItem(item32, Location_Right);
+    item3->insertItem(item32, Location_OnRight);
     auto container3 = item3->parentContainer();
 
     QCOMPARE(container3->parentContainer(), container3Parent);
@@ -256,12 +256,12 @@ void TestMultiSplitter::tst_insertOnRootDifferentOrientation()
     auto item31 = createItem("3.1");
     auto item32 = createItem("3.2");
     auto item4 = createItem("4");
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item3, Location_Right);
-    item3->insertItem(item31, Location_Bottom);
-    item3->insertItem(item32, Location_Right);
-    root->insertItem(item4, Location_Top);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnRight);
+    item3->insertItem(item31, Location_OnBottom);
+    item3->insertItem(item32, Location_OnRight);
+    root->insertItem(item4, Location_OnTop);
 
     QCOMPARE(item4->parentContainer(), root.get());
     QCOMPARE(item4->pos(), root->pos());
@@ -283,12 +283,12 @@ void TestMultiSplitter::tst_removeItem1()
     auto item31 = createItem("3.1");
     auto item32 = createItem("3.2");
     auto item4 = createItem("4");
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item3, Location_Right);
-    item3->insertItem(item31, Location_Bottom);
-    item3->insertItem(item32, Location_Right);
-    root->insertItem(item4, Location_Top);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnRight);
+    item3->insertItem(item31, Location_OnBottom);
+    item3->insertItem(item32, Location_OnRight);
+    root->insertItem(item4, Location_OnTop);
 
     QCOMPARE(root->numChildren(), 2);
     root->removeItem(item4);
@@ -322,10 +322,10 @@ void TestMultiSplitter::tst_removeItem2()
     auto item2 = createItem("2");
     auto item3 = createItem("3");
     auto item31 = createItem("3.1");
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item3, Location_Right);
-    item3->insertItem(item31, Location_Bottom);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnRight);
+    item3->insertItem(item31, Location_OnBottom);
     item31->parentContainer()->removeItem(item31);
     item3->parentContainer()->removeItem(item3);
 }
@@ -341,9 +341,9 @@ void TestMultiSplitter::tst_minSize()
     item2->m_sizingInfo.minSize = {200, 300};
     item22->m_sizingInfo.minSize = {100, 100};
 
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    item2->insertItem(item22, Location_Bottom);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item22, Location_OnBottom);
 
     QCOMPARE(item2->minSize(), QSize(200, 300));
     QCOMPARE(item2->parentContainer()->minSize(), QSize(200, 300+100+st));
@@ -359,9 +359,9 @@ void TestMultiSplitter::tst_resize()
     auto item3 = createItem("3");
     auto item31 = createItem("31");
 
-    root->insertItem(item1, Location_Left);
-    root->insertItem(item2, Location_Right);
-    root->insertItem(item3, Location_Right);
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    root->insertItem(item3, Location_OnRight);
 
     const int item1Percentage = item1->width() / root->width();
     const int item2Percentage = item1->width() / root->width();
@@ -379,7 +379,7 @@ void TestMultiSplitter::tst_resize()
     QCOMPARE(item2->height(), 505);
     QCOMPARE(item3->height(), 505);
 
-    item3->insertItem(item31, Location_Bottom);
+    item3->insertItem(item31, Location_OnBottom);
 
     QVERIFY(root->checkSanity());
     root->resize({2500, 505});
@@ -394,7 +394,7 @@ void TestMultiSplitter::tst_resizeWithConstraints()
         auto root = createRoot();
         auto item1 = createItem("1");
         item1->setMinSize(QSize(500, 500));
-        root->insertItem(item1, Location_Left);
+        root->insertItem(item1, Location_OnLeft);
         QVERIFY(root->checkSanity());
 
         root->resize(item1->minSize()); // Still fits
@@ -411,9 +411,9 @@ void TestMultiSplitter::tst_resizeWithConstraints()
         item1->setMinSize(QSize(500, 500));
         item2->setMinSize(QSize(500, 500));
         item3->setMinSize(QSize(500, 500));
-        root->insertItem(item1, Location_Left);
-        root->insertItem(item2, Location_Right);
-        root->insertItem(item3, Location_Right);
+        root->insertItem(item1, Location_OnLeft);
+        root->insertItem(item2, Location_OnRight);
+        root->insertItem(item3, Location_OnRight);
         QVERIFY(root->checkSanity());
 
         // TODO: Resize further
@@ -433,7 +433,7 @@ void TestMultiSplitter::tst_availableSize()
     item2->m_sizingInfo.minSize = {100, 100};
     item3->m_sizingInfo.minSize = {100, 100};
 
-    root->insertItem(item1, Location_Left);
+    root->insertItem(item1, Location_OnLeft);
     QCOMPARE(root->availableSize(), QSize(900, 900));
     QCOMPARE(root->minSize(), QSize(100, 100));
     QCOMPARE(root->neighboursLengthFor(item1, Side1, Qt::Horizontal), 0);
@@ -450,7 +450,7 @@ void TestMultiSplitter::tst_availableSize()
     QCOMPARE(root->neighboursLengthFor_recursive(item1, Side1, Qt::Horizontal), 0);
     QCOMPARE(root->neighboursLengthFor_recursive(item1, Side2, Qt::Horizontal), 0);
 
-    root->insertItem(item2, Location_Left);
+    root->insertItem(item2, Location_OnLeft);
     QCOMPARE(root->availableSize(), QSize(800 - st, 900));
     QCOMPARE(root->minSize(), QSize(200 + st, 100));
     QCOMPARE(root->neighboursLengthFor(item1, Side1, Qt::Horizontal), item2->width());
@@ -467,7 +467,7 @@ void TestMultiSplitter::tst_availableSize()
     QCOMPARE(root->neighboursLengthFor_recursive(item1, Side1, Qt::Horizontal), item2->width());
     QCOMPARE(root->neighboursLengthFor_recursive(item1, Side2, Qt::Horizontal), 0);
 
-    root->insertItem(item3, Location_Bottom);
+    root->insertItem(item3, Location_OnBottom);
     QCOMPARE(root->availableSize(), QSize(800 - st, 800 - st));
     QCOMPARE(root->minSize(), QSize(200 + st, 100 + 100 + st));
     QCOMPARE(item3->parentContainer()->neighboursMinLengthFor(item3, Side1, Qt::Vertical), item1->minSize().height());
@@ -481,8 +481,8 @@ void TestMultiSplitter::tst_availableSize()
     // More nesting
     auto item4 = createItem("4");
     auto item5 = createItem("5");
-    item3->insertItem(item4, Location_Right);
-    item4->insertItem(item5, Location_Bottom);
+    item3->insertItem(item4, Location_OnRight);
+    item4->insertItem(item5, Location_OnBottom);
 
     auto container4 = item4->parentContainer();
     QCOMPARE(container4->neighboursLengthFor_recursive(item4, Side1, Qt::Vertical), item1->height());
@@ -526,7 +526,7 @@ void TestMultiSplitter::tst_missingSize()
     QCOMPARE(root->missingSizeFor(item3, Qt::Vertical), QSize(100, 200));
 
     // Test with an existing item
-    root->insertItem(item1, Location_Top);
+    root->insertItem(item1, Location_OnTop);
     QCOMPARE(root->missingSizeFor(item2, Qt::Vertical), item1->minSize() + QSize(0, st));
     QCOMPARE(root->missingSizeFor(item3, Qt::Vertical), item1->minSize() + QSize(0, st) + QSize(100, 200));
 }
@@ -541,7 +541,7 @@ void TestMultiSplitter::tst_ensureEnoughSize()
 
     // Insert to empty layout:
 
-    root->insertItem(item1, Location_Left);
+    root->insertItem(item1, Location_OnLeft);
     QCOMPARE(root->size(), QSize(2000, 1000));
     QCOMPARE(item1->size(), QSize(2000, 1000));
     QCOMPARE(item1->minSize(), root->minSize());
@@ -550,7 +550,7 @@ void TestMultiSplitter::tst_ensureEnoughSize()
     // Insert to non-empty layout
     Item *item2 = createItem("2");
     item2->setMinSize({2000, 2000});
-    root->insertItem(item2, Location_Right);
+    root->insertItem(item2, Location_OnRight);
     QVERIFY(root->checkSanity());
     QCOMPARE(root->size(), QSize(item1->minSize().width() + item2->minSize().width() + st, item2->minSize().height()));
 }
