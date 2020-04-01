@@ -1,11 +1,7 @@
 
 cmake_policy(SET CMP0043 NEW)
 
-add_definitions(-DQT_NO_CAST_TO_ASCII
-                -DQT_NO_CAST_FROM_ASCII
-                -DQT_NO_URL_CAST_FROM_STRING
-                -DQT_NO_CAST_FROM_BYTEARRAY
-                -DQT_NO_SIGNALS_SLOTS_KEYWORDS
+add_definitions(-DQT_NO_SIGNALS_SLOTS_KEYWORDS
                 -DQT_USE_QSTRINGBUILDER
                 -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT
                 -DQT_STRICT_ITERATORS
@@ -134,7 +130,13 @@ target_include_directories(kddockwidgets
         ${CMAKE_CURRENT_SOURCE_DIR}/private
 )
 
-target_compile_definitions(kddockwidgets PRIVATE BUILDING_DOCKS_LIBRARY)
+target_compile_definitions(kddockwidgets PRIVATE BUILDING_DOCKS_LIBRARY
+                                                 QT_NO_CAST_TO_ASCII
+                                                 QT_NO_CAST_FROM_ASCII
+                                                 QT_NO_URL_CAST_FROM_STRING
+                                                 QT_NO_CAST_FROM_BYTEARRAY
+)
+
 if (CMAKE_COMPILER_IS_GNUCXX OR IS_CLANG_BUILD)
     target_compile_options(kddockwidgets PRIVATE -Wshadow -Wconversion -fvisibility=hidden)
 
