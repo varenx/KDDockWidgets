@@ -33,12 +33,10 @@ class DOCKS_EXPORT Separator : public QWidgetAdapter
 {
     Q_OBJECT
     Q_PROPERTY(bool isVertical READ isVertical CONSTANT)
-    Q_PROPERTY(bool isStatic READ isStatic CONSTANT)
     //Q_PROPERTY(int position READ position NOTIFY positionChanged)
 public:
     explicit Separator(Anchor *anchor, QWidgetAdapter *parent = nullptr);
     bool isVertical() const;
-    bool isStatic() const;
     int position() const;
     void move(int p);
     const QPointer<Anchor> anchor() const { return m_anchor; }

@@ -749,6 +749,16 @@ void ItemContainer::positionItems()
     m_childPercentages.clear();
 }
 
+void ItemContainer::clear()
+{
+    for (Item *item : qAsConst(m_children)) {
+        if (ItemContainer *container = item->asContainer())
+            container->clear();
+
+        delete item;
+    }
+}
+
 void ItemContainer::insertItem(Item *item, int index, bool growItem)
 {
     m_children.insert(index, item);

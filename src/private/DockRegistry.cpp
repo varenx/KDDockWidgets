@@ -315,7 +315,7 @@ QVector<QWidget *> DockRegistry::topLevels(bool excludeFloatingDocks) const
     return windows;
 }
 
-void DockRegistry::clear(bool deleteStaticAnchors)
+void DockRegistry::clear()
 {
     for (auto dw : qAsConst(m_dockWidgets)) {
         dw->forceClose();
@@ -323,17 +323,17 @@ void DockRegistry::clear(bool deleteStaticAnchors)
     }
 
     for (auto mw : qAsConst(m_mainWindows))
-        mw->multiSplitterLayout()->clear(deleteStaticAnchors);
+        mw->multiSplitterLayout()->clear();
 
     qCDebug(restoring) << Q_FUNC_INFO << "; dockwidgets=" << m_dockWidgets.size()
                        << "; nestedwindows=" << m_nestedWindows.size();
 }
 
-void DockRegistry::clear(QStringList affinities, bool deleteStaticAnchors)
+void DockRegistry::clear(QStringList affinities)
 {
     if (affinities.isEmpty()) {
         // Just clear everything
-        clear(deleteStaticAnchors);
+        clear();
         return;
     }
 
@@ -349,7 +349,7 @@ void DockRegistry::clear(QStringList affinities, bool deleteStaticAnchors)
 
     for (auto mw : qAsConst(m_mainWindows)) {
         if (affinities.contains(mw->affinityName())) {
-            mw->multiSplitterLayout()->clear(deleteStaticAnchors);
+            mw->multiSplitterLayout()->clear();
         }
     }
 }

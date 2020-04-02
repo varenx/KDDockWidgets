@@ -22,6 +22,7 @@
 #include "multisplitter/MultiSplitterLayout_p.h"
 #include "multisplitter/Anchor_p.h"
 #include "Logging_p.h"
+#include "Item_p.h"
 
 using namespace KDDockWidgets;
 
@@ -32,7 +33,7 @@ Separator::Separator(KDDockWidgets::Anchor *anchor, QWidgetAdapter *parent)
     Q_ASSERT(anchor);
     setVisible(true);
 
-    const int thickness = Anchor::thickness(isStatic());
+    const int thickness = Item::separatorThickness();
     if (isVertical())
         setFixedWidth(thickness);
     else
@@ -44,11 +45,6 @@ bool Separator::isVertical() const
     return m_anchor->isVertical();
 }
 
-bool Separator::isStatic() const
-{
-    return m_anchor->isStatic();
-}
-
 int Separator::position() const
 {
     return isVertical() ? x() : y();
@@ -56,19 +52,16 @@ int Separator::position() const
 
 void Separator::onMousePress()
 {
-    Q_ASSERT(!m_anchor->isFollowing());
     m_anchor->onMousePress();
 }
 
 void Separator::onMouseMove(QPoint globalPos)
 {
-    Q_ASSERT(!m_anchor->isFollowing());
     m_anchor->onMouseMoved(parentWidget()->mapFromGlobal(globalPos));
 }
 
 void Separator::onMouseRelease()
 {
-    Q_ASSERT(!m_anchor->isFollowing());
     m_anchor->onMouseReleased();
 }
 

@@ -138,7 +138,7 @@ public:
      * @brief Removes all Items, Anchors and Frames docked in this layout.
      * DockWidgets are closed but not deleted.
      */
-    void clear(bool alsoDeleteStaticAnchors = false);
+    void clear();
 
     /**
      * @brief Returns the number of Item objects in this layout.
@@ -237,13 +237,13 @@ public:
      * @brief returns the contents width.
      * Usually it's the same width as the respective parent MultiSplitter.
      */
-    int width() const { return m_size.width(); }
+    int width() const { return size().width(); }
 
     /**
      * @brief returns the contents height.
      * Usually it's the same height as the respective parent MultiSplitter.
      */
-    int height() const { return m_size.height(); }
+    int height() const { return size().height(); }
 
     /**
      * @brief returns the layout's minimum size
@@ -254,7 +254,7 @@ public:
     /**
      * @brief getter for the size
      */
-    QSize size() const { return m_size; }
+    QSize size() const { return m_rootItem->size(); }
 
     // For debug/hardening
     bool validateInputs(QWidgetOrQuick *widget, KDDockWidgets::Location location, const Frame *relativeToFrame, AddingOption option) const;
@@ -295,6 +295,8 @@ public:
      * @brief Returns a list of DockWidget objects contained in this layout
      */
     QVector<DockWidgetBase*> dockWidgets() const;
+
+    void restorePlaceholder(Item *, int tabIndex);
 
     struct Length {
         Length() = default;
@@ -434,8 +436,7 @@ private:
 
     QSize m_minSize = QSize(0, 0);
     QPointer<Anchor> m_anchorBeingDragged;
-    QSize m_size;
-    Item *const m_rootItem;
+    ItemContainer *const m_rootItem;
 };
 
 /**

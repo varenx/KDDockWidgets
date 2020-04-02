@@ -250,6 +250,8 @@ public:
     bool isBeingInserted() const;
     void setBeingInserted(bool);
     ItemContainer *root() const;
+    void deserialize() {}
+    void serialize() {}
 
     QWidget *frame() const { return m_widget; } // TODO: rename
     void setFrame(QWidget *w) { m_widget = w; } // TODO rename
@@ -336,6 +338,7 @@ public:
     QRect suggestedDropRect(Item *newItem, Item *relativeTo, Location) const;
     void positionItems();
     bool isResizing() const { return m_isResizing; }
+    void clear();
 Q_SIGNALS:
     void itemsChanged();
 public:

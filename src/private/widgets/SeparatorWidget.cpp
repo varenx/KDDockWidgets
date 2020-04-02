@@ -60,12 +60,10 @@ void SeparatorWidget::enterEvent(QEvent *)
     if (!anchor())
         return;
 
-    if (!isStatic()) {
-        if (isVertical())
-            setCursor(Qt::SizeHorCursor);
-        else
-            setCursor(Qt::SizeVerCursor);
-    }
+    if (isVertical())
+        setCursor(Qt::SizeHorCursor);
+    else
+        setCursor(Qt::SizeVerCursor);
 }
 
 void SeparatorWidget::leaveEvent(QEvent *)

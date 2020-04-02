@@ -33,7 +33,6 @@
 
 #include <memory>
 
-#define ANCHOR_MAGIC_MARKER "e520c60e-cf5d-4a30-b1a7-588d2c569851"
 #define MULTISPLITTER_LAYOUT_MAGIC_MARKER "bac9948e-5f1b-4271-acc5-07f1708e2611"
 
 /**
@@ -213,35 +212,11 @@ struct LayoutSaver::Item
     bool isPlaceholder;
     QRect geometry;
     QSize minSize;
-    int indexOfLeftAnchor;
+    int indexOfLeftAnchor; // TODO: Search and replace. Remove anchors
     int indexOfTopAnchor;
     int indexOfRightAnchor;
     int indexOfBottomAnchor;
     LayoutSaver::Frame frame;
-};
-
-struct LayoutSaver::Anchor
-{
-    typedef QVector<LayoutSaver::Anchor> List;
-
-    bool isValid(const LayoutSaver::MultiSplitterLayout &layout) const;
-
-    QVariantMap toVariantMap() const;
-    void fromVariantMap(const QVariantMap &map);
-    void scaleSizes(const ScalingInfo &);
-
-    bool isVertical() const;
-
-    QString objectName;
-    QRect geometry;
-    double positionPercentage;
-    int orientation;
-    int type;
-    int indexOfFrom;
-    int indexOfTo;
-    int indexOfFollowee;
-    QVector<int> side1Items;
-    QVector<int> side2Items;
 };
 
 struct LayoutSaver::MultiSplitterLayout
@@ -253,7 +228,6 @@ struct LayoutSaver::MultiSplitterLayout
     QVariantMap toVariantMap() const;
     void fromVariantMap(const QVariantMap &map);
 
-    LayoutSaver::Anchor::List anchors;
     LayoutSaver::Item::List items;
     QSize minSize;
     QSize size;
@@ -389,27 +363,6 @@ inline QDataStream &operator>>(QDataStream &ds, LayoutSaver::Placeholder *p)
     return ds;
 }
 
-inline  QDataStream &operator>>(QDataStream &ds, LayoutSaver::Anchor *a)
-{
-    QString marker;
-
-    ds >> marker;
-    if (marker != QLatin1String(ANCHOR_MAGIC_MARKER))
-        qWarning() << Q_FUNC_INFO << "Corrupt stream";
-
-    ds >> a->objectName;
-    ds >> a->geometry;
-    ds >> a->orientation;
-    ds >> a->type;
-    ds >> a->indexOfFrom;
-    ds >> a->indexOfTo;
-    ds >> a->indexOfFollowee;
-    ds >> a->side1Items;
-    ds >> a->side2Items;
-
-    return ds;
-}
-
 inline QDataStream &operator>>(QDataStream &ds, LayoutSaver::Frame *frame)
 {
     int numDockWidgets;
@@ -465,7 +418,6 @@ inline QDataStream &operator>>(QDataStream &ds, LayoutSaver::Item *item)
 inline QDataStream &operator>>(QDataStream &ds, LayoutSaver::MultiSplitterLayout *l)
 {
     int numItems;
-    int numAnchors;
     QString marker;
     ds >> marker;
 
@@ -475,21 +427,13 @@ inline QDataStream &operator>>(QDataStream &ds, LayoutSaver::MultiSplitterLayout
     ds >> l->size;
     ds >> l->minSize;
     ds >> numItems;
-    ds >> numAnchors;
 
     l->items.clear();
-    l->anchors.clear();
 
     for (int i = 0 ; i < numItems; ++i) {
         LayoutSaver::Item item;
         ds >> &item;
         l->items.push_back(item);
-    }
-
-    for (int i = 0 ; i < numAnchors; ++i) {
-        LayoutSaver::Anchor a;
-        ds >> &a;
-        l->anchors.push_back(a);
     }
 
     return ds;

@@ -59,18 +59,6 @@ int DropArea::numFrames() const
     return m_layout->count();
 }
 
-Anchor::List DropArea::nonStaticAnchors(bool includePlaceholders) const
-{
-    auto anchors = m_layout->anchors();
-    Anchor::List result;
-    for (Anchor *anchor : anchors) {
-        if (!anchor->isStatic() && !(!includePlaceholders && anchor->isFollowing()))
-            result << anchor;
-    }
-
-    return result;
-}
-
 Frame *DropArea::frameContainingPos(QPoint globalPos) const
 {
     const ItemList &items = m_layout->items();
