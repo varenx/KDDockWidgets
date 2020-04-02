@@ -26,8 +26,11 @@
 
 #include <QPointer>
 
-namespace KDDockWidgets {
+namespace Layouting {
 class Anchor;
+}
+
+namespace KDDockWidgets {
 
 class DOCKS_EXPORT Separator : public QWidgetAdapter
 {
@@ -35,11 +38,11 @@ class DOCKS_EXPORT Separator : public QWidgetAdapter
     Q_PROPERTY(bool isVertical READ isVertical CONSTANT)
     //Q_PROPERTY(int position READ position NOTIFY positionChanged)
 public:
-    explicit Separator(Anchor *anchor, QWidgetAdapter *parent = nullptr);
+    explicit Separator(Layouting::Anchor *anchor, QWidgetAdapter *parent = nullptr);
     bool isVertical() const;
     int position() const;
     void move(int p);
-    const QPointer<Anchor> anchor() const { return m_anchor; }
+    const QPointer<Layouting::Anchor> anchor() const { return m_anchor; }
 
 protected:
     void onMousePress() override;
@@ -47,7 +50,7 @@ protected:
     void onMouseRelease() override;
 
 private:
-    const QPointer<Anchor> m_anchor; // QPointer so we don't dereference invalid point in paintEvent() when Anchor is deleted.
+    const QPointer<Layouting::Anchor> m_anchor; // QPointer so we don't dereference invalid point in paintEvent() when Anchor is deleted.
 };
 
 }

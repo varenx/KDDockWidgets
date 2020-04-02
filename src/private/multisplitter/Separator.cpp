@@ -19,14 +19,16 @@
 */
 
 #include "Separator_p.h"
+#include "multisplitter/Item_p.h"
 #include "multisplitter/MultiSplitterLayout_p.h"
 #include "multisplitter/Anchor_p.h"
 #include "Logging_p.h"
 #include "Item_p.h"
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
-Separator::Separator(KDDockWidgets::Anchor *anchor, QWidgetAdapter *parent)
+Separator::Separator(Layouting::Anchor *anchor, QWidgetAdapter *parent)
     : QWidgetAdapter(parent)
     , m_anchor(anchor)
 {

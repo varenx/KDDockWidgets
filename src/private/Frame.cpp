@@ -46,6 +46,7 @@
 static int s_dbg_numFrames = 0;
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
 namespace KDDockWidgets {
 static FrameOptions actualOptions(FrameOptions options)

@@ -59,7 +59,7 @@ public:
     int numFrames() const;
 
     Frame *frameContainingPos(QPoint globalPos) const;
-    Item *centralFrame() const;
+    Layouting::Item *centralFrame() const;
     DropIndicatorOverlayInterface *dropIndicatorOverlay() const { return m_dropIndicatorOverlay; }
     void addDockWidget(DockWidgetBase *, KDDockWidgets::Location location, DockWidgetBase *relativeTo, AddingOption option = {});
 

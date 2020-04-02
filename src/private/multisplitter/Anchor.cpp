@@ -36,6 +36,7 @@
 #endif
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
 bool Anchor::s_isResizing = false;
 
@@ -198,7 +199,7 @@ bool Anchor::containsItem(const Item *item, Side side) const
     }
 }
 
-const ItemList Anchor::items(Side side) const
+const QVector<Item *> Anchor::items(Side side) const
 {
     switch (side) {
     case Side1:

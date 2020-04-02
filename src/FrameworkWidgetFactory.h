@@ -32,6 +32,10 @@
  * @author Sérgio Martins \<sergio.martins@kdab.com\>
  */
 
+namespace Layouting {
+class Anchor;
+}
+
 namespace KDDockWidgets {
 
 class MainWindowBase;
@@ -42,7 +46,6 @@ class TabWidget;
 class TitleBar;
 class Frame;
 class DropArea;
-class Anchor;
 class TabBar;
 
 /**
@@ -103,7 +106,7 @@ public:
     ///       the user to resize nested dock widgets.
     ///@param anchor Just forward to Sepataror's constructor.
     ///@param parent Just forward to Separator's constructor.
-    virtual Separator* createSeparator(Anchor *anchor, QWidgetAdapter *parent = nullptr) const = 0;
+    virtual Separator* createSeparator(Layouting::Anchor *anchor, QWidgetAdapter *parent = nullptr) const = 0;
 
     ///@brief Called internally by the framework to create a FloatingWindow
     ///       Override to provide your own FloatingWindow sub-class. If overridden then
@@ -135,7 +138,7 @@ public:
     TitleBar *createTitleBar(FloatingWindow *) const override;
     TabBar *createTabBar(TabWidget *parent) const override;
     TabWidget *createTabWidget(Frame *parent) const override;
-    Separator *createSeparator(Anchor *anchor, QWidgetAdapter *parent = nullptr) const override;
+    Separator *createSeparator(Layouting::Anchor *anchor, QWidgetAdapter *parent = nullptr) const override;
     FloatingWindow *createFloatingWindow(MainWindowBase *parent = nullptr) const override;
     FloatingWindow *createFloatingWindow(Frame *frame, MainWindowBase *parent = nullptr) const override;
     DropIndicatorOverlayInterface *createDropIndicatorOverlay(DropArea*) const override;

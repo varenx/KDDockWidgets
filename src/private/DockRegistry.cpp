@@ -33,6 +33,7 @@
 #include <QWindow>
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
 DockRegistry::DockRegistry(QObject *parent)
     : QObject(parent)

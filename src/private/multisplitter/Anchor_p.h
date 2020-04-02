@@ -35,12 +35,14 @@ class QRubberBand;
 QT_END_NAMESPACE
 
 namespace KDDockWidgets {
-
-class Item;
 class MultiSplitterLayout;
 class Separator;
+typedef QVector<Layouting::Item*> ItemList;
+}
 
-typedef QVector<Item*> ItemList;
+namespace Layouting {
+
+class Item;
 
 /**
  * @brief An anchor is the vertical or horizontal (@ref orientation()) line that has an handle
@@ -100,7 +102,7 @@ class DOCKS_EXPORT_FOR_UNIT_TESTS Anchor : public QObject // clazy:exclude=ctor-
 public:
 
     typedef QVector<Anchor *> List;
-    explicit Anchor(Qt::Orientation orientation, MultiSplitterLayout *multiSplitter);
+    explicit Anchor(Qt::Orientation orientation, KDDockWidgets::MultiSplitterLayout *multiSplitter);
     ~Anchor() override;
 
     void setFrom(Anchor *);
@@ -109,7 +111,7 @@ public:
     void setTo(Anchor *);
     Qt::Orientation orientation() const;
     void addItem(Item *, Side);
-    void addItems(const ItemList &list, Side);
+    void addItems(const QVector<Item*> &list, Side);
     void removeItem(Item *w);
     void removeItems(Side);
     bool isVertical() const { return m_orientation == Qt::Vertical; }
@@ -123,10 +125,10 @@ public:
      * @brief Sets the new layout. Called when we're dropping a source layout into a target one.
      * The target one will steal the separators of the source one.
      */
-    void setLayout(MultiSplitterLayout *);
+    void setLayout(KDDockWidgets::MultiSplitterLayout *);
 
     ///@brief returns the separator widget
-    Separator* separatorWidget() const;
+    KDDockWidgets::Separator* separatorWidget() const;
 
     /**
      * @brief The length of this anchor. The distance between @ref from and @ref to.
@@ -150,9 +152,9 @@ public:
 
     bool containsItem(const Item *w, Side side) const;
 
-    const ItemList items(Side side) const;
-    const ItemList side1Items() const { return m_side1Items; }
-    const ItemList side2Items() const { return m_side2Items; }
+    const QVector<Item*> items(Side side) const;
+    const QVector<Item*> side1Items() const { return m_side1Items; }
+    const QVector<Item*> side2Items() const { return m_side2Items; }
 
     void removeAllItems();
 
@@ -190,15 +192,15 @@ public:
     QRect geometry() const { return m_geometry; }
 
     const Qt::Orientation m_orientation;
-    ItemList m_side1Items;
-    ItemList m_side2Items;
+    QVector<Item*> m_side1Items;
+    QVector<Item*> m_side2Items;
     QPointer<Anchor> m_from;// QPointer just so we can assert. They should never be null.
     QPointer<Anchor> m_to;
 
     // Only set when anchor is moved through mouse. Side1 if going towards left or top, Side2 otherwise.
     Side m_lastMoveDirection = Side1;
 
-    MultiSplitterLayout *m_layout = nullptr;
+    KDDockWidgets::MultiSplitterLayout *m_layout = nullptr;
     bool m_showingSide1Rubberband = false;
     bool m_showingSide2Rubberband = false;
     bool m_initialized = false;
@@ -206,7 +208,7 @@ public:
 
     QString m_debug_side1ItemNames;
     QString m_debug_side2ItemNames;
-    Separator *const m_separatorWidget;
+    KDDockWidgets::Separator *const m_separatorWidget;
     QRect m_geometry;
     const bool m_lazyResize;
     int m_lazyPosition = 0;
@@ -216,6 +218,5 @@ public:
 }
 
 Q_DECLARE_METATYPE(KDDockWidgets::ItemList)
-Q_DECLARE_METATYPE(KDDockWidgets::Item*)
 
 #endif

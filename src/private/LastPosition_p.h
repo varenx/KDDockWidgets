@@ -43,7 +43,7 @@ class MultiSplitterLayout;
 // Just a RAII class so we don't forget to unref
 struct ItemRef
 {
-    ItemRef(const QMetaObject::Connection &conn, Item *it)
+    ItemRef(const QMetaObject::Connection &conn, Layouting::Item *it)
         : item(it)
         , guard(it)
         , connection(conn)
@@ -59,8 +59,8 @@ struct ItemRef
         }
     }
 
-    Item *const item;
-    const QPointer<Item> guard;
+    Layouting::Item *const item;
+    const QPointer<Layouting::Item> guard;
     const QMetaObject::Connection connection;
 private:
     Q_DISABLE_COPY(ItemRef)
@@ -108,13 +108,13 @@ public:
     bool m_wasFloating = false;
 
     ///@brief Adds the last layout item where the dock widget was (or is)
-    void addPlaceholderItem(Item *placeholder);
+    void addPlaceholderItem(Layouting::Item *placeholder);
 
 
     QWidgetOrQuick *window() const;
-    Item* layoutItem() const;
+    Layouting::Item* layoutItem() const;
 
-    bool containsPlaceholder(Item*) const;
+    bool containsPlaceholder(Layouting::Item*) const;
     void removePlaceholders() { m_clearing = true; m_placeholders.clear(); m_clearing = false;}
 
     const std::vector<std::unique_ptr<ItemRef>>& placeholders() const { return m_placeholders; }
@@ -126,7 +126,7 @@ public:
     void removeNonMainWindowPlaceholders();
 
     ///@brief removes the Item @p placeholder
-    void removePlaceholder(Item *placeholder);
+    void removePlaceholder(Layouting::Item *placeholder);
 
     void dumpDebug()
     {

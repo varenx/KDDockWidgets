@@ -112,17 +112,17 @@ public:
     /**
      * @brief Adds the dockwidget but it stays hidden until an explicit show()
      */
-    void addAsPlaceholder(DockWidgetBase *dw, KDDockWidgets::Location location, Item *relativeTo = nullptr);
+    void addAsPlaceholder(DockWidgetBase *dw, KDDockWidgets::Location location, Layouting::Item *relativeTo = nullptr);
 
     /**
      * @brief Removes an item from this MultiSplitter.
      */
-    void removeItem(Item *item);
+    void removeItem(Layouting::Item *item);
 
     /**
      * @brief Returns true if this layout contains the specified item.
      */
-    bool contains(const Item *) const;
+    bool contains(const Layouting::Item *) const;
 
     /**
      * @brief  Returns true if this layout contains the specified frame.
@@ -132,7 +132,7 @@ public:
     /**
      * @brief Returns the visible Item at pos @p p.
      */
-    Item *itemAt(QPoint p) const;
+    Layouting::Item *itemAt(QPoint p) const;
 
     /**
      * @brief Removes all Items, Anchors and Frames docked in this layout.
@@ -181,7 +181,7 @@ public:
      */
     const ItemList items() const;
 
-    Item* rootItem() const;
+    Layouting::Item* rootItem() const;
 
     /**
      * Called by the indicators, so they draw the drop rubber band at the correct place.
@@ -189,17 +189,17 @@ public:
      * Excludes the Anchor thickness, result is actually smaller than what needed. In other words,
      * the result will be exactly the same as the geometry the widget will get.
      */
-    QRect rectForDrop(const QWidgetOrQuick *widget, KDDockWidgets::Location location, const Item *relativeTo) const;
+    QRect rectForDrop(const QWidgetOrQuick *widget, KDDockWidgets::Location location, const Layouting::Item *relativeTo) const;
 
     bool deserialize(const LayoutSaver::MultiSplitterLayout &);
     LayoutSaver::MultiSplitterLayout serialize() const;
 
-    void setAnchorBeingDragged(Anchor *);
-    Anchor *anchorBeingDragged() const { return m_anchorBeingDragged; }
+    void setAnchorBeingDragged(Layouting::Anchor *);
+    Layouting::Anchor *anchorBeingDragged() const { return m_anchorBeingDragged; }
     bool anchorIsBeingDragged() const { return m_anchorBeingDragged != nullptr; }
 
     ///@brief returns list of separators
-    const Anchor::List anchors() const { return m_anchors; }
+    const Layouting::Anchor::List anchors() const { return m_anchors; }
 
     ///@brief returns the number of anchors that are following others, just for tests.
     int numVisibleAnchors() const;
@@ -277,7 +277,7 @@ public:
     /**
      * @brief returns the Item that holds @p frame in this layout
      */
-    Item *itemForFrame(const Frame *frame) const;
+    Layouting::Item *itemForFrame(const Frame *frame) const;
 
     /**
      * @brief returns the frames contained in @p frameOrMultiSplitter
@@ -296,7 +296,7 @@ public:
      */
     QVector<DockWidgetBase*> dockWidgets() const;
 
-    void restorePlaceholder(Item *, int tabIndex);
+    void restorePlaceholder(Layouting::Item *, int tabIndex);
 
     struct Length {
         Length() = default;
@@ -337,11 +337,11 @@ Q_SIGNALS:
 
     ///@brief emitted when a widget is added
     ///@param item the item containing the new widget
-    void widgetAdded(KDDockWidgets::Item *item);
+    void widgetAdded(Layouting::Item *item);
 
     ///@brief emitted when a widget is removed
     ///@param item the item containing the removed widget
-    void widgetRemoved(KDDockWidgets::Item *item);
+    void widgetRemoved(Layouting::Item *item);
 
     ///@brief emitted right before dumping debug
     ///@sa dumpDebug
@@ -357,22 +357,16 @@ Q_SIGNALS:
 
 public:
     bool eventFilter(QObject *o, QEvent *e) override;
-    Anchor::List anchors(Qt::Orientation, bool includeStatic = false, bool includePlaceholders = true) const;
+    Layouting::Anchor::List anchors(Qt::Orientation, bool includeStatic = false, bool includePlaceholders = true) const;
     static const QString s_magicMarker;
     void ensureAnchorsBounded();
 private:
-    friend class Item;
-    friend class Anchor;
     friend class TestDocks;
     friend class KDDockWidgets::Debug::DebugWindow;
     friend class LayoutSaver;
 
-    struct AnchorBounds {
-        Anchor *side1;
-        Anchor *side2;
-    };
-
-    std::pair<int,int> boundInterval(int newPos1, Anchor* anchor1, int newPos2, Anchor *anchor2) const;
+    std::pair<int,int> boundInterval(int newPos1, Layouting::Anchor* anchor1, int newPos2,
+                                     Layouting::Anchor *anchor2) const;
     void blockItemPropagateGeo(bool block);
 
     /**
@@ -392,7 +386,7 @@ private:
      * So it returns this layout's width() (or height), minus the minimum-sizes of all widgets, minus the thickness of all anchors
      * minus the thickness of the anchor that would be created.
      **/
-    Length availableLengthForDrop(KDDockWidgets::Location location, const Item *relativeTo) const;
+    Length availableLengthForDrop(KDDockWidgets::Location location, const Layouting::Item *relativeTo) const;
 
     /**
      * @brief Like @ref availableLengthForDrop but just returns the total available width or height (depending on @p orientation)
@@ -425,7 +419,7 @@ private:
     QString affinityName() const;
 
     MultiSplitter *const m_multiSplitter;
-    Anchor::List m_anchors;
+    Layouting::Anchor::List m_anchors;
 
     ItemList m_items;
     bool m_inCtor = true;
@@ -435,8 +429,8 @@ private:
     bool m_resizing = false;
 
     QSize m_minSize = QSize(0, 0);
-    QPointer<Anchor> m_anchorBeingDragged;
-    ItemContainer *const m_rootItem;
+    QPointer<Layouting::Anchor> m_anchorBeingDragged;
+    Layouting::ItemContainer *const m_rootItem;
 };
 
 /**

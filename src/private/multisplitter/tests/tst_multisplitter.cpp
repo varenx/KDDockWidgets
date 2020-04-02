@@ -25,7 +25,7 @@
 
 // TODO: namespace
 
-using namespace KDDockWidgets;
+using namespace Layouting;
 
 static int st = Item::separatorThickness();
 

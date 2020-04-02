@@ -32,6 +32,7 @@
 #include "WindowBeingDragged_p.h"
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
 /**
  * @file

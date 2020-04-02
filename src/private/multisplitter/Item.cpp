@@ -23,7 +23,7 @@
 #include <QDebug>
 #include <QScopedValueRollback>
 
-using namespace KDDockWidgets;
+using namespace Layouting;
 
 ItemContainer *Item::root() const
 {
@@ -148,7 +148,7 @@ void Item::insertItem(Item *item, Location loc, SizingOption sizingOption)
         m_parent->insertItem(item, indexInParent);
     } else {
         ItemContainer *container = m_parent->convertChildToContainer(this);
-        container->insertItem(item, loc,SizingOption::UseProvided);
+        container->insertItem(item, loc, SizingOption::UseProvided);
     }
 }
 
@@ -213,7 +213,7 @@ Qt::Orientation Item::orientation() const
 
 int Item::minLength(Qt::Orientation o) const
 {
-    return KDDockWidgets::length(minSize(), o);
+    return Layouting::length(minSize(), o);
 }
 
 void Item::setLength(int length, Qt::Orientation o)
@@ -227,7 +227,7 @@ void Item::setLength(int length, Qt::Orientation o)
 
 int Item::length(Qt::Orientation o) const
 {
-    return KDDockWidgets::length(size(), o);
+    return Layouting::length(size(), o);
 }
 
 int Item::availableLength(Qt::Orientation o) const
@@ -386,9 +386,9 @@ bool ItemContainer::checkSanity() const
     }
 
     // Check that the geometries don't overlap
-    int expectedPos = KDDockWidgets::pos(pos(), m_orientation);
+    int expectedPos = Layouting::pos(pos(), m_orientation);
     for (Item *item : m_children) {
-        const int pos = KDDockWidgets::pos(item->pos(), m_orientation);
+        const int pos = Layouting::pos(item->pos(), m_orientation);
         if (expectedPos != pos) {
             qWarning() << Q_FUNC_INFO << "Unexpected pos" << pos << "; expected=" << expectedPos
                        << "; for item=" << item
@@ -396,10 +396,10 @@ bool ItemContainer::checkSanity() const
             return false;
         }
 
-        expectedPos = pos + KDDockWidgets::length(item->size(), m_orientation) + separatorThickness();
+        expectedPos = pos + Layouting::length(item->size(), m_orientation) + separatorThickness();
     }
 
-    const int h1 = KDDockWidgets::length(size(), oppositeOrientation(m_orientation));
+    const int h1 = Layouting::length(size(), oppositeOrientation(m_orientation));
     for (Item *item : m_children) { 
         if (item->parentContainer() != this) {
             qWarning() << "Invalid parent container for" << item
@@ -414,7 +414,7 @@ bool ItemContainer::checkSanity() const
         }
 
         // Check the children height (if horizontal, and vice-versa)
-        const int h2 = KDDockWidgets::length(item->size(), oppositeOrientation(m_orientation));
+        const int h2 = Layouting::length(item->size(), oppositeOrientation(m_orientation));
         if (h1 != h2) {
             qWarning() << Q_FUNC_INFO << "Invalid size for item." << item
                        << "Container.length=" << h1 << "; item.length=" << h2;
@@ -594,7 +594,7 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
     }
 
     // Child has some growing to do. It will grow left and right equally, (and top-bottom), as needed.
-    growItem(child, KDDockWidgets::length(missingForChild, m_orientation), GrowthStrategy::BothSidesEqually);
+    growItem(child, Layouting::length(missingForChild, m_orientation), GrowthStrategy::BothSidesEqually);
 }
 
 void ItemContainer::onChildVisibleChanged(Item *child, bool visible)
@@ -733,12 +733,12 @@ void ItemContainer::positionItems()
 {
     Item::List children = visibleChildren();
     int nextPos = 0;
-    const Qt::Orientation oppositeOrientation = KDDockWidgets::oppositeOrientation(m_orientation);
+    const Qt::Orientation oppositeOrientation = Layouting::oppositeOrientation(m_orientation);
     for (int i = 0; i < children.size(); ++i) {
         Item *item = children.at(i);
 
         // If the layout is horizontal, the item will have the height of the container. And vice-versa
-        const int oppositeLength = KDDockWidgets::length(size(), oppositeOrientation);
+        const int oppositeLength = Layouting::length(size(), oppositeOrientation);
         item->setLength(oppositeLength, oppositeOrientation);
 
         // Update the pos
@@ -813,7 +813,7 @@ int ItemContainer::usableLength() const
 {
     const int numVisibleChildren = this->numVisibleChildren();
     if (numVisibleChildren <= 1)
-        return KDDockWidgets::length(size(), m_orientation);
+        return Layouting::length(size(), m_orientation);
 
     const int separatorWaste = separatorThickness() * (numVisibleChildren - 1);
     return length() - separatorWaste;

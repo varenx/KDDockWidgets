@@ -138,10 +138,10 @@ public:
     bool isProcessingAppQuitEvent() const;
 
     // TODO: docs
-    MultiSplitterLayout* layoutForItem(const Item *) const;
+    MultiSplitterLayout* layoutForItem(const Layouting::Item *) const;
 
     // TODO: docs
-    bool itemIsInMainWindow(const Item *) const;
+    bool itemIsInMainWindow(const Layouting::Item *) const;
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;

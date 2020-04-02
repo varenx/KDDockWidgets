@@ -27,8 +27,9 @@
 #include <QStyleOption>
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
-SeparatorWidget::SeparatorWidget(KDDockWidgets::Anchor *anchor, QWidgetAdapter *parent)
+SeparatorWidget::SeparatorWidget(Layouting::Anchor *anchor, QWidgetAdapter *parent)
     : Separator(anchor, parent)
 {
     setMouseTracking(true);

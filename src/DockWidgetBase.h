@@ -32,7 +32,6 @@
 #include "KDDockWidgets.h"
 #include "QWidgetAdapter.h"
 #include "LayoutSaver_p.h"
-#include "multisplitter/Item_p.h"
 
 #include <QVector>
 #include <QWidget>
@@ -41,12 +40,15 @@ QT_BEGIN_NAMESPACE
 class QAction;
 QT_END_NAMESPACE
 
+namespace Layouting {
+class Item;
+}
+
 namespace KDDockWidgets {
 
 class Frame;
 class FloatingWindow;
 class DragController;
-class Item;
 class LastPosition;
 class DockRegistry;
 class LayoutSaver;
@@ -334,7 +336,6 @@ private:
     friend class KDDockWidgets::TabWidget;
     friend class KDDockWidgets::TitleBar;
     friend class KDDockWidgets::DragController;
-    friend class KDDockWidgets::Item;
     friend class KDDockWidgets::DockRegistry;
     friend class KDDockWidgets::LayoutSaver;
 
@@ -357,7 +358,7 @@ private:
     FloatingWindow *floatingWindow() const;
 
     ///@brief adds the current layout item containing this dock widget
-    void addPlaceholderItem(Item*);
+    void addPlaceholderItem(Layouting::Item*);
 
     ///@brief returns the last position, just for tests. TODO Make tests just use the d-pointer.
     LastPosition *lastPosition() const;
@@ -367,5 +368,6 @@ private:
 };
 
 }
+Q_DECLARE_METATYPE(KDDockWidgets::Location)
 
 #endif

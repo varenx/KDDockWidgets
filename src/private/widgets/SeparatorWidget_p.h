@@ -33,7 +33,7 @@ class DOCKS_EXPORT SeparatorWidget : public Separator
 {
     Q_OBJECT
 public:
-    explicit SeparatorWidget(Anchor *anchor, QWidgetAdapter *parent = nullptr);
+    explicit SeparatorWidget(Layouting::Anchor *anchor, QWidgetAdapter *parent = nullptr);
 
 protected:
     void paintEvent(QPaintEvent *) override;

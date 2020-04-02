@@ -37,13 +37,16 @@
 #include <QDebug>
 #include <QPointer>
 
+namespace Layouting {
+class Item;
+}
+
 namespace KDDockWidgets {
 
 class TitleBar;
 class TabWidget;
 class DropArea;
 class DockWidgetBase;
-class Item;
 class FloatingWindow;
 
 /**
@@ -179,10 +182,10 @@ public:
     void onDockWidgetHidden(DockWidgetBase *w);
 
     ///@brief sets the layout item that either contains this Frame in the layout or is a placeholder
-    void setLayoutItem(Item *item);
+    void setLayoutItem(Layouting::Item *item);
 
     ///@brief returns the layout item that either contains this Frame in the layout or is a placeholder
-    Item *layoutItem() const;
+    Layouting::Item *layoutItem() const;
 
     ///@brief For tests-only. Returns the number of Frame instances in the whole application.
     static int dbg_numFrames();
@@ -223,7 +226,7 @@ private:
     TitleBar *const m_titleBar;
     DropArea *m_dropArea = nullptr;
     const FrameOptions m_options;
-    QPointer<Item> m_layoutItem;
+    QPointer<Layouting::Item> m_layoutItem;
     bool m_beingDeleted = false;
     QMetaObject::Connection m_visibleWidgetCountChangedConnection;
 };

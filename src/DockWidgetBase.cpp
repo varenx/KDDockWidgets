@@ -47,6 +47,7 @@
  */
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
 class DockWidgetBase::Private
 {

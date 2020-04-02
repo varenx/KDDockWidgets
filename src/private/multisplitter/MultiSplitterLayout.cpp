@@ -41,6 +41,7 @@
 #define KDDOCKWIDGETS_MIN_HEIGHT 90
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
 const QString MultiSplitterLayout::s_magicMarker = QStringLiteral("bac9948e-5f1b-4271-acc5-07f1708e2611");
 
@@ -149,7 +150,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
                        << "; relativeTo=" << relativeToWidget
                        << "; size=" << size()
                        << "; w.size=" << w->size()
-                       << "; w.min=" << widgetMinLength(w, orientationForLocation(location))
+                       << "; w.min=" << widgetMinLength(w, Layouting::orientationForLocation(Layouting::Location(location)))
                        << "; frame=" << frame
                        << "; option=" << option;
 
@@ -234,7 +235,7 @@ bool MultiSplitterLayout::contains(const Frame *frame) const
 
 Item *MultiSplitterLayout::itemAt(QPoint p) const
 {
-    for (Item *item : m_items) {
+    for (Layouting::Item *item : m_items) {
         if (!item->isPlaceholder() && item->geometry().contains(p))
             return item;
     }
