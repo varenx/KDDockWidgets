@@ -31,6 +31,21 @@ ItemContainer *Item::root() const
                     : const_cast<ItemContainer*>(qobject_cast<const ItemContainer*>(this));
 }
 
+QRect Item::mapToRoot(QRect r) const
+{
+    const QPoint topLeft = mapToRoot(r.topLeft());
+    r.moveTopLeft(topLeft);
+    return r;
+}
+
+QPoint Item::mapToRoot(QPoint p) const
+{
+    if (isRoot())
+        return p;
+
+    return p + parentContainer()->pos();
+}
+
 void Item::resize(QSize newSize)
 {
     setSize(newSize);
@@ -303,7 +318,7 @@ void Item::setGeometry(QRect rect)
             Q_EMIT heightChanged();
 
         if (m_isVisible && m_widget) {
-            m_widget->setGeometry(m_geometry);
+            m_widget->setGeometry(mapToRoot(m_geometry));
         }
     }
 }

@@ -234,6 +234,8 @@ public:
     ItemContainer *root() const;
     void deserialize() {}
     void serialize() {}
+    QRect mapToRoot(QRect local) const;
+    QPoint mapToRoot(QPoint local) const;
 
     QWidget *frame() const { return m_widget; } // TODO: rename
     void setFrame(QWidget *w) { m_widget = w; } // TODO rename
