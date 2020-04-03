@@ -148,13 +148,13 @@ endif()
 if (OPTION_QTQUICK)
     target_link_libraries(kddockwidgets Qt5::Widgets Qt5::Quick)
 else()
-    target_link_libraries(kddockwidgets Qt5::Widgets)
+    target_link_libraries(kddockwidgets PUBLIC Qt5::Widgets PRIVATE kddockwidgets_layouting)
 endif()
 
 
 if (NOT WIN32 AND NOT APPLE)
     find_package(Qt5X11Extras)
-    target_link_libraries(kddockwidgets Qt5::X11Extras)
+    target_link_libraries(kddockwidgets PUBLIC Qt5::X11Extras)
 endif()
 
 install (TARGETS kddockwidgets

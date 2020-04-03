@@ -113,7 +113,6 @@ public:
     void addItem(Item *, Side);
     void addItems(const QVector<Item*> &list, Side);
     void removeItem(Item *w);
-    void removeItems(Side);
     bool isVertical() const { return m_orientation == Qt::Vertical; }
     void setPosition(int);
     void updatePositionPercentage();
@@ -155,8 +154,6 @@ public:
     const QVector<Item*> items(Side side) const;
     const QVector<Item*> side1Items() const { return m_side1Items; }
     const QVector<Item*> side2Items() const { return m_side2Items; }
-
-    void removeAllItems();
 
     void setPositionOffset(int);
     bool isBeingDragged() const;

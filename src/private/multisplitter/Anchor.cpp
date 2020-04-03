@@ -212,12 +212,6 @@ const QVector<Item *> Anchor::items(Side side) const
     }
 }
 
-void Anchor::removeAllItems()
-{
-    removeItems(Side1);
-    removeItems(Side2);
-}
-
 bool Anchor::isBeingDragged() const
 {
     return m_layout->anchorBeingDragged() == this;

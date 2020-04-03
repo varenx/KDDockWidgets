@@ -371,6 +371,11 @@ void MultiSplitterLayout::unrefOldPlaceholders(const Frame::List &framesBeingAdd
     }
 }
 
+void MultiSplitterLayout::dumpDebug() const
+{
+    m_rootItem->dumpLayout();
+}
+
 void MultiSplitterLayout::setSize(QSize size)
 {
     if (size != this->size()) {
@@ -416,6 +421,15 @@ const ItemList MultiSplitterLayout::items() const
 Item *MultiSplitterLayout::rootItem() const
 {
     return m_rootItem;
+}
+
+QRect MultiSplitterLayout::rectForDrop(const QWidgetOrQuick *widget, Location location, const Item *relativeTo) const
+{
+    // TODO
+    Q_UNUSED(widget);
+    Q_UNUSED(location);
+    Q_UNUSED(relativeTo);
+    return QRect();
 }
 
 bool MultiSplitterLayout::eventFilter(QObject *o, QEvent *e)
