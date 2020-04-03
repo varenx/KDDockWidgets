@@ -113,7 +113,7 @@ void MyMainWindow::createDockWidgets()
     Q_ASSERT(m_dockwidgets.isEmpty());
 
     // Create 9 KDDockWidget::DockWidget and the respective widgets they're hosting (MyWidget instances)
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < 3; i++)
         m_dockwidgets << newDockWidget();
 
 
@@ -124,7 +124,7 @@ void MyMainWindow::createDockWidgets()
     addDockWidget(m_dockwidgets[1], KDDockWidgets::Location_OnRight, m_dockwidgets[0]);
 
     addDockWidget(m_dockwidgets[2], KDDockWidgets::Location_OnLeft);
-    addDockWidget(m_dockwidgets[3], KDDockWidgets::Location_OnBottom);
+    /*addDockWidget(m_dockwidgets[3], KDDockWidgets::Location_OnBottom);
     addDockWidget(m_dockwidgets[4], KDDockWidgets::Location_OnBottom);
 
     // Tab two dock widgets toghether
@@ -138,7 +138,7 @@ void MyMainWindow::createDockWidgets()
     m_dockwidgets[6]->addDockWidgetToContainingWindow(m_dockwidgets[8], KDDockWidgets::Location_OnBottom);
 
     auto floatingWindow = m_dockwidgets[6]->window();
-    floatingWindow->move(100, 100);
+    floatingWindow->move(100, 100); */
 }
 
 KDDockWidgets::DockWidgetBase *MyMainWindow::newDockWidget()

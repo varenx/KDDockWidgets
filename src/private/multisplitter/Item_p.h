@@ -178,6 +178,7 @@ public:
 
     bool isVertical() const;
     bool isHorizontal() const;
+    virtual int visibleCount() const;
 
     virtual void insertItem(Item *item, Location, SizingOption = SizingOption::Calculate);
 
@@ -286,7 +287,8 @@ public:
     Item::List visibleChildren() const;
     int usableLength() const;
     bool hasSingleVisibleItem() const;
-    bool contains(Item *item) const;
+    bool contains(const Item *item) const;
+    bool contains_recursive(const Item *item) const;
     void setChildren(const Item::List children);
     QSize minSize() const override;
     QSize maxSize() const override;
@@ -320,6 +322,9 @@ public:
     void positionItems();
     bool isResizing() const { return m_isResizing; }
     void clear();
+    Item* itemForFrame(const QWidget *w) const; // TODO: Rename
+    int visibleCount() const override;
+
 Q_SIGNALS:
     void itemsChanged();
 public:

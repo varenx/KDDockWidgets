@@ -301,6 +301,10 @@ void Item::setGeometry(QRect rect)
             Q_EMIT widthChanged();
         if (oldGeo.height() != height())
             Q_EMIT heightChanged();
+
+        if (m_isVisible && m_widget) {
+            m_widget->setGeometry(m_geometry);
+        }
     }
 }
 
@@ -342,6 +346,11 @@ bool Item::isVertical() const
 bool Item::isHorizontal() const
 {
     return m_orientation == Qt::Horizontal;
+}
+
+int Item::visibleCount() const
+{
+    return m_isVisible ? 1 : 0;
 }
 
 int Item::availableOnSide(Side, Qt::Orientation o) const
@@ -759,6 +768,30 @@ void ItemContainer::clear()
     }
 }
 
+Item *ItemContainer::itemForFrame(const QWidget *w) const
+{
+    for (Item *item : m_children) {
+        if (item->isContainer()) {
+            if (Item *result = item->asContainer()->itemForFrame(w))
+                return result;
+        } else if (item->frame() == w) {
+            return item;
+        }
+    }
+
+    return nullptr;
+}
+
+int ItemContainer::visibleCount() const
+{
+    int count = 0;
+    for (Item *item : m_children) {
+        count += item->visibleCount();
+    }
+
+    return count;
+}
+
 void ItemContainer::insertItem(Item *item, int index, bool growItem)
 {
     m_children.insert(index, item);
@@ -824,9 +857,23 @@ bool ItemContainer::hasSingleVisibleItem() const
     return numVisibleChildren() == 1;
 }
 
-bool ItemContainer::contains(Item *item) const
+bool ItemContainer::contains(const Item *item) const
 {
-    return m_children.contains(item);
+    return m_children.contains(const_cast<Item *>(item));
+}
+
+bool ItemContainer::contains_recursive(const Item *item) const
+{
+    for (Item *it : m_children) {
+        if (it == item) {
+            return true;
+        } else if (it->isContainer()) {
+            if (it->asContainer()->contains_recursive(item))
+                return true;
+        }
+    }
+
+    return false;
 }
 
 void ItemContainer::setChildren(const Item::List children)

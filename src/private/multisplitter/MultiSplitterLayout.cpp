@@ -134,7 +134,8 @@ bool MultiSplitterLayout::validateInputs(QWidgetOrQuick *widget,
     Item *relativeToItem = itemForFrame(relativeToFrame);
     if (!relativeToThis && !contains(relativeToItem)) {
         qWarning() << "MultiSplitterLayout::addWidget: Doesn't contain relativeTo:"
-                   << relativeToFrame
+                   << "; relativeToFrame=" << relativeToFrame
+                   << "; relativeToItem=" << relativeToItem
                    << "; options=" << option;
         return false;
     }
@@ -164,6 +165,15 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     // Make some sanity checks:
     if (!validateInputs(w, location, relativeToWidget, option))
         return;
+
+    Item *relativeTo = itemForFrame(relativeToWidget);
+    if (!relativeTo)
+        relativeTo = m_rootItem;
+
+    auto newItem = new Item();
+    newItem->setFrame(w);
+    w->setParent(multiSplitter());
+    relativeTo->insertItem(newItem, Layouting::Location(location));
 
     unrefOldPlaceholders(framesFrom(w));
     //Item *relativeToItem = itemForFrame(relativeToWidget);
@@ -225,7 +235,7 @@ void MultiSplitterLayout::removeItem(Item *item)
 
 bool MultiSplitterLayout::contains(const Item *item) const
 {
-    return m_items.contains(const_cast<Item*>(item));
+    return m_rootItem->contains_recursive(item);
 }
 
 bool MultiSplitterLayout::contains(const Frame *frame) const
@@ -250,7 +260,6 @@ void MultiSplitterLayout::clear()
 
     m_rootItem->clear();
 
-
     if (oldCount > 0)
         Q_EMIT widgetCountChanged(0);
     if (oldVisibleCount > 0)
@@ -259,11 +268,7 @@ void MultiSplitterLayout::clear()
 
 int MultiSplitterLayout::visibleCount() const
 {
-    int count = 0;
-    for (auto item : m_items)
-        if (!item->isPlaceholder())
-            count++;
-    return count;
+    return m_rootItem->visibleCount();
 }
 
 int MultiSplitterLayout::placeholderCount() const
@@ -307,11 +312,7 @@ Item *MultiSplitterLayout::itemForFrame(const Frame *frame) const
     if (!frame)
         return nullptr;
 
-    for (Item *item : m_items) {
-        if (item->frame() == frame)
-            return item;
-    }
-    return nullptr;
+    return m_rootItem->itemForFrame(frame);
 }
 
 Frame::List MultiSplitterLayout::framesFrom(QWidgetOrQuick *frameOrMultiSplitter) const
