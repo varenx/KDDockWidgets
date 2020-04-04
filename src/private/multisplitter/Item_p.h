@@ -293,7 +293,7 @@ public:
     bool hasChildren() const;
     bool hasVisibleChildren() const;
     int indexOfChild(const Item *) const;
-    void removeItem(Item *);
+    void removeItem(Item *, bool hardRemove = true);
     bool isEmpty() const;
     void setGeometry_recursive(QRect rect) override;
 

@@ -66,6 +66,7 @@ private Q_SLOTS:
     void tst_availableSize();
     void tst_missingSize();
     void tst_ensureEnoughSize();
+    void tst_turnIntoPlaceholder();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -553,6 +554,29 @@ void TestMultiSplitter::tst_ensureEnoughSize()
     root->insertItem(item2, Location_OnRight);
     QVERIFY(root->checkSanity());
     QCOMPARE(root->size(), QSize(item1->minSize().width() + item2->minSize().width() + st, item2->minSize().height()));
+}
+
+void TestMultiSplitter::tst_turnIntoPlaceholder()
+{
+    auto root = createRoot();
+    Item *item1 = createItem("1");
+    Item *item2 = createItem("2");
+    Item *item3 = createItem("3");
+    root->insertItem(item1, Location_OnLeft);
+    QVERIFY(item1->isVisible());
+    item1->turnIntoPlaceholder();
+    QVERIFY(!item1->isVisible());
+    QCOMPARE(root->visibleCount_recursive(), 0);
+    QCOMPARE(root->count_recursive(), 1);
+    QVERIFY(root->checkSanity());
+
+    root->insertItem(item2, Location_OnLeft);
+    root->insertItem(item3, Location_OnLeft);
+    QVERIFY(root->checkSanity());
+    QCOMPARE(item2->width() + item3->width() + st, root->width());
+    item2->turnIntoPlaceholder();
+    QVERIFY(root->checkSanity());
+    QCOMPARE(item3->width(), root->width());
 }
 
 QTEST_MAIN(TestMultiSplitter)

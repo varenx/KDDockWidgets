@@ -57,7 +57,7 @@ QPoint Item::mapFromParent(QPoint p) const
 
 void Item::setFrame(QWidget *w)
 {
-    Q_ASSERT((w && !m_widget) || (!w && m_widget));
+    Q_ASSERT(!w || !m_widget);
 
     if (m_widget) {
         m_widget->removeEventFilter(this);
@@ -430,8 +430,12 @@ bool Item::eventFilter(QObject *widget, QEvent *e)
 
 void Item::turnIntoPlaceholder()
 {
-    setIsVisible(false);
-    setFrame(nullptr);
+    Q_ASSERT(!isContainer());
+
+    // Turning into placeholder just means hidding it. So we can show it again in its original position.
+    // Call removeItem() so we share the code for making the neighbours grow into the space that becomes available
+    // after hidding this one
+    parentContainer()->removeItem(this, /*hardDelete=*/ false);
 
     // TODO: Visible widgets changed signal ?
 }
@@ -538,6 +542,8 @@ bool ItemContainer::checkSanity() const
     // Check that the geometries don't overlap
     int expectedPos = Layouting::pos(pos(), m_orientation);
     for (Item *item : m_children) {
+        if (!item->isVisible())
+            continue;
         const int pos = Layouting::pos(item->pos(), m_orientation);
         if (expectedPos != pos) {
             qWarning() << Q_FUNC_INFO << "Unexpected pos" << pos << "; expected=" << expectedPos
@@ -611,25 +617,34 @@ int ItemContainer::indexOfChild(const Item *item) const
     return m_children.indexOf(const_cast<Item *>(item));
 }
 
-void ItemContainer::removeItem(Item *item)
+void ItemContainer::removeItem(Item *item, bool hardRemove)
 {
     Q_ASSERT(!item->isRoot());
     if (contains(item)) {
+        m_childPercentages.clear();
         Item *side1Item = visibleNeighbourFor(item, Side1);
         Item *side2Item = visibleNeighbourFor(item, Side2);
-        const bool removed = m_children.removeOne(item);
-        Q_ASSERT(removed);
-        delete item;
-        m_childPercentages.clear();
-        if (isEmpty() && !isRoot()) {
-            parentContainer()->removeItem(this);
+        if (hardRemove) {
+            m_children.removeOne(item);
+            delete item;
+        } else {
+            item->setIsVisible(false);
+            item->setFrame(nullptr);
+        }
+
+        const bool containerShouldBeRemoved = !isRoot() && ((hardRemove && isEmpty()) ||
+                                                            (!hardRemove && !hasVisibleChildren()));
+
+        if (containerShouldBeRemoved) {
+            parentContainer()->removeItem(this, hardRemove);
         } else {
             // Neighbours will occupy the space of the deleted item
             growNeighbours(side1Item, side2Item);
             Q_EMIT itemsChanged();
         }
     } else {
-        item->parentContainer()->removeItem(item);
+        // Not ours, ask parent
+        item->parentContainer()->removeItem(item, hardRemove);
     }
 }
 
