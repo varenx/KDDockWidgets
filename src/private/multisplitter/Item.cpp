@@ -91,10 +91,8 @@ void Item::unref()
     Q_ASSERT(m_refCount > 0);
     m_refCount--;
     if (m_refCount == 0) {
-        if (!m_destroying) {
-            m_destroying = true;
-            delete this;
-        }
+        Q_ASSERT(!isRoot());
+        parentContainer()->removeItem(this);
     }
 }
 
@@ -462,19 +460,16 @@ void Item::updateObjectName()
 
 void Item::onWidgetDestroyed()
 {
-    if (m_refCount || true) {
-
+    if (m_refCount) {
+        turnIntoPlaceholder();
     } else {
-        if (!m_destroying) {
-            m_destroying = true;
-            delete this;
-        }
+        Q_ASSERT(!isRoot());
+        parentContainer()->removeItem(this);
     }
 }
 
 void Item::onWidgetLayoutRequested()
 {
-
 }
 
 bool Item::isRoot() const
