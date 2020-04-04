@@ -145,7 +145,7 @@ public:
      * This includes non-visible (placeholder) Items too.
      * @sa visibleCount
      */
-    int count() const { return m_items.size(); }
+    int count() const { return m_rootItem->count_recursive();  }
 
     /**
      * @brief Returns the number of visible Items in this layout.
@@ -160,11 +160,6 @@ public:
      * @sa count, visibleCount
      */
     int placeholderCount() const;
-
-    /**
-     * @brief Returns true if count is 0.
-     */
-    bool isEmpty() const { return m_items.isEmpty(); }
 
     /**
      * @brief Returns whether there's non placeholder items.
@@ -421,7 +416,6 @@ private:
     MultiSplitter *const m_multiSplitter;
     Layouting::Anchor::List m_anchors;
 
-    ItemList m_items;
     bool m_inCtor = true;
     bool m_inDestructor = false;
     bool m_beingMergedIntoAnotherMultiSplitter = false; // TODO

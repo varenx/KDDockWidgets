@@ -182,7 +182,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
 
 void MultiSplitterLayout::addItems_internal(const ItemList &items, bool updateConstraints, bool emitSignal)
 {
-    m_items << items;
+
     if (updateConstraints)
         updateSizeConstraints();
 
@@ -195,7 +195,7 @@ void MultiSplitterLayout::addItems_internal(const ItemList &items, bool updateCo
     }
 
     if (emitSignal)
-        Q_EMIT widgetCountChanged(m_items.size());
+        Q_EMIT widgetCountChanged(m_rootItem->count_recursive());
 }
 
 QString MultiSplitterLayout::affinityName() const
@@ -230,7 +230,7 @@ void MultiSplitterLayout::removeItem(Item *item)
     item->parentContainer()->removeItem(item);
 
     Q_EMIT widgetRemoved(item);
-    Q_EMIT widgetCountChanged(m_items.size());
+    Q_EMIT widgetCountChanged(m_rootItem->numVisibleChildren());
 }
 
 bool MultiSplitterLayout::contains(const Item *item) const
@@ -245,12 +245,7 @@ bool MultiSplitterLayout::contains(const Frame *frame) const
 
 Item *MultiSplitterLayout::itemAt(QPoint p) const
 {
-    for (Layouting::Item *item : m_items) {
-        if (!item->isPlaceholder() && item->geometry().contains(p))
-            return item;
-    }
-
-    return nullptr;
+    return m_rootItem->itemAt_recursive(p);
 }
 
 void MultiSplitterLayout::clear()
@@ -268,7 +263,7 @@ void MultiSplitterLayout::clear()
 
 int MultiSplitterLayout::visibleCount() const
 {
-    return m_rootItem->visibleCount();
+    return m_rootItem->visibleCount_recursive();
 }
 
 int MultiSplitterLayout::placeholderCount() const
@@ -328,9 +323,12 @@ Frame::List MultiSplitterLayout::framesFrom(QWidgetOrQuick *frameOrMultiSplitter
 
 Frame::List MultiSplitterLayout::frames() const
 {
-    Frame::List result;
+    const Item::List items = m_rootItem->items_recursive();
 
-    for (Item *item : m_items) {
+    Frame::List result;
+    result.reserve(items.size());
+
+    for (Item *item : items) {
         if (auto f = static_cast<Frame*>(item->frame()))
             result.push_back(f);
     }
@@ -416,7 +414,7 @@ void MultiSplitterLayout::setMinimumSize(QSize sz)
 
 const ItemList MultiSplitterLayout::items() const
 {
-    return m_items;
+    return m_rootItem->items_recursive();
 }
 
 Item *MultiSplitterLayout::rootItem() const
@@ -452,51 +450,13 @@ bool MultiSplitterLayout::eventFilter(QObject *o, QEvent *e)
     return false;
 }
 
-bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &msl)
+bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &)
 {
-    clear();
-
-    ItemList items;
-    items.reserve(msl.items.size());
-    for (const auto &i : qAsConst(msl.items)) {
-        Q_UNUSED(i);
-        //Item *item = deserialize(); TODO
-        //items.push_back(item);
-    }
-
-    m_items = items; // Set the items, so Anchor::deserialize() can set the side1 and side2 items
-
-    m_items.clear(); // Now properly set the items, which installs needed event filters, etc.
-    addItems_internal(items, false, false); // Add the items only after we have the static anchors set
-
-    setSize(msl.size);
-    setMinimumSize(msl.minSize);
-
-    if (!m_items.isEmpty())
-        Q_EMIT widgetCountChanged(m_items.size());
-
-
-    // The main window that we're restoring can have more stuff now (other-toolbars etc), so by
-    // having restored its geometry it can mean our dockwidget layout is now different, so update
-    // its content size if needed
-    Q_EMIT minimumSizeChanged(m_minSize);
-
-    if (size() != multiSplitter()->size()) {
-        setSize(multiSplitter()->size());
-    }
-
     return true;
 }
 
 LayoutSaver::MultiSplitterLayout MultiSplitterLayout::serialize() const
 {
     LayoutSaver::MultiSplitterLayout l;
-
-    l.size = size();
-    l.minSize = minimumSize();
-
-    //for (Item *item : m_items) TODO
-        //l.items.push_back(item->serialize());
-
     return l;
 }

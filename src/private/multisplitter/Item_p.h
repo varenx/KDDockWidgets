@@ -178,7 +178,7 @@ public:
 
     bool isVertical() const;
     bool isHorizontal() const;
-    virtual int visibleCount() const;
+    virtual int visibleCount_recursive() const;
 
     virtual void insertItem(Item *item, Location, SizingOption = SizingOption::Calculate);
 
@@ -234,8 +234,9 @@ public:
     ItemContainer *root() const;
     void deserialize() {}
     void serialize() {}
-    QRect mapToRoot(QRect local) const;
-    QPoint mapToRoot(QPoint local) const;
+    QRect mapToRoot(QRect) const;
+    QPoint mapToRoot(QPoint) const;
+    QPoint mapFromParent(QPoint) const;
 
     QWidget *frame() const { return m_widget; } // TODO: rename
     void setFrame(QWidget *w) { m_widget = w; } // TODO rename
@@ -325,7 +326,11 @@ public:
     bool isResizing() const { return m_isResizing; }
     void clear();
     Item* itemForFrame(const QWidget *w) const; // TODO: Rename
-    int visibleCount() const override;
+    int visibleCount_recursive() const override;
+    int count_recursive() const;
+    Item *itemAt(QPoint p) const;
+    Item *itemAt_recursive(QPoint p) const;
+    Item::List items_recursive() const;
 
 Q_SIGNALS:
     void itemsChanged();

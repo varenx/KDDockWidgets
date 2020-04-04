@@ -43,7 +43,15 @@ QPoint Item::mapToRoot(QPoint p) const
     if (isRoot())
         return p;
 
-    return p + parentContainer()->pos();
+    return p + parentContainer()->mapToRoot(parentContainer()->pos());
+}
+
+QPoint Item::mapFromParent(QPoint p) const
+{
+    if (isRoot())
+        return p;
+
+    return p - pos();
 }
 
 void Item::resize(QSize newSize)
@@ -363,7 +371,7 @@ bool Item::isHorizontal() const
     return m_orientation == Qt::Horizontal;
 }
 
-int Item::visibleCount() const
+int Item::visibleCount_recursive() const
 {
     return m_isVisible ? 1 : 0;
 }
@@ -797,14 +805,66 @@ Item *ItemContainer::itemForFrame(const QWidget *w) const
     return nullptr;
 }
 
-int ItemContainer::visibleCount() const
+int ItemContainer::visibleCount_recursive() const
 {
     int count = 0;
     for (Item *item : m_children) {
-        count += item->visibleCount();
+        count += item->visibleCount_recursive();
     }
 
     return count;
+}
+
+int ItemContainer::count_recursive() const
+{
+    int count = 0;
+    for (Item *item : m_children) {
+        if (auto c = item->asContainer()) {
+            count += c->count_recursive();
+        } else {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+Item *ItemContainer::itemAt(QPoint p) const
+{
+    for (Item *item : m_children) {
+        if (item->isVisible() && item->geometry().contains(p))
+            return item;
+    }
+
+    return nullptr;
+}
+
+Item *ItemContainer::itemAt_recursive(QPoint p) const
+{
+    if (Item *item = itemAt(p)) {
+        if (auto c = item->asContainer()) {
+            return c->itemAt_recursive(c->mapFromParent(p));
+        } else {
+            return item;
+        }
+    }
+
+    return nullptr;
+}
+
+Item::List ItemContainer::items_recursive() const
+{
+   Item::List items;
+   items.reserve(30); // sounds like a good upper number to minimize allocations
+   for (Item *item : m_children) {
+       if (auto c  = item->asContainer()) {
+           items << c->items_recursive();
+       } else {
+           items << item;
+       }
+   }
+
+   return items;
 }
 
 void ItemContainer::insertItem(Item *item, int index, bool growItem)
