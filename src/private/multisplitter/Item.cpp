@@ -104,11 +104,7 @@ int Item::refCount() const
 
 QWidget *Item::hostWidget() const
 {
-    if (isRoot()) {
-        return asContainer()->m_hostWidget;
-    }
-
-    return root()->hostWidget();
+    return m_hostWidget;
 }
 
 void Item::resize(QSize newSize)
@@ -161,8 +157,7 @@ ItemContainer *Item::parentContainer() const
 
 const ItemContainer *Item::asContainer() const
 {
-    Q_ASSERT(isContainer());
-    return static_cast<const ItemContainer*>(this);
+    return qobject_cast<const ItemContainer*>(this);
 }
 
 ItemContainer *Item::asContainer()
@@ -399,17 +394,19 @@ void Item::dumpLayout(int level)
     qDebug().noquote() << indent << "- Widget: " << objectName() << m_geometry << visible << beingInserted;
 }
 
-Item::Item(ItemContainer *parent)
+Item::Item(QWidget *hostWidget, ItemContainer *parent)
     : QObject(parent)
     , m_isContainer(false)
     , m_parent(parent)
+    , m_hostWidget(hostWidget)
 {
 }
 
-Item::Item(bool isContainer, ItemContainer *parent)
+Item::Item(bool isContainer, QWidget *hostWidget, ItemContainer *parent)
     : QObject(parent)
     , m_isContainer(isContainer)
     , m_parent(parent)
+    , m_hostWidget(hostWidget)
 {
 }
 
@@ -505,9 +502,8 @@ int Item::availableOnSide(Side, Qt::Orientation o) const
     return 0;
 }
 
-ItemContainer::ItemContainer(ItemContainer *parent)
-    : Item(true, parent)
-    , m_hostWidget(nullptr)
+ItemContainer::ItemContainer(QWidget *hostWidget, ItemContainer *parent)
+    : Item(true, hostWidget, parent)
 {
     Q_ASSERT(parent);
     connect(this, &Item::xChanged, this, [this] {
@@ -524,9 +520,10 @@ ItemContainer::ItemContainer(ItemContainer *parent)
 }
 
 ItemContainer::ItemContainer(QWidget *hostWidget)
-    : m_hostWidget(hostWidget)
+    : Item(hostWidget)
 {
-    Q_ASSERT(m_hostWidget);
+    // CTOR for root item
+    Q_ASSERT(hostWidget);
 }
 
 bool ItemContainer::checkSanity() const
@@ -665,7 +662,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
 {
     const int index = indexOfChild(leaf);
     Q_ASSERT(index != -1);
-    auto container = new ItemContainer(this);
+    auto container = new ItemContainer(hostWidget(), this);
     insertItem(container, index, /*growItem=*/false);
     m_children.removeOne(leaf);
     container->setGeometry(leaf->geometry());
@@ -701,7 +698,7 @@ void ItemContainer::insertItem(Item *item, Location loc, SizingOption sizingOpti
     } else {
         // Inserting directly in a container ? Only if it's root.
         Q_ASSERT(isRoot());
-        auto container = new ItemContainer(this);
+        auto container = new ItemContainer(hostWidget(), this);
         container->setChildren(m_children);
         container->m_orientation = m_orientation;
         m_children.clear();

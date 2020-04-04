@@ -170,7 +170,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     if (!relativeTo)
         relativeTo = m_rootItem;
 
-    auto newItem = new Item();
+    auto newItem = new Item(multiSplitter());
     newItem->setFrame(w);
     w->setParent(multiSplitter());
     relativeTo->insertItem(newItem, Layouting::Location(location));

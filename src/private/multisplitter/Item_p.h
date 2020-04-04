@@ -172,7 +172,7 @@ class Item : public QObject
 public:
     typedef QVector<Item*> List;
 
-    explicit Item(ItemContainer *parent = nullptr);
+    explicit Item(QWidget *hostWidget, ItemContainer *parent = nullptr);
 
     bool isRoot() const;
 
@@ -258,7 +258,7 @@ Q_SIGNALS:
     void minSizeChanged(Item *thisItem);
 protected:
     friend class ::TestMultiSplitter;
-    explicit Item(bool isContainer, ItemContainer *parent);
+    explicit Item(bool isContainer, QWidget *hostWidget, ItemContainer *parent);
     const bool m_isContainer;
     Qt::Orientation m_orientation = Qt::Vertical;
 
@@ -277,13 +277,14 @@ private:
     bool m_isVisible = false;
     bool m_destroying = false; // TODO: Remove and check if unit-tests pass
     QWidget *m_widget = nullptr; // TODO: Make generic
+    QWidget *const m_hostWidget;
 };
 
 class ItemContainer : public Item {
     Q_OBJECT
     Q_PROPERTY(QVariantList items READ items NOTIFY itemsChanged)
 public:
-    explicit ItemContainer(ItemContainer *parent);
+    explicit ItemContainer(QWidget *hostWidget, ItemContainer *parent);
     explicit ItemContainer(QWidget *parent);
     void insertItem(Item *item, int index, bool growItem = true);
     bool checkSanity() const override;
@@ -353,7 +354,6 @@ public:
     Item::List m_children;
     bool m_isResizing = false;
     bool m_isRoot = false;
-    QWidget *const m_hostWidget;
 };
 
 }

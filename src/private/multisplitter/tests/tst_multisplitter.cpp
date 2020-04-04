@@ -36,7 +36,7 @@ static std::unique_ptr<ItemContainer> createRoot() {
 }
 
 static Item* createItem(const QString &objName) {
-    auto item = new Item();
+    auto item = new Item(new QWidget());
     item->setObjectName(objName);
     return item;
 }
@@ -101,9 +101,9 @@ void TestMultiSplitter::tst_insertThreeSideBySide()
     // Result is [1, 2, 3]
 
     auto root = createRoot();
-    auto item1 = new Item();
-    auto item2 = new Item();
-    auto item3 = new Item();
+    auto item1 = createItem("1");
+    auto item2 = createItem("2");
+    auto item3 = createItem("3");
 
     root->insertItem(item1, Location_OnLeft);
     root->insertItem(item2, Location_OnRight);
@@ -119,9 +119,9 @@ void TestMultiSplitter::tst_insertOnWidgetItem1()
     // Result is still [1, 2, 3]
 
     auto root = createRoot();
-    auto item1 = new Item();
-    auto item2 = new Item();
-    auto item3 = new Item();
+    auto item1 = createItem("1");
+    auto item2 = createItem("2");
+    auto item3 = createItem("3");
     root->insertItem(item1, Location_OnLeft);
     root->insertItem(item2, Location_OnRight);
     item2->insertItem(item3, Location_OnRight);
@@ -138,9 +138,9 @@ void TestMultiSplitter::tst_insertOnWidgetItem2()
     // Same, but result [1, 3, 2]
 
     auto root = createRoot();
-    auto item1 = new Item();
-    auto item2 = new Item();
-    auto item3 = new Item();
+    auto item1 = createItem("1");
+    auto item2 = createItem("2");
+    auto item3 = createItem("3");
     root->insertItem(item1, Location_OnLeft);
     root->insertItem(item2, Location_OnRight);
     item2->insertItem(item3, Location_OnLeft);
