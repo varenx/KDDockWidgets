@@ -247,6 +247,7 @@ public:
     int refCount() const;
 
     QWidget *hostWidget() const;
+    void restorePlaceholder(QWidget *);
 
 Q_SIGNALS:
     void geometryChanged();

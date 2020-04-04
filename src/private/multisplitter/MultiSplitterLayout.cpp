@@ -172,7 +172,6 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
 
     auto newItem = new Item(multiSplitter());
     newItem->setFrame(w);
-    w->setParent(multiSplitter());
     relativeTo->insertItem(newItem, Layouting::Location(location));
 
     unrefOldPlaceholders(framesFrom(w));
@@ -347,9 +346,23 @@ QVector<DockWidgetBase *> MultiSplitterLayout::dockWidgets() const
     return result;
 }
 
-void MultiSplitterLayout::restorePlaceholder(Item *, int /*tabIndex*/)
+void MultiSplitterLayout::restorePlaceholder(DockWidgetBase *dw, Item *item, int tabIndex)
 {
-    // TODO
+    if (item->isPlaceholder()) {
+        Frame *newFrame = Config::self().frameworkWidgetFactory()->createFrame(multiSplitter());
+        item->restorePlaceholder(newFrame);
+    }
+
+    Frame *frame = qobject_cast<Frame*>(item->frame());
+    Q_ASSERT(frame);
+
+    if (tabIndex != -1 && frame->dockWidgetCount() >= tabIndex) {
+        frame->insertWidget(dw, tabIndex);
+    } else {
+        frame->addWidget(dw);
+    }
+
+    frame->setVisible(true);
 }
 
 bool MultiSplitterLayout::checkSanity() const

@@ -291,7 +291,7 @@ public:
      */
     QVector<DockWidgetBase*> dockWidgets() const;
 
-    void restorePlaceholder(Layouting::Item *, int tabIndex);
+    void restorePlaceholder(DockWidgetBase *dw, Layouting::Item *, int tabIndex);
 
     struct Length {
         Length() = default;

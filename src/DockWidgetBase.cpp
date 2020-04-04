@@ -547,7 +547,7 @@ void DockWidgetBase::Private::restoreToPreviousPosition()
 
     MultiSplitterLayout *layout = DockRegistry::self()->layoutForItem(m_lastPosition.layoutItem());
     Q_ASSERT(layout);
-    layout->restorePlaceholder(m_lastPosition.layoutItem(), m_lastPosition.m_tabIndex);
+    layout->restorePlaceholder(q, m_lastPosition.layoutItem(), m_lastPosition.m_tabIndex);
 }
 
 void DockWidgetBase::Private::maybeRestoreToPreviousPosition()

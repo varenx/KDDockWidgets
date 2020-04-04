@@ -66,7 +66,6 @@ void Item::setFrame(QWidget *w)
         disconnect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
     }
 
-
     m_widget = w;
 
     if (m_widget) {
@@ -74,6 +73,8 @@ void Item::setFrame(QWidget *w)
         connect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
         connect(m_widget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
         connect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
+        m_widget->setParent(m_hostWidget);
+        //setMinSize(m_widget->min)
     }
 
     updateObjectName();
@@ -105,6 +106,13 @@ int Item::refCount() const
 QWidget *Item::hostWidget() const
 {
     return m_hostWidget;
+}
+
+void Item::restorePlaceholder(QWidget *widget)
+{
+    Q_ASSERT(isVisible() && !frame());
+    setFrame(widget);
+    setIsVisible(true);
 }
 
 void Item::resize(QSize newSize)
@@ -326,6 +334,8 @@ void Item::setIsVisible(bool is)
         m_isVisible = is;
         Q_EMIT minSizeChanged(this); // min-size is 0x0 when hidden
         Q_EMIT visibleChanged(this, is);
+        if (m_widget)
+            m_widget->setVisible(is);
     }
 }
 
