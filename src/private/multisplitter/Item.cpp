@@ -413,13 +413,27 @@ Item::Item(bool isContainer, ItemContainer *parent)
 {
 }
 
-bool Item::eventFilter(QObject *, QEvent *e)
+bool Item::eventFilter(QObject *widget, QEvent *e)
 {
     if (e->type() != QEvent::ParentChange)
         return false;
 
-    return false;
+    if (widget->parent() != hostWidget()) {
+        // Frame was detached into floating window. Turn into placeholder
+        Q_ASSERT(isVisible());
+        turnIntoPlaceholder();
+    }
 
+    return false;
+}
+
+
+void Item::turnIntoPlaceholder()
+{
+    setIsVisible(false);
+    setFrame(nullptr);
+
+    // TODO: Visible widgets changed signal ?
 }
 
 void Item::updateObjectName()
