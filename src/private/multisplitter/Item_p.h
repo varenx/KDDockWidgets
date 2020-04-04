@@ -216,9 +216,6 @@ public:
     int availableLength(Qt::Orientation) const;
     bool isPlaceholder() const;
 
-    void ref() {}
-    void unref() {}
-
     bool isVisible() const;
     void setIsVisible(bool);
     virtual void setGeometry_recursive(QRect rect);
@@ -239,11 +236,17 @@ public:
     QPoint mapFromParent(QPoint) const;
 
     QWidget *frame() const { return m_widget; } // TODO: rename
-    void setFrame(QWidget *w) { m_widget = w; } // TODO rename
+    void setFrame(QWidget *w);
     QWidget *window() const {
         return m_widget ? m_widget->window()
                         : nullptr;
     }
+
+    void ref();
+    void unref();
+    int refCount() const;
+
+    QWidget *hostWidget() const;
 
 Q_SIGNALS:
     void geometryChanged();
@@ -261,8 +264,17 @@ protected:
 
     ItemContainer *m_parent = nullptr;
     QRect m_geometry;
+
+private Q_SLOTS:
+    void onWidgetLayoutRequested();
+
 private:
+    bool eventFilter(QObject *o, QEvent *event) override;
+    int m_refCount = 0;
+    void updateObjectName();
+    void onWidgetDestroyed();
     bool m_isVisible = false;
+    bool m_destroying = false; // TODO: Remove and check if unit-tests pass
     QWidget *m_widget = nullptr; // TODO: Make generic
 };
 
@@ -270,7 +282,8 @@ class ItemContainer : public Item {
     Q_OBJECT
     Q_PROPERTY(QVariantList items READ items NOTIFY itemsChanged)
 public:
-    explicit ItemContainer(ItemContainer *parent = nullptr);
+    explicit ItemContainer(ItemContainer *parent);
+    explicit ItemContainer(QWidget *parent);
     void insertItem(Item *item, int index, bool growItem = true);
     bool checkSanity() const override;
     bool hasOrientation() const;
@@ -338,6 +351,8 @@ public:
     QVector<qreal> m_childPercentages;
     Item::List m_children;
     bool m_isResizing = false;
+    bool m_isRoot = false;
+    QWidget *const m_hostWidget;
 };
 
 }

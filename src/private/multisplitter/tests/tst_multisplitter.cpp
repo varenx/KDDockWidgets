@@ -30,7 +30,7 @@ using namespace Layouting;
 static int st = Item::separatorThickness();
 
 static std::unique_ptr<ItemContainer> createRoot() {
-    auto item = new ItemContainer();
+    auto item = new ItemContainer(new QWidget()); // todo WIDGET
     item->setSize({ 1000, 1000 });
     return std::unique_ptr<ItemContainer>(item);
 }

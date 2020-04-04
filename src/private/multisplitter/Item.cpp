@@ -20,6 +20,7 @@
 
 #include "Item_p.h"
 
+#include <QEvent>
 #include <QDebug>
 #include <QScopedValueRollback>
 
@@ -52,6 +53,62 @@ QPoint Item::mapFromParent(QPoint p) const
         return p;
 
     return p - pos();
+}
+
+void Item::setFrame(QWidget *w)
+{
+    Q_ASSERT((w && !m_widget) || (!w && m_widget));
+
+    if (m_widget) {
+        m_widget->removeEventFilter(this);
+        disconnect(w, &QObject::destroyed, this, &Item::onWidgetDestroyed);
+        disconnect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested()));
+        disconnect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
+    }
+
+
+    m_widget = w;
+
+    if (m_widget) {
+        m_widget->installEventFilter(this);
+        connect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
+        connect(m_widget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
+        connect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
+    }
+
+    updateObjectName();
+
+}
+
+void Item::ref()
+{
+    m_refCount++;
+}
+
+void Item::unref()
+{
+    Q_ASSERT(m_refCount > 0);
+    m_refCount--;
+    if (m_refCount == 0) {
+        if (!m_destroying) {
+            m_destroying = true;
+            delete this;
+        }
+    }
+}
+
+int Item::refCount() const
+{
+    return m_refCount;
+}
+
+QWidget *Item::hostWidget() const
+{
+    if (isRoot()) {
+        return asContainer()->m_hostWidget;
+    }
+
+    return root()->hostWidget();
 }
 
 void Item::resize(QSize newSize)
@@ -356,6 +413,45 @@ Item::Item(bool isContainer, ItemContainer *parent)
 {
 }
 
+bool Item::eventFilter(QObject *, QEvent *e)
+{
+    if (e->type() != QEvent::ParentChange)
+        return false;
+
+    return false;
+
+}
+
+void Item::updateObjectName()
+{
+    if (m_widget && !m_widget->objectName().isEmpty()) {
+        setObjectName(m_widget->objectName());
+    } else if (!isVisible()) {
+        setObjectName(QStringLiteral("hidden"));
+    } else if (!m_widget) {
+        setObjectName(QStringLiteral("null"));
+    } else {
+        setObjectName(QStringLiteral("empty"));
+    }
+}
+
+void Item::onWidgetDestroyed()
+{
+    if (m_refCount || true) {
+
+    } else {
+        if (!m_destroying) {
+            m_destroying = true;
+            delete this;
+        }
+    }
+}
+
+void Item::onWidgetLayoutRequested()
+{
+
+}
+
 bool Item::isRoot() const
 {
     return m_parent == nullptr;
@@ -393,7 +489,9 @@ int Item::availableOnSide(Side, Qt::Orientation o) const
 
 ItemContainer::ItemContainer(ItemContainer *parent)
     : Item(true, parent)
+    , m_hostWidget(nullptr)
 {
+    Q_ASSERT(parent);
     connect(this, &Item::xChanged, this, [this] {
         for (Item *item : qAsConst(m_children)) {
             Q_EMIT item->xChanged();
@@ -405,6 +503,12 @@ ItemContainer::ItemContainer(ItemContainer *parent)
             Q_EMIT item->yChanged();
         }
     });
+}
+
+ItemContainer::ItemContainer(QWidget *hostWidget)
+    : m_hostWidget(hostWidget)
+{
+    Q_ASSERT(m_hostWidget);
 }
 
 bool ItemContainer::checkSanity() const

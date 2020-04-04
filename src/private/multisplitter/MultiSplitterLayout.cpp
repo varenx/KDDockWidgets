@@ -49,7 +49,7 @@ const QString MultiSplitterLayout::s_magicMarker = QStringLiteral("bac9948e-5f1b
 MultiSplitterLayout::MultiSplitterLayout(MultiSplitter *parent)
     : QObject(parent)
     , m_multiSplitter(parent)
-    , m_rootItem(new ItemContainer())
+    , m_rootItem(new ItemContainer(parent))
 {
     Q_ASSERT(parent);
 
