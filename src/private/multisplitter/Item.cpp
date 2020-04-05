@@ -633,11 +633,14 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
         m_childPercentages.clear();
         Item *side1Item = visibleNeighbourFor(item, Side1);
         Item *side2Item = visibleNeighbourFor(item, Side2);
-        const bool wasVisible = item->isVisible();
+        const bool isContainer = item->isContainer();
+        const bool wasVisible = !isContainer && item->isVisible();
 
         if (hardRemove) {
             m_children.removeOne(item);
             delete item;
+            if (!isContainer)
+                Q_EMIT root()->numItemsChanged();
         } else {
             if (wasVisible) {
                 item->setIsVisible(false);

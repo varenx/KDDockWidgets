@@ -306,8 +306,7 @@ public:
 
 Q_SIGNALS:
     ///@brief emitted when the number of widgets changes
-    ///@param count the new widget count
-    void widgetCountChanged(int count);
+    void widgetCountChanged();
 
     void visibleWidgetCountChanged(int count);
 
@@ -371,13 +370,6 @@ private:
      * width is for Qt::Vertical.
      */
     QSize availableSize() const;
-
-    /**
-     * Returns the width (if orientation = Horizontal), or height that is occupied by anchors.
-     * For example, an horizontal anchor has 2 or 3 px of width, so that's space that can't be
-     * occupied by child widgets.
-     */
-    int wastedSpacing(Qt::Orientation) const;
 
     // convenience for the unit-tests
     // Moves the widget's bottom or right anchor, to resize it.

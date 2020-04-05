@@ -53,9 +53,11 @@ MultiSplitterLayout::MultiSplitterLayout(MultiSplitter *parent)
     setSize(parent->size());
 
     qCDebug(multisplittercreation()) << "MultiSplitter";
-    connect(this, &MultiSplitterLayout::widgetCountChanged, this, [this] {
+   /** connect(m_rootItem, &MultiSplitterLayout::widgetCountChanged, this, [this] {
         Q_EMIT visibleWidgetCountChanged(visibleCount());
-    });
+    });*/
+
+    connect(m_rootItem, &ItemContainer::numItemsChanged, this, &MultiSplitterLayout::widgetCountChanged);
 
     clear();
 
@@ -194,13 +196,10 @@ void MultiSplitterLayout::removeItem(Item *item)
     if (!item || m_inDestructor)
         return;
 
-    Q_ASSERT(item != m_rootItem);
-    if (!item->isPlaceholder())
-        item->frame()->removeEventFilter(this);
     item->parentContainer()->removeItem(item);
 
-    Q_EMIT widgetRemoved(item);
-    Q_EMIT widgetCountChanged(m_rootItem->numVisibleChildren());
+
+    Q_EMIT widgetRemoved(item);     // TODO Remove.
 }
 
 bool MultiSplitterLayout::contains(const Item *item) const
