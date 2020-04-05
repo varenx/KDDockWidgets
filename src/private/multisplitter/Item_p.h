@@ -358,7 +358,7 @@ public:
 
 Q_SIGNALS:
     void itemsChanged();
-    void numVisibleItemsChanged();
+    void numVisibleItemsChanged(int);
     void numItemsChanged();
 public:
     QVector<qreal> m_childPercentages;

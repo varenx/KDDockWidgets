@@ -652,7 +652,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
         }
 
         if (wasVisible) {
-            Q_EMIT root()->numVisibleItemsChanged();
+            Q_EMIT root()->numVisibleItemsChanged(root()->numVisibleChildren());
         }
 
         const bool containerShouldBeRemoved = !isRoot() && ((hardRemove && isEmpty()) ||
@@ -1033,7 +1033,11 @@ void ItemContainer::insertItem(Item *item, int index, bool growItem)
     if (growItem)
         restorePlaceholder(item);
 
-    Q_EMIT root()->numVisibleItemsChanged();
+    if (!item->isContainer()) {
+        if (item->isVisible())
+            Q_EMIT root()->numVisibleItemsChanged(root()->numVisibleChildren());
+        Q_EMIT root()->numItemsChanged();
+    }
 }
 
 bool ItemContainer::hasChildren() const

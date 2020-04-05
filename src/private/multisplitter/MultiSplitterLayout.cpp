@@ -53,11 +53,9 @@ MultiSplitterLayout::MultiSplitterLayout(MultiSplitter *parent)
     setSize(parent->size());
 
     qCDebug(multisplittercreation()) << "MultiSplitter";
-   /** connect(m_rootItem, &MultiSplitterLayout::widgetCountChanged, this, [this] {
-        Q_EMIT visibleWidgetCountChanged(visibleCount());
-    });*/
 
     connect(m_rootItem, &ItemContainer::numItemsChanged, this, &MultiSplitterLayout::widgetCountChanged);
+    connect(m_rootItem, &ItemContainer::numVisibleItemsChanged, this, &MultiSplitterLayout::visibleWidgetCountChanged);
 
     clear();
 
