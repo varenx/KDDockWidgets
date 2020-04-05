@@ -243,9 +243,9 @@ public:
     static void nestDockWidget(DockWidgetBase *dock, DropArea *dropArea, Frame *relativeTo, KDDockWidgets::Location location);
 
 private Q_SLOTS:
-//    void tst_simple1();
-//    void tst_simple2();
-//    void tst_shutdown();
+    void tst_simple1();
+    void tst_simple2();
+    void tst_shutdown();
 //    void tst_mainWindowAlwaysHasCentralWidget();
     void tst_createFloatingWindow();
     void tst_dock2FloatingWidgetsTabbed();
@@ -1041,7 +1041,7 @@ void TestDocks::tst_posAfterLeftDetach()
         Testing::waitForDeleted(fw);
     }
 }
-
+#endif
 void TestDocks::tst_shutdown()
 {
     EnsureTopLevelsDeleted e;
@@ -1053,7 +1053,7 @@ void TestDocks::tst_shutdown()
     dock->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock));
 }
-
+#if 0
 void TestDocks::tst_mainWindowAlwaysHasCentralWidget()
 {
     EnsureTopLevelsDeleted e;
@@ -2913,7 +2913,7 @@ void TestDocks::tst_setVisibleFalseWhenSideBySide()
     auto window = m.release();
     Testing::waitForDeleted(window);
 }
-
+#endif
 void TestDocks::tst_simple1()
 {
     // Simply create a MainWindow
@@ -2931,7 +2931,7 @@ void TestDocks::tst_simple2()
     m->addDockWidget(dw, KDDockWidgets::Location_OnTop);
     m->multiSplitterLayout()->checkSanity();
 }
-
+#if 0
 void TestDocks::tst_refUnrefItem()
 {
     EnsureTopLevelsDeleted e;
