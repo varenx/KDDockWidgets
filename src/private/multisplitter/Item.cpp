@@ -221,7 +221,7 @@ void Item::insertItem(Item *item, Location loc, SizingOption sizingOption)
     const bool locIsSide1 = locationIsSide1(loc);
 
     if (sizingOption == SizingOption::Calculate)
-        item->setGeometry(m_parent->suggestedDropRect(item, this, loc));
+        item->setGeometry(m_parent->suggestedDropRect(item->minSize(), this, loc));
 
     if (m_parent->hasOrientationFor(loc)) {
         int indexInParent = m_parent->indexOfChild(this);
@@ -626,6 +626,12 @@ int ItemContainer::indexOfChild(const Item *item) const
     return m_children.indexOf(const_cast<Item *>(item));
 }
 
+int ItemContainer::indexOfVisibleChild(const Item *item) const
+{
+    const Item::List items = visibleChildren();
+    return items.indexOf(const_cast<Item*>(item));
+}
+
 void ItemContainer::removeItem(Item *item, bool hardRemove)
 {
     Q_ASSERT(!item->isRoot());
@@ -703,7 +709,7 @@ void ItemContainer::insertItem(Item *item, Location loc, SizingOption sizingOpti
     item->setIsVisible(false);
 
     if (isRoot() && sizingOption == SizingOption::Calculate)
-        item->setGeometry(suggestedDropRect(item, nullptr, loc));
+        item->setGeometry(suggestedDropRect(item->minSize(), nullptr, loc));
 
     Q_ASSERT(item != this);
     if (contains(item)) {
@@ -828,9 +834,8 @@ void ItemContainer::onChildVisibleChanged(Item *child, bool visible)
     }
 }
 
-QRect ItemContainer::suggestedDropRect(Item *newItem, Item *relativeTo, Location loc) const
+QRect ItemContainer::suggestedDropRect(QSize minSize, const Item *relativeTo, Location loc) const
 {
-    Q_ASSERT(newItem);
     if (relativeTo && !relativeTo->parentContainer()) {
         qWarning() << Q_FUNC_INFO << "No parent container";
         return {};
@@ -841,47 +846,66 @@ QRect ItemContainer::suggestedDropRect(Item *newItem, Item *relativeTo, Location
         return {};
     }
 
+    if (relativeTo && !relativeTo->isVisible()) {
+        qWarning() << Q_FUNC_INFO << "relative to isn't visible";
+        return {};
+    }
+
     if (loc == Location_None) {
         qWarning() << Q_FUNC_INFO << "Invalid location";
         return {};
     }
-    const int itemMin = newItem->minLength(m_orientation);
+    const int itemMin = Layouting::length(minSize, m_orientation);
     const int available = availableLength() - Item::separatorThickness();
 
     if (relativeTo) {
+        const Item::List visibleChildren = this->visibleChildren();
         const int equitativeLength = usableLength() / (m_children.size() + 1);
         const int suggestedLength = qMax(qMin(available, equitativeLength), itemMin);
-        const int indexOfRelativeTo = indexOfChild(relativeTo);
+        const int indexOfRelativeTo = indexOfVisibleChild(relativeTo);
 
-        //int availableSide1 = 0;
-        //int min1 = 0; TODO
-        //int max2 = 0;
+        LengthOnSide side1Length;
+        LengthOnSide side2Length;
+        int min1 = 0;
+        int max2 = 0;
+        int suggestedPos = 0;
 
         //const int availableSide2 = availableOnSide(m_children.at(indexOfRelativeTo), Side2);
-        //const int relativeToPos = relativeTo->position(m_orientation);
+        const int relativeToPos = relativeTo->position(m_orientation);
         if (locationIsSide1(loc)) {
-            if (indexOfRelativeTo > 0) {
-                //availableSide1 = availableOnSide(m_children.at(indexOfRelativeTo - 1), Side1);
-                // min1 = relativeToPos - availableSide1; TODO
-                // max2 = relativeToPos + availableSide2;
-            }
+            side1Length = lengthOnSide(indexOfRelativeTo - 1, Side1, m_orientation);
+            side2Length = lengthOnSide(indexOfRelativeTo, Side2, m_orientation);
+            min1 = relativeToPos - side1Length.available();
+            max2 = relativeToPos + side2Length.available() - suggestedLength;
+            suggestedPos = relativeToPos - suggestedLength / 2;
         } else {
-            if (indexOfRelativeTo < m_children.size() - 1) {
-                //availableSide1 = availableOnSide(m_children.at(indexOfRelativeTo + 1), Side1);
-                // min1 = relativeToPos + relativeTo->length(m_orientation) - availableSide1; TODO
-                // max2 = relativeToPos + relativeTo->length(m_orientation) + availableSide2;
-            }
+            side1Length = lengthOnSide(indexOfRelativeTo, Side1, m_orientation);
+            side2Length = lengthOnSide(indexOfRelativeTo + 1, Side2, m_orientation);
+            min1 = relativeToPos + relativeTo->length(m_orientation) - side1Length.available();
+            max2 = relativeToPos + relativeTo->length(m_orientation) + side2Length.available() - suggestedLength;
+            suggestedPos = relativeToPos + relativeTo->length(m_orientation) - (suggestedLength / 2);
         }
+
+        // Bound:
+        suggestedPos = qMax(suggestedPos, min1);
+        suggestedPos = qMin(suggestedPos, max2);
 
         QRect rect;
 
         if (orientationForLocation(loc) == Qt::Vertical) {
-            rect.setX(0);
+            rect.setTopLeft(QPoint(x(), suggestedPos));
             rect.setSize(QSize(relativeTo->width(), suggestedLength));
         } else {
-            rect.setY(0);
+            rect.setTopLeft(QPoint(suggestedPos, y()));
             rect.setSize(QSize(suggestedLength, relativeTo->height()));
         }
+
+        /*qDebug() << "; min1=" << min1
+                 << "; max2=" << max2
+                 << "; a1=" << side1Length.available()
+                 << "; a2=" << side2Length.available()
+                 << "; indexOfRelativeTo=" << indexOfRelativeTo
+                 << "; available=" << available;*/
 
         return rect;
 
@@ -1308,6 +1332,35 @@ int ItemContainer::availableLength() const
 {
     return isVertical() ? availableSize().height()
                         : availableSize().width();
+}
+
+ItemContainer::LengthOnSide ItemContainer::lengthOnSide(int fromIndex, Side side, Qt::Orientation o) const
+{
+    if (fromIndex < 0)
+        return {};
+
+    const Item::List visibleChildren = this->visibleChildren();
+    if (fromIndex >= visibleChildren.size())
+        return {};
+
+    int start = 0;
+    int end = -1;
+    if (side == Side1) {
+        start = fromIndex;
+        end = visibleChildren.size() - 1;
+    } else {
+        start = 0;
+        end = fromIndex;
+    }
+
+    LengthOnSide result;
+    for (int i = start; i <= end; ++i) {
+        Item *child = visibleChildren.at(i);
+        result.length += child->length(o);
+        result.minLength += child->minLength(o);
+    }
+
+    return result;
 }
 
 int ItemContainer::neighboursLengthFor(const Item *item, Side side, Qt::Orientation o) const

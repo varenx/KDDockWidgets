@@ -67,6 +67,7 @@ private Q_SLOTS:
     void tst_missingSize();
     void tst_ensureEnoughSize();
     void tst_turnIntoPlaceholder();
+    void tst_suggestedRect();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -577,6 +578,51 @@ void TestMultiSplitter::tst_turnIntoPlaceholder()
     item2->turnIntoPlaceholder();
     QVERIFY(root->checkSanity());
     QCOMPARE(item3->width(), root->width());
+}
+
+void TestMultiSplitter::tst_suggestedRect()
+{
+    auto root = createRoot();
+    const QSize minSize(100, 100);
+    QRect leftRect = root->suggestedDropRect(minSize, nullptr, Location_OnLeft);
+    QRect topRect = root->suggestedDropRect(minSize, nullptr, Location_OnTop);
+    QRect bottomRect = root->suggestedDropRect(minSize, nullptr, Location_OnBottom);
+    QRect rightRect = root->suggestedDropRect(minSize, nullptr, Location_OnRight);
+
+    // Test relative to root:
+    QVERIFY(leftRect.width() >= minSize.width());
+    QVERIFY(topRect.height() >= minSize.height());
+    QVERIFY(bottomRect.height() >= minSize.height());
+    QVERIFY(rightRect.width() >= minSize.width());
+    QCOMPARE(leftRect.topLeft(), QPoint(0, 0));
+    QCOMPARE(leftRect.bottomLeft(), root->rect().bottomLeft());
+    QCOMPARE(rightRect.topRight(), root->rect().topRight());
+    QCOMPARE(rightRect.bottomRight(), root->rect().bottomRight());
+    QCOMPARE(topRect.topLeft(), root->rect().topLeft());
+    QCOMPARE(topRect.topRight(), root->rect().topRight());
+    QCOMPARE(bottomRect.bottomLeft(), root->rect().bottomLeft());
+    QCOMPARE(bottomRect.bottomRight(), root->rect().bottomRight());
+
+    // Test relative to an item
+    Item *item1 = createItem("1");
+    item1->setMinSize(QSize(100, 100));
+    root->insertItem(item1, Location_OnLeft);
+    leftRect = root->suggestedDropRect(minSize, item1, Location_OnLeft);
+    topRect = root->suggestedDropRect(minSize, item1, Location_OnTop);
+    bottomRect = root->suggestedDropRect(minSize, item1, Location_OnBottom);
+    rightRect = root->suggestedDropRect(minSize, item1, Location_OnRight);
+    QVERIFY(leftRect.width() >= minSize.width());
+    QVERIFY(topRect.height() >= minSize.height());
+    QVERIFY(bottomRect.height() >= minSize.height());
+    QVERIFY(rightRect.width() >= minSize.width());
+    QCOMPARE(leftRect.topLeft(), QPoint(0, 0));
+    QCOMPARE(leftRect.bottomLeft(), root->rect().bottomLeft());
+    QCOMPARE(rightRect.topRight(), root->rect().topRight());
+    QCOMPARE(rightRect.bottomRight(), root->rect().bottomRight());
+    QCOMPARE(topRect.topLeft(), root->rect().topLeft());
+    QCOMPARE(topRect.topRight(), root->rect().topRight());
+    QCOMPARE(bottomRect.bottomLeft(), root->rect().bottomLeft());
+    QCOMPARE(bottomRect.bottomRight(), root->rect().bottomRight());
 }
 
 QTEST_MAIN(TestMultiSplitter)

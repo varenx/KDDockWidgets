@@ -274,36 +274,6 @@ public:
 
     void restorePlaceholder(DockWidgetBase *dw, Layouting::Item *, int tabIndex);
 
-    struct Length {
-        Length() = default;
-        Length(int side1, int side2)
-            : side1Length(side1)
-            , side2Length(side2)
-        {}
-
-        int side1Length = 0;
-        int side2Length = 0;
-        int length() const { return side1Length + side2Length; }
-
-        void setLength(int newLength)
-        {
-            // Sets the new length, preserving proportion
-            side1Length = int(side1Factor() * newLength);
-            side2Length = newLength - side1Length;
-        }
-
-        bool isNull() const
-        {
-            return length() <= 0;
-        }
-
-    private:
-        qreal side1Factor() const
-        {
-            return (1.0 * side1Length) / length();
-        }
-    };
-
 Q_SIGNALS:
     ///@brief emitted when the number of widgets changes
     void widgetCountChanged();
@@ -340,23 +310,12 @@ private:
     void blockItemPropagateGeo(bool block);
 
     /**
-     * @brief overload called by the first one. Split-out so it's easier to unit-test the math
-     */
-    QRect rectForDrop(Length lengthForDrop, Location location, QRect relativeToRect) const;
-
-    /**
      * @brief setter for the minimum size
      * @ref minimumSize
      */
     void setMinimumSize(QSize);
 
     void emitVisibleWidgetCountChanged();
-
-    /** Returns how much is available for the new drop. It already counts with the space for new anchor that will be created.
-     * So it returns this layout's width() (or height), minus the minimum-sizes of all widgets, minus the thickness of all anchors
-     * minus the thickness of the anchor that would be created.
-     **/
-    Length availableLengthForDrop(KDDockWidgets::Location location, const Layouting::Item *relativeTo) const;
 
     /**
      * @brief Like @ref availableLengthForDrop but just returns the total available width or height (depending on @p orientation)
@@ -396,7 +355,5 @@ private:
 };
 
 }
-
-Q_DECLARE_METATYPE(KDDockWidgets::MultiSplitterLayout::Length)
 
 #endif

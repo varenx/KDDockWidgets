@@ -293,6 +293,20 @@ class ItemContainer : public Item {
     Q_OBJECT
     Q_PROPERTY(QVariantList items READ items NOTIFY itemsChanged)
 public:
+
+    struct LengthOnSide {
+        int length = 0;
+        int minLength = 0;
+
+        int available() const {
+            return qMax(0, length - minLength);
+        }
+
+        int missing() const {
+            return qMax(0, minLength - length);
+        }
+    };
+
     explicit ItemContainer(QWidget *hostWidget, ItemContainer *parent);
     explicit ItemContainer(QWidget *parent);
     void insertItem(Item *item, int index, bool growItem = true);
@@ -303,6 +317,7 @@ public:
     bool hasChildren() const;
     bool hasVisibleChildren() const;
     int indexOfChild(const Item *) const;
+    int indexOfVisibleChild(const Item *) const;
     void removeItem(Item *, bool hardRemove = true);
     bool isEmpty() const;
     void setGeometry_recursive(QRect rect) override;
@@ -333,6 +348,8 @@ public:
     Item *visibleNeighbourFor(const Item *item, Side side) const;
     QSize availableSize() const;
     int availableLength() const;
+    LengthOnSide lengthOnSide(int fromIndex, Side, Qt::Orientation) const;
+    int minLength(int fromIndex, Side, Qt::Orientation) const;
     int neighboursLengthFor(const Item *item, Side, Qt::Orientation) const;
     int neighboursLengthFor_recursive(const Item *item, Side, Qt::Orientation) const;
     int neighboursMinLengthFor(const Item *item, Side, Qt::Orientation) const;
@@ -345,7 +362,7 @@ public:
     void onChildVisibleChanged(Item *child, bool visible);
     QVector<int> availableLengthPerNeighbour(Item *item, Side) const;
     static QVector<int> calculateSqueezes(QVector<int> availabilities, int needed);
-    QRect suggestedDropRect(Item *newItem, Item *relativeTo, Location) const;
+    QRect suggestedDropRect(QSize minSize, const Item *relativeTo, Location) const;
     void positionItems();
     bool isResizing() const { return m_isResizing; }
     void clear();
