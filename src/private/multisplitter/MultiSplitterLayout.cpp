@@ -41,9 +41,6 @@
 using namespace KDDockWidgets;
 using namespace Layouting;
 
-const QString MultiSplitterLayout::s_magicMarker = QStringLiteral("bac9948e-5f1b-4271-acc5-07f1708e2611");
-
-
 MultiSplitterLayout::MultiSplitterLayout(MultiSplitter *parent)
     : QObject(parent)
     , m_multiSplitter(parent)
@@ -171,24 +168,6 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
 
 }
 
-void MultiSplitterLayout::addItems_internal(const ItemList &items, bool updateConstraints, bool emitSignal)
-{
-
-    if (updateConstraints)
-        updateSizeConstraints();
-
-    for (auto item : items) {
-        if (item->frame()) {
-            item->setIsVisible(true);
-            item->frame()->installEventFilter(this);
-            Q_EMIT widgetAdded(item);
-        }
-    }
-
-    if (emitSignal)
-        Q_EMIT widgetCountChanged(m_rootItem->count_recursive());
-}
-
 QString MultiSplitterLayout::affinityName() const
 {
     if (auto ms = multiSplitter()) {
@@ -241,15 +220,7 @@ Item *MultiSplitterLayout::itemAt(QPoint p) const
 
 void MultiSplitterLayout::clear()
 {
-    const int oldCount = count();
-    const int oldVisibleCount = visibleCount();
-
     m_rootItem->clear();
-
-    if (oldCount > 0)
-        Q_EMIT widgetCountChanged(0);
-    if (oldVisibleCount > 0)
-        Q_EMIT visibleWidgetCountChanged(0);
 }
 
 int MultiSplitterLayout::visibleCount() const
@@ -434,25 +405,6 @@ QRect MultiSplitterLayout::rectForDrop(const QWidgetOrQuick *widget, Location lo
     Q_UNUSED(location);
     Q_UNUSED(relativeTo);
     return QRect();
-}
-
-bool MultiSplitterLayout::eventFilter(QObject *o, QEvent *e)
-{
-    if (m_inDestructor || e->spontaneous() || !m_multiSplitter)
-        return false;
-
-    if (!m_multiSplitter->isVisible()) {
-        // The whole MultiSplitter isn't visible, don't bother. It probably even is being hidden by ~QMainWindow().
-        return false;
-    }
-
-    QWidget *w = qobject_cast<QWidget*>(o);
-    if (!w || !w->testAttribute(Qt::WA_WState_ExplicitShowHide)) {
-        // We only care about explicit show/hide by the developer
-        return false;
-    }
-
-    return false;
 }
 
 bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &)

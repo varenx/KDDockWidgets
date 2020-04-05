@@ -185,11 +185,6 @@ public:
     ///@brief returns the number of anchors that are following others, just for tests.
     int numVisibleAnchors() const;
 
-    ///@brief a function that all code paths adding Items will call.
-    ///It's mostly for code reuse, so we don't duplicate what's done here. But it's also nice to
-    ///have a central place that we know will be called
-    void addItems_internal(const ItemList &, bool updateConstraints = true, bool emitSignal = true);
-
     /**
      * @brief Updates the min size of this layout.
      */
@@ -337,17 +332,12 @@ Q_SIGNALS:
     void minimumSizeChanged(QSize);
 
 public:
-    bool eventFilter(QObject *o, QEvent *e) override;
     Layouting::Anchor::List anchors(Qt::Orientation, bool includeStatic = false, bool includePlaceholders = true) const;
-    static const QString s_magicMarker;
-    void ensureAnchorsBounded();
 private:
     friend class TestDocks;
     friend class KDDockWidgets::Debug::DebugWindow;
     friend class LayoutSaver;
 
-    std::pair<int,int> boundInterval(int newPos1, Layouting::Anchor* anchor1, int newPos2,
-                                     Layouting::Anchor *anchor2) const;
     void blockItemPropagateGeo(bool block);
 
     /**
