@@ -44,7 +44,7 @@ add_subdirectory(src)
 
 if (OPTION_DEVELOPER_MODE)
     if (NOT OPTION_QTQUICK)
-        # add_subdirectory(tests)
+        add_subdirectory(tests)
     endif()
 
     # examples use <kddockwidget/ qualified includes so need to be installed first
