@@ -37,8 +37,6 @@
 #include <QScopedValueRollback>
 
 #define INDICATOR_MINIMUM_LENGTH 100
-#define KDDOCKWIDGETS_MIN_WIDTH 80
-#define KDDOCKWIDGETS_MIN_HEIGHT 90
 
 using namespace KDDockWidgets;
 using namespace Layouting;
@@ -77,12 +75,6 @@ MultiSplitterLayout::~MultiSplitterLayout()
     qDeleteAll(anchors);
     delete m_rootItem;
     DockRegistry::self()->unregisterLayout(this);
-}
-
-/**static*/
-QSize MultiSplitterLayout::hardcodedMinimumSize()
-{
-    return QSize(KDDOCKWIDGETS_MIN_WIDTH, KDDOCKWIDGETS_MIN_HEIGHT);
 }
 
 MultiSplitter *MultiSplitterLayout::multiSplitter() const
@@ -151,7 +143,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
                        << "; relativeTo=" << relativeToWidget
                        << "; size=" << size()
                        << "; w.size=" << w->size()
-                       << "; w.min=" << widgetMinLength(w, Layouting::orientationForLocation(Layouting::Location(location)))
+                       << "; w.min=" << Layouting::widgetMinSize(w)
                        << "; frame=" << frame
                        << "; option=" << option;
 

@@ -32,6 +32,9 @@ class TestMultiSplitter;
 
 namespace Layouting {
 
+#define KDDOCKWIDGETS_MIN_WIDTH 80
+#define KDDOCKWIDGETS_MIN_HEIGHT 90
+
 enum Location {
     Location_None,
     Location_OnLeft, ///> Left docking location
@@ -181,6 +184,11 @@ public:
     virtual int visibleCount_recursive() const;
 
     virtual void insertItem(Item *item, Location, SizingOption = SizingOption::Calculate);
+
+    /**
+     * @brief No widget can have a minimum size smaller than this, regardless of their minimum size.
+     */
+    static QSize hardcodedMinimumSize();
 
     int x() const;
     int y() const;
@@ -350,11 +358,26 @@ public:
 
 Q_SIGNALS:
     void itemsChanged();
+    void numVisibleItemsChanged();
 public:
     QVector<qreal> m_childPercentages;
     Item::List m_children;
     bool m_isResizing = false;
     bool m_isRoot = false;
 };
+
+/**
+ * Returns the widget's min size
+ */
+inline QSize widgetMinSize(const QWidget *w)
+{
+    const int minW = w->minimumWidth() > 0 ? w->minimumWidth()
+                                           : w->minimumSizeHint().width();
+
+    const int minH = w->minimumHeight() > 0 ? w->minimumHeight()
+                                            : w->minimumSizeHint().height();
+
+    return QSize(minW, minH).expandedTo(Item::hardcodedMinimumSize());
+}
 
 }

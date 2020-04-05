@@ -26,6 +26,7 @@
 
 using namespace Layouting;
 
+
 ItemContainer *Item::root() const
 {
     return m_parent ? m_parent->root()
@@ -74,7 +75,7 @@ void Item::setFrame(QWidget *w)
         connect(m_widget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
         connect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
         m_widget->setParent(m_hostWidget);
-        //setMinSize(m_widget->min)
+        setMinSize(widgetMinSize(m_widget));
     }
 
     updateObjectName();
@@ -149,7 +150,7 @@ void Item::setParentContainer(ItemContainer *parent)
 
         if (parent) {
             connect(this, &Item::minSizeChanged, parent, &ItemContainer::onChildMinSizeChanged);
-            connect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);
+            connect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);            
         }
 
         QObject::setParent(parent);
@@ -231,6 +232,12 @@ void Item::insertItem(Item *item, Location loc, SizingOption sizingOption)
         ItemContainer *container = m_parent->convertChildToContainer(this);
         container->insertItem(item, loc, SizingOption::UseProvided);
     }
+}
+
+/** static */
+QSize Item::hardcodedMinimumSize()
+{
+    return QSize(KDDOCKWIDGETS_MIN_WIDTH, KDDOCKWIDGETS_MIN_HEIGHT);
 }
 
 int Item::x() const
@@ -626,12 +633,23 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
         m_childPercentages.clear();
         Item *side1Item = visibleNeighbourFor(item, Side1);
         Item *side2Item = visibleNeighbourFor(item, Side2);
+        const bool wasVisible = item->isVisible();
+
         if (hardRemove) {
             m_children.removeOne(item);
             delete item;
         } else {
-            item->setIsVisible(false);
-            item->setFrame(nullptr);
+            if (wasVisible) {
+                item->setIsVisible(false);
+                item->setFrame(nullptr);
+            } else {
+                // Nothing to do, item was already a placeholder.
+                return;
+            }
+        }
+
+        if (wasVisible) {
+            Q_EMIT root()->numVisibleItemsChanged();
         }
 
         const bool containerShouldBeRemoved = !isRoot() && ((hardRemove && isEmpty()) ||
@@ -1011,6 +1029,8 @@ void ItemContainer::insertItem(Item *item, int index, bool growItem)
 
     if (growItem)
         restorePlaceholder(item);
+
+    Q_EMIT root()->numVisibleItemsChanged();
 }
 
 bool ItemContainer::hasChildren() const

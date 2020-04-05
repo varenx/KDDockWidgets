@@ -50,15 +50,6 @@ class DebugWindow;
 }
 
 /**
- * Returns the width of the widget if orientation is Vertical, the height otherwise.
- */
-template <typename T>
-inline int widgetLength(const T *w, Qt::Orientation orientation)
-{
-    return (orientation == Qt::Vertical) ? w->width() : w->height();
-}
-
-/**
  * A MultiSplitter is like a QSplitter but supports mixing vertical and horizontal splitters in
  * any combination.
  *
@@ -83,11 +74,6 @@ public:
      */
     explicit MultiSplitterLayout(MultiSplitter *parent);
     ~MultiSplitterLayout() override;
-
-    /**
-     * @brief No widget can have a minimum size smaller than this, regardless of their minimum size.s
-     */
-    static QSize hardcodedMinimumSize();
 
     /**
      * @brief returns the widget that this layout manages
@@ -426,31 +412,6 @@ private:
     QPointer<Layouting::Anchor> m_anchorBeingDragged;
     Layouting::ItemContainer *const m_rootItem;
 };
-
-/**
- * Returns the widget's min-width if orientation is Vertical, the min-height otherwise.
- */
-inline int widgetMinLength(const QWidgetOrQuick *w, Qt::Orientation orientation)
-{
-    int min = 0;
-    if (orientation == Qt::Vertical) {
-        if (w->minimumWidth() > 0)
-            min = w->minimumWidth();
-        else
-            min = w->minimumSizeHint().width();
-
-        min = qMax(MultiSplitterLayout::hardcodedMinimumSize().width(), min);
-    } else {
-        if (w->minimumHeight() > 0)
-            min = w->minimumHeight();
-        else
-            min = w->minimumSizeHint().height();
-
-        min = qMax(MultiSplitterLayout::hardcodedMinimumSize().height(), min);
-    }
-
-    return qMax(min, 0);
-}
 
 }
 
