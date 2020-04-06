@@ -188,9 +188,16 @@ void TestMultiSplitter::tst_insertOnWidgetItem1DifferentOrientation()
     auto item3 = createItem("3");
     auto item31 = createItem("3.2");
     root->insertItem(item1, Location_OnLeft);
+    QVERIFY(root->checkSanity());
+
     root->insertItem(item2, Location_OnRight);
+    QVERIFY(root->checkSanity());
+
     item2->insertItem(item3, Location_OnRight);
+    QVERIFY(root->checkSanity());
+
     item3->insertItem(item31, Location_OnBottom);
+    QVERIFY(root->checkSanity());
 
     auto container3 = item3->parentContainer();
     QVERIFY(container3->isContainer());
@@ -394,6 +401,7 @@ void TestMultiSplitter::tst_resize()
 
     // Now resize:
     root->resize({2000, 505});
+    QVERIFY(root->checkSanity());
 
     QVERIFY(item1Percentage - (1.0* item1->width() / root->width()) < 0.01);
     QVERIFY(item2Percentage - (1.0* item2->width() / root->width()) < 0.01);
