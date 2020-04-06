@@ -53,6 +53,8 @@ private Q_SLOTS:
     void tst_createRoot();
     void tst_insertOne();
     void tst_insertThreeSideBySide();
+    void tst_insertTwoHorizontal();
+    void tst_insertTwoVertical();
     void tst_insertOnWidgetItem1();
     void tst_insertOnWidgetItem2();
     void tst_insertOnWidgetItem1DifferentOrientation();
@@ -112,6 +114,27 @@ void TestMultiSplitter::tst_insertThreeSideBySide()
 
     QVERIFY(root->checkSanity());
     QCOMPARE(root->numChildren(), 3);
+}
+
+void TestMultiSplitter::tst_insertTwoHorizontal()
+{
+    auto root = createRoot();
+    auto item1 = createItem("1");
+    auto item2 = createItem("2");
+    root->insertItem(item1, Location_OnLeft);
+    item1->insertItem(item2, Location_OnRight);
+    root->dumpLayout();
+    QVERIFY(root->checkSanity());
+}
+
+void TestMultiSplitter::tst_insertTwoVertical()
+{
+    auto root = createRoot();
+    auto item1 = createItem("1");
+    auto item2 = createItem("2");
+    root->insertItem(item1, Location_OnTop);
+    item1->insertItem(item2, Location_OnBottom);
+    QVERIFY(root->checkSanity());
 }
 
 void TestMultiSplitter::tst_insertOnWidgetItem1()
@@ -643,7 +666,6 @@ void TestMultiSplitter::tst_suggestedRect()
     QCOMPARE(topRect.topRight(), item2->geometry().topRight());
     QCOMPARE(bottomRect.bottomLeft(), item2->geometry().bottomLeft());
     QCOMPARE(bottomRect.bottomRight(), item2->geometry().bottomRight());
-
 }
 
 QTEST_MAIN(TestMultiSplitter)

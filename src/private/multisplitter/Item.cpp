@@ -218,15 +218,23 @@ int Item::pos(Qt::Orientation o) const
 void Item::insertItem(Item *item, Location loc, SizingOption sizingOption)
 {
     Q_ASSERT(item != this);
-    const bool locIsSide1 = locationIsSide1(loc);
-
     if (sizingOption == SizingOption::Calculate)
         item->setGeometry(m_parent->suggestedDropRect(item->minSize(), this, loc));
 
     if (m_parent->hasOrientationFor(loc)) {
-        int indexInParent = m_parent->indexOfChild(this);
+        const bool locIsSide1 = locationIsSide1(loc);
+        int indexInParent = m_parent->indexOfVisibleChild(this);
         if (!locIsSide1)
             indexInParent++;
+
+        const Qt::Orientation orientation = orientationForLocation(loc);
+        if (orientation != m_parent->orientation()) {
+            Q_ASSERT(m_parent->visibleChildren().size() == 1);
+            // This is the case where the container only has one item, so it's both vertical and horizontal
+            // Now its orientation gets defined
+            m_parent->m_orientation = orientation;
+        }
+
         m_parent->insertItem(item, indexInParent);
     } else {
         ItemContainer *container = m_parent->convertChildToContainer(this);
