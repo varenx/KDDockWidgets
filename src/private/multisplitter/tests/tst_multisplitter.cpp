@@ -76,8 +76,8 @@ void TestMultiSplitter::tst_createRoot()
 {
     auto root = createRoot();
     QVERIFY(root->isRoot());
-    QVERIFY(!root->isWidget());
     QVERIFY(root->isContainer());
+    QVERIFY(!root->isWidget());
     QVERIFY(root->hasOrientation());
     QCOMPARE(root->size(), QSize(1000, 1000));
     QVERIFY(root->checkSanity());

@@ -540,7 +540,7 @@ ItemContainer::ItemContainer(QWidget *hostWidget, ItemContainer *parent)
 }
 
 ItemContainer::ItemContainer(QWidget *hostWidget)
-    : Item(hostWidget)
+    : Item(true, hostWidget, /*parentContainer=*/ nullptr)
 {
     // CTOR for root item
     Q_ASSERT(hostWidget);
