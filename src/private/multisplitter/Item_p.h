@@ -154,6 +154,20 @@ inline Qt::Orientation orientationForLocation(Location loc)
     return Qt::Vertical;
 }
 
+inline Side sideForLocation(Location loc)
+{
+    switch (loc) {
+    case Location_OnLeft:
+    case Location_OnTop:
+        return Side::Side1;
+    case Location_OnRight:
+    case Location_OnBottom:
+        return Side::Side2;
+    default:
+        return Side::Side1;
+    }
+}
+
 struct SizingInfo {
     QSize minSize = QSize(40, 40); // TODO: Hardcoded
     QSize maxSize = QSize(16777215, 16777215); // TODO: Not supported yet

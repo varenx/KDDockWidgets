@@ -583,6 +583,7 @@ void TestMultiSplitter::tst_turnIntoPlaceholder()
 void TestMultiSplitter::tst_suggestedRect()
 {
     auto root = createRoot();
+    root->setSize(QSize(2000, 1000));
     const QSize minSize(100, 100);
     QRect leftRect = root->suggestedDropRect(minSize, nullptr, Location_OnLeft);
     QRect topRect = root->suggestedDropRect(minSize, nullptr, Location_OnTop);
@@ -623,6 +624,26 @@ void TestMultiSplitter::tst_suggestedRect()
     QCOMPARE(topRect.topRight(), root->rect().topRight());
     QCOMPARE(bottomRect.bottomLeft(), root->rect().bottomLeft());
     QCOMPARE(bottomRect.bottomRight(), root->rect().bottomRight());
+
+
+    // Insert another item:
+    Item *item2 = createItem("2");
+    item1->setMinSize(QSize(100, 100));
+    root->insertItem(item2, Location_OnRight);
+    leftRect = root->suggestedDropRect(minSize, item2, Location_OnLeft);
+    topRect = root->suggestedDropRect(minSize, item2, Location_OnTop);
+    bottomRect = root->suggestedDropRect(minSize, item2, Location_OnBottom);
+    rightRect = root->suggestedDropRect(minSize, item2, Location_OnRight);
+    QCOMPARE(leftRect.y(), item2->geometry().y());
+    QVERIFY(leftRect.x() < item2->geometry().x());
+    QVERIFY(leftRect.x() > item1->geometry().x());
+    QCOMPARE(rightRect.topRight(), root->rect().topRight());
+    QCOMPARE(rightRect.bottomRight(), root->rect().bottomRight());
+    QCOMPARE(topRect.topLeft(), item2->geometry().topLeft());
+    QCOMPARE(topRect.topRight(), item2->geometry().topRight());
+    QCOMPARE(bottomRect.bottomLeft(), item2->geometry().bottomLeft());
+    QCOMPARE(bottomRect.bottomRight(), item2->geometry().bottomRight());
+
 }
 
 QTEST_MAIN(TestMultiSplitter)

@@ -855,48 +855,82 @@ QRect ItemContainer::suggestedDropRect(QSize minSize, const Item *relativeTo, Lo
         qWarning() << Q_FUNC_INFO << "Invalid location";
         return {};
     }
+
     const int itemMin = Layouting::length(minSize, m_orientation);
     const int available = availableLength() - Item::separatorThickness();
+    const Item::List visibleChildren = this->visibleChildren();
+
+    if (relativeTo && visibleChildren.size() == 1) {
+        // If it's the only item then the result is that it's relative to the whole layout
+        // So simplify our code
+        relativeTo = nullptr;
+    }
 
     if (relativeTo) {
-        const Item::List visibleChildren = this->visibleChildren();
         const int equitativeLength = usableLength() / (m_children.size() + 1);
         const int suggestedLength = qMax(qMin(available, equitativeLength), itemMin);
         const int indexOfRelativeTo = indexOfVisibleChild(relativeTo);
 
-        LengthOnSide side1Length;
-        LengthOnSide side2Length;
-        int min1 = 0;
-        int max2 = 0;
         int suggestedPos = 0;
 
         //const int availableSide2 = availableOnSide(m_children.at(indexOfRelativeTo), Side2);
         const int relativeToPos = relativeTo->position(m_orientation);
-        if (locationIsSide1(loc)) {
-            side1Length = lengthOnSide(indexOfRelativeTo - 1, Side1, m_orientation);
-            side2Length = lengthOnSide(indexOfRelativeTo, Side2, m_orientation);
-            min1 = relativeToPos - side1Length.available();
-            max2 = relativeToPos + side2Length.available() - suggestedLength;
-            suggestedPos = relativeToPos - suggestedLength / 2;
+        const QRect relativeToGeo = relativeTo->geometry();
+        const Qt::Orientation orientation = orientationForLocation(loc);
+
+        if (orientation == m_orientation) {
+            if (sideForLocation(loc) == Side1) {
+                if (indexOfRelativeTo == 0) {
+                    suggestedPos = 0;
+                } else {
+                    const LengthOnSide side1Length = lengthOnSide(indexOfRelativeTo - 1, Side1, m_orientation);
+                    const LengthOnSide side2Length = lengthOnSide(indexOfRelativeTo, Side2, m_orientation);
+                    const int min1 = relativeToPos - side1Length.available();
+                    const int max2 = relativeToPos + side2Length.available() - suggestedLength;
+                    suggestedPos = relativeToPos - suggestedLength / 2;
+                    suggestedPos = qBound(min1, suggestedPos, max2);
+                }
+            } else { // Side2
+                 if (indexOfRelativeTo == visibleChildren.size() - 1) { // is last
+                     suggestedPos = length() - suggestedLength;
+                 } else {
+                     const LengthOnSide side1Length = lengthOnSide(indexOfRelativeTo, Side1, m_orientation);
+                     const LengthOnSide side2Length  = lengthOnSide(indexOfRelativeTo + 1, Side2, m_orientation);
+                     const int min1 = relativeToPos + relativeTo->length(m_orientation) - side1Length.available();
+                     const int max2 = relativeToPos + relativeTo->length(m_orientation) + side2Length.available() - suggestedLength;
+                     suggestedPos = relativeToPos + relativeTo->length(m_orientation) - (suggestedLength / 2);
+                     suggestedPos = qBound(min1, suggestedPos, max2);
+                 }
+            }
+
         } else {
-            side1Length = lengthOnSide(indexOfRelativeTo, Side1, m_orientation);
-            side2Length = lengthOnSide(indexOfRelativeTo + 1, Side2, m_orientation);
-            min1 = relativeToPos + relativeTo->length(m_orientation) - side1Length.available();
-            max2 = relativeToPos + relativeTo->length(m_orientation) + side2Length.available() - suggestedLength;
-            suggestedPos = relativeToPos + relativeTo->length(m_orientation) - (suggestedLength / 2);
+            // Incompatible orientations, takes half then.
+            switch (loc) {
+            case Location_OnLeft:
+                suggestedPos = relativeToGeo.x();
+                break;
+            case Location_OnTop:
+                suggestedPos = relativeToGeo.y();
+                break;
+            case Location_OnRight:
+                suggestedPos = relativeToGeo.right() - suggestedLength + 1;
+                break;
+            case Location_OnBottom:
+                suggestedPos = relativeToGeo.bottom() - suggestedLength + 1;
+                break;
+            default:
+                Q_ASSERT(false);
+            }
         }
 
-        // Bound:
-        suggestedPos = qMax(suggestedPos, min1);
-        suggestedPos = qMin(suggestedPos, max2);
 
         QRect rect;
 
         if (orientationForLocation(loc) == Qt::Vertical) {
-            rect.setTopLeft(QPoint(x(), suggestedPos));
+            rect.setTopLeft(QPoint(relativeTo->x(), suggestedPos));
             rect.setSize(QSize(relativeTo->width(), suggestedLength));
         } else {
-            rect.setTopLeft(QPoint(suggestedPos, y()));
+            rect.setTopLeft(QPoint(suggestedPos, relativeTo->y()));
             rect.setSize(QSize(suggestedLength, relativeTo->height()));
         }
 
