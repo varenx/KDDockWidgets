@@ -29,14 +29,17 @@ using namespace Layouting;
 
 static int st = Item::separatorThickness();
 
-static std::unique_ptr<ItemContainer> createRoot() {
+static std::unique_ptr<ItemContainer> createRoot()
+{
     auto item = new ItemContainer(new QWidget()); // todo WIDGET
     item->setSize({ 1000, 1000 });
     return std::unique_ptr<ItemContainer>(item);
 }
 
-static Item* createItem(const QString &objName) {
+static Item* createItem(const QString &objName)
+{
     auto item = new Item(new QWidget());
+    item->setGeometry(QRect(0, 0, 200, 200));
     item->setObjectName(objName);
     return item;
 }
@@ -123,7 +126,6 @@ void TestMultiSplitter::tst_insertTwoHorizontal()
     auto item2 = createItem("2");
     root->insertItem(item1, Location_OnLeft);
     item1->insertItem(item2, Location_OnRight);
-    root->dumpLayout();
     QVERIFY(root->checkSanity());
 }
 
@@ -186,7 +188,7 @@ void TestMultiSplitter::tst_insertOnWidgetItem1DifferentOrientation()
     auto item1 = createItem("1");
     auto item2 = createItem("2");
     auto item3 = createItem("3");
-    auto item31 = createItem("3.2");
+    auto item31 = createItem("3.1");
     root->insertItem(item1, Location_OnLeft);
     QVERIFY(root->checkSanity());
 
@@ -436,6 +438,8 @@ void TestMultiSplitter::tst_resizeWithConstraints()
     }
 
     {
+        // |1|2|3|
+
         auto root = createRoot();
         auto item1 = createItem("1");
         auto item2 = createItem("2");

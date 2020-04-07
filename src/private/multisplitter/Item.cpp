@@ -48,6 +48,25 @@ QPoint Item::mapToRoot(QPoint p) const
     return p + parentContainer()->mapToRoot(parentContainer()->pos());
 }
 
+QPoint Item::mapFromRoot(QPoint p) const
+{
+
+    ItemContainer *c = parentContainer();
+    while (c) {
+        p = p - c->pos();
+        c = parentContainer();
+    }
+
+    return p;
+}
+
+QRect Item::mapFromRoot(QRect r) const
+{
+    const QPoint topLeft = mapFromRoot(r.topLeft());
+    r.moveTopLeft(topLeft);
+    return r;
+}
+
 QPoint Item::mapFromParent(QPoint p) const
 {
     if (isRoot())
@@ -175,7 +194,11 @@ ItemContainer *Item::asContainer()
 void Item::setMinSize(QSize sz)
 {
     Q_ASSERT(!isContainer());
-    m_sizingInfo.minSize = sz;
+
+    if (sz != m_sizingInfo.minSize) {
+        m_sizingInfo.minSize = sz;
+        setSize(size().expandedTo(sz));
+    }
 }
 
 void Item::setMaxSize(QSize sz)
@@ -215,12 +238,9 @@ int Item::pos(Qt::Orientation o) const
     return o == Qt::Vertical ? y() : x();
 }
 
-void Item::insertItem(Item *item, Location loc, SizingOption sizingOption)
+void Item::insertItem(Item *item, Location loc)
 {
     Q_ASSERT(item != this);
-    if (sizingOption == SizingOption::Calculate)
-        item->setGeometry(m_parent->suggestedDropRect(item->minSize(), this, loc));
-
     if (m_parent->hasOrientationFor(loc)) {
         const bool locIsSide1 = locationIsSide1(loc);
         int indexInParent = m_parent->indexOfVisibleChild(this);
@@ -238,7 +258,7 @@ void Item::insertItem(Item *item, Location loc, SizingOption sizingOption)
         m_parent->insertItem(item, indexInParent);
     } else {
         ItemContainer *container = m_parent->convertChildToContainer(this);
-        container->insertItem(item, loc, SizingOption::UseProvided);
+        container->insertItem(item, loc);
     }
 }
 
@@ -386,8 +406,10 @@ void Item::setGeometry(QRect rect)
         const QRect oldGeo = m_geometry;
         m_geometry = rect;
 
-        Q_ASSERT(rect.width() > 0);
-        Q_ASSERT(rect.height() > 0);
+        if (rect.isEmpty()) {
+            root()->dumpLayout();
+            Q_ASSERT(false);
+        }
 
         Q_EMIT geometryChanged();
 
@@ -414,7 +436,9 @@ void Item::dumpLayout(int level)
                                                                : QString();
     const QString visible = !isVisible() ? QStringLiteral(";hidden;")
                                          : QString();
-    qDebug().noquote() << indent << "- Widget: " << objectName() << m_geometry << visible << beingInserted;
+    qDebug().noquote() << indent << "- Widget: " << objectName()
+                       << m_geometry << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
+                       << visible << beingInserted;
 }
 
 Item::Item(QWidget *hostWidget, ItemContainer *parent)
@@ -706,18 +730,15 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
     insertItem(container, index, /*growItem=*/false);
     m_children.removeOne(leaf);
     container->setGeometry(leaf->geometry());
-    container->insertItem(leaf, Location_OnTop, SizingOption::UseProvided);
+    container->insertItem(leaf, Location_OnTop);
     Q_EMIT itemsChanged();
 
     return container;
 }
 
-void ItemContainer::insertItem(Item *item, Location loc, SizingOption sizingOption)
+void ItemContainer::insertItem(Item *item, Location loc)
 {
     item->setIsVisible(false);
-
-    if (isRoot() && sizingOption == SizingOption::Calculate)
-        item->setGeometry(suggestedDropRect(item->minSize(), nullptr, loc));
 
     Q_ASSERT(item != this);
     if (contains(item)) {
@@ -787,6 +808,9 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
         return;
     }
 
+    if (child->isBeingInserted())
+        return;
+
     const QSize missingForChild = child->missingSize();
     if (missingForChild.isNull()) {
         // The child changed its minSize. Thanks for letting us know, but there's nothing needed doing.
@@ -794,7 +818,6 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
         //Q_ASSERT(false); // Never happens I think. Remove this if!
         return;
     }
-
     // Child has some growing to do. It will grow left and right equally, (and top-bottom), as needed.
     growItem(child, Layouting::length(missingForChild, m_orientation), GrowthStrategy::BothSidesEqually);
 }
@@ -990,6 +1013,10 @@ void ItemContainer::positionItems()
     const Qt::Orientation oppositeOrientation = Layouting::oppositeOrientation(m_orientation);
     for (int i = 0; i < children.size(); ++i) {
         Item *item = children.at(i);
+        if (item->isBeingInserted()) {
+            nextPos += Item::separatorThickness();
+            continue;
+        }
 
         // If the layout is horizontal, the item will have the height of the container. And vice-versa
         const int oppositeLength = Layouting::length(size(), oppositeOrientation);
@@ -1307,8 +1334,9 @@ void ItemContainer::dumpLayout(int level)
     indent.fill(QLatin1Char(' '), level);
     const QString beingInserted = m_sizingInfo.isBeingInserted ? QStringLiteral("; beingInserted;")
                                                                : QString();
-    qDebug().noquote() << indent << "* Layout: " << m_orientation << m_geometry << "; this="
-                       << this << beingInserted;
+    qDebug().noquote() << indent << "* Layout: " << m_orientation
+                       << m_geometry << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
+                       << "; this=" << this << beingInserted;
     for (Item *item : qAsConst(m_children)) {
         item->dumpLayout(level + 1);
     }
@@ -1329,8 +1357,8 @@ void ItemContainer::restorePlaceholder(Item *item)
 
     item->setBeingInserted(true); // TODO: Move into setIsVisible ?
     item->setIsVisible(true);
-    item->setBeingInserted(false);
     positionItems();
+    item->setBeingInserted(false);
 
     if (numVisibleChildren() == 1)
         return;
@@ -1388,11 +1416,12 @@ ItemContainer::LengthOnSide ItemContainer::lengthOnSide(int fromIndex, Side side
     int start = 0;
     int end = -1;
     if (side == Side1) {
-        start = fromIndex;
-        end = visibleChildren.size() - 1;
-    } else {
         start = 0;
         end = fromIndex;
+    } else {
+        start = fromIndex;
+        end = visibleChildren.size() - 1;
+
     }
 
     LengthOnSide result;
@@ -1596,17 +1625,20 @@ void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrate
     Q_ASSERT(growthStrategy == GrowthStrategy::BothSidesEqually);
     const Item::List visibleItems = visibleChildren();
     const int index = visibleItems.indexOf(item);
+    Q_ASSERT(index != -1);
 
     if (visibleItems.size() == 1) {
-        Q_ASSERT(index != -1);
         //There's no neighbours to push, we're alone. Occupy the full container
         item->setLength(item->length(m_orientation) + amount, m_orientation);
         positionItems();
         return;
     }
 
-    const int available1 = availableOnSide(item, Side1);
-    const int available2 = availableOnSide(item, Side2);
+    const LengthOnSide side1Length = lengthOnSide(index - 1, Side1, m_orientation);
+    const LengthOnSide side2Length = lengthOnSide(index + 1, Side2, m_orientation);
+
+    const int available1 = side1Length.available();
+    const int available2 = side2Length.available();
     const int neededLength = amount;
 
     int min1 = 0;
@@ -1667,8 +1699,7 @@ QVector<int> ItemContainer::availableLengthPerNeighbour(Item *item, Side side) c
     return result;
 }
 
-/** static */
-QVector<int> ItemContainer::calculateSqueezes(QVector<int> availabilities, int needed)
+QVector<int> ItemContainer::calculateSqueezes(QVector<int> availabilities, int needed) const
 {
     QVector<int> squeezes(availabilities.size(), 0);
     int missing = needed;
@@ -1678,6 +1709,7 @@ QVector<int> ItemContainer::calculateSqueezes(QVector<int> availabilities, int n
         });
 
         if (numDonors == 0) {
+            root()->dumpLayout();
             Q_ASSERT(false);
             return {};
         }

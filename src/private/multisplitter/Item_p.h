@@ -88,11 +88,6 @@ enum class GrowthStrategy {
     BothSidesEqually
 };
 
-enum class SizingOption {
-    Calculate,
-    UseProvided
-};
-
 inline Qt::Orientation oppositeOrientation(Qt::Orientation o) {
     return o == Qt::Vertical ? Qt::Horizontal
                              : Qt::Vertical;
@@ -197,7 +192,7 @@ public:
     bool isHorizontal() const;
     virtual int visibleCount_recursive() const;
 
-    virtual void insertItem(Item *item, Location, SizingOption = SizingOption::Calculate);
+    virtual void insertItem(Item *item, Location);
 
     /**
      * @brief No widget can have a minimum size smaller than this, regardless of their minimum size.
@@ -255,6 +250,8 @@ public:
     void serialize() {}
     QRect mapToRoot(QRect) const;
     QPoint mapToRoot(QPoint) const;
+    QPoint mapFromRoot(QPoint) const;
+    QRect mapFromRoot(QRect) const;
     QPoint mapFromParent(QPoint) const;
 
     QWidget *frame() const { return m_widget; } // TODO: rename
@@ -337,7 +334,7 @@ public:
     void setGeometry_recursive(QRect rect) override;
 
     ItemContainer *convertChildToContainer(Item *leaf);
-    void insertItem(Item *item, Location, SizingOption = SizingOption::Calculate) override;
+    void insertItem(Item *item, Location) override;
     bool hasOrientationFor(Location) const;
     Item::List children() const;
     Item::List visibleChildren() const;
@@ -375,7 +372,7 @@ public:
     void onChildMinSizeChanged(Item *child);
     void onChildVisibleChanged(Item *child, bool visible);
     QVector<int> availableLengthPerNeighbour(Item *item, Side) const;
-    static QVector<int> calculateSqueezes(QVector<int> availabilities, int needed);
+    QVector<int> calculateSqueezes(QVector<int> availabilities, int needed) const;
     QRect suggestedDropRect(QSize minSize, const Item *relativeTo, Location) const;
     void positionItems();
     bool isResizing() const { return m_isResizing; }
