@@ -70,7 +70,8 @@ MultiSplitterLayout::~MultiSplitterLayout()
     m_inDestructor = true;
     const auto anchors = m_anchors;
     qDeleteAll(anchors);
-    delete m_rootItem;
+    if (m_rootItem->hostWidget() == multiSplitter())
+        delete m_rootItem;
     DockRegistry::self()->unregisterLayout(this);
 }
 
@@ -159,13 +160,35 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     if (!relativeTo)
         relativeTo = m_rootItem;
 
-    auto newItem = new Item(multiSplitter());
-    newItem->setFrame(w);
+    Item *newItem = nullptr;
+
+    Frame::List frames = framesFrom(w);
+
+    if (frame) {
+        newItem = new Item(multiSplitter());
+        newItem->setFrame(frame);
+        qDebug() << "geo frame" << frame->geometry();
+    } else if (auto dw = qobject_cast<DockWidgetBase*>(w)) {
+        newItem = new Item(multiSplitter());
+        newItem->setFrame(new Frame(dw));
+        qDebug() << "geo dw" << dw->geometry();
+    } else if (auto ms = qobject_cast<MultiSplitter*>(w)) {
+        newItem = ms->multiSplitterLayout()->rootItem();
+        Q_ASSERT(newItem->hostWidget() != multiSplitter());
+        newItem->setHostWidget(multiSplitter());
+
+        qDebug() << ms->multiSplitterLayout()->frames()
+                 << ms->multiSplitterLayout()->frames().at(0)->parentWidget()
+                 << multiSplitter()
+                 << ms;
+
+        delete ms;
+    }
+
+    Q_ASSERT(!newItem->geometry().isEmpty());
     relativeTo->insertItem(newItem, Layouting::Location(location));
 
-    unrefOldPlaceholders(framesFrom(w));
-    //Item *relativeToItem = itemForFrame(relativeToWidget);
-
+    unrefOldPlaceholders(frames);
 }
 
 QString MultiSplitterLayout::affinityName() const

@@ -95,6 +95,7 @@ void Item::setFrame(QWidget *w)
         connect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
         m_widget->setParent(m_hostWidget);
         setMinSize(widgetMinSize(m_widget));
+        setGeometry(m_widget->geometry());
     }
 
     updateObjectName();
@@ -131,6 +132,13 @@ void Item::restorePlaceholder(QWidget *widget)
     Q_ASSERT(isVisible() && !frame());
     setFrame(widget);
     setIsVisible(true);
+}
+
+void Item::setHostWidget(QWidget *host)
+{
+    m_hostWidget = host;
+    if (m_widget)
+        m_widget->setParent(host);
 }
 
 void Item::resize(QSize newSize)
@@ -260,6 +268,8 @@ void Item::insertItem(Item *item, Location loc)
         ItemContainer *container = m_parent->convertChildToContainer(this);
         container->insertItem(item, loc);
     }
+
+    checkSanity();
 }
 
 /** static */
@@ -367,8 +377,10 @@ void Item::setIsVisible(bool is)
         m_isVisible = is;
         Q_EMIT minSizeChanged(this); // min-size is 0x0 when hidden
         Q_EMIT visibleChanged(this, is);
-        if (m_widget)
+        if (m_widget) {
+            m_widget->setGeometry(mapToRoot(m_geometry));
             m_widget->setVisible(is);
+        }
     }
 }
 
@@ -771,6 +783,7 @@ void ItemContainer::insertItem(Item *item, Location loc)
         // Now we have the correct orientation, we can insert
         insertItem(item, loc);
     }
+    checkSanity();
 }
 
 void ItemContainer::onChildMinSizeChanged(Item *child)
@@ -1116,6 +1129,22 @@ Item::List ItemContainer::items_recursive() const
    return items;
 }
 
+void ItemContainer::setHostWidget(QWidget *host)
+{
+    Item::setHostWidget(host);
+    for (Item *item : qAsConst(m_children)) {
+        item->setHostWidget(host);
+    }
+}
+
+void ItemContainer::setIsVisible(bool is)
+{
+    Item::setIsVisible(is);
+    for (Item *item : qAsConst(m_children)) {
+        item->setIsVisible(is);
+    }
+}
+
 void ItemContainer::insertItem(Item *item, int index, bool growItem)
 {
     m_children.insert(index, item);
@@ -1369,6 +1398,7 @@ void ItemContainer::restorePlaceholder(Item *item)
     const int newLength = proposedItemLength > maxItemLength ? maxItemLength
                                                              : proposedItemLength;
     item->setLength(newLength, m_orientation);
+    Q_ASSERT(item->isVisible());
     growItem(item, newLength, GrowthStrategy::BothSidesEqually);
 }
 

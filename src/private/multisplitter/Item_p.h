@@ -234,7 +234,7 @@ public:
     bool isPlaceholder() const;
 
     bool isVisible() const;
-    void setIsVisible(bool);
+    virtual void setIsVisible(bool);
     virtual void setGeometry_recursive(QRect rect);
     Item* neighbour(Side) const;
 
@@ -267,6 +267,7 @@ public:
 
     QWidget *hostWidget() const;
     void restorePlaceholder(QWidget *);
+    virtual void setHostWidget(QWidget *);
 
 Q_SIGNALS:
     void geometryChanged();
@@ -296,8 +297,8 @@ private:
     void onWidgetDestroyed();
     bool m_isVisible = false;
     bool m_destroying = false; // TODO: Remove and check if unit-tests pass
+    QWidget * m_hostWidget = nullptr;
     QWidget *m_widget = nullptr; // TODO: Make generic
-    QWidget *const m_hostWidget;
 };
 
 class ItemContainer : public Item {
@@ -383,7 +384,8 @@ public:
     Item *itemAt(QPoint p) const;
     Item *itemAt_recursive(QPoint p) const;
     Item::List items_recursive() const;
-
+    void setHostWidget(QWidget *) override;
+    void setIsVisible(bool) override;
 Q_SIGNALS:
     void itemsChanged();
     void numVisibleItemsChanged(int);
