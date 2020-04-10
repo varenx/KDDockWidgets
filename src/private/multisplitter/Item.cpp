@@ -1333,7 +1333,6 @@ QSize ItemContainer::maxSize() const
 void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 {
     QScopedValueRollback<bool>(m_blockUpdatePercentages, true);
-    checkSanity();
 
     const QSize minSize = this->minSize();
     if (newSize.width() < minSize.width() || newSize.height() < minSize.height()) {
