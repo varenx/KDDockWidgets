@@ -861,7 +861,7 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
     growItem(child, Layouting::length(missingForChild, m_orientation), GrowthStrategy::BothSidesEqually);
 }
 
-void ItemContainer::onChildVisibleChanged(Item *child, bool visible)
+void ItemContainer::onChildVisibleChanged(Item */*child*/, bool visible)
 {
     const int numVisible = numVisibleChildren();
     if (visible && numVisible == 1) {
@@ -869,39 +869,6 @@ void ItemContainer::onChildVisibleChanged(Item *child, bool visible)
         Q_EMIT visibleChanged(this, true);
     } else if (!visible && numVisible == 0) {
         Q_EMIT visibleChanged(this, false);
-    }
-
-    if (!visible)
-        return;
-
-    return;
-
-    if (numVisibleChildren() == 1) {
-        // There's no separator when there's only 1
-        return;
-    }
-
-    // Shift the neighbours by 5px, to make space for the separator
-    const int available1 = availableOnSide(child, Side1);
-    const int available2 = availableOnSide(child, Side2);
-    int needed = Item::separatorThickness();
-
-    if (available1 > 0) { // The available squeeze on the left (or top)
-        Item *neighbour1 = visibleNeighbourFor(child, Side1);
-        Q_ASSERT(neighbour1);
-        const int side1Shift = qMin(needed, available1);
-        needed -= side1Shift;
-
-        const QRect geo1 = adjustedRect(neighbour1->geometry(), m_orientation, 0, -side1Shift);
-        neighbour1->setGeometry_recursive(geo1);
-    }
-
-    if (needed > 0) { // Squeeze on the right, if needed
-        Item *neighbour2 = visibleNeighbourFor(child, Side2);
-        Q_ASSERT(neighbour2);
-        Q_ASSERT(available2 >= needed);
-        const QRect geo2 = adjustedRect(neighbour2->geometry(), m_orientation, 0, -needed);
-        neighbour2->setGeometry_recursive(geo2);
     }
 }
 
