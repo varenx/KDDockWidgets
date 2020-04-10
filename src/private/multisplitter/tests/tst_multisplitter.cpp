@@ -73,6 +73,7 @@ private Q_SLOTS:
     void tst_ensureEnoughSize();
     void tst_turnIntoPlaceholder();
     void tst_suggestedRect();
+    void tst_insertAnotherRoot();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -607,8 +608,11 @@ void TestMultiSplitter::tst_turnIntoPlaceholder()
     QVERIFY(root->checkSanity());
 
     root->insertItem(item2, Location_OnLeft);
+    QVERIFY(root->checkSanity());
+
     root->insertItem(item3, Location_OnLeft);
     QVERIFY(root->checkSanity());
+    root->dumpLayout();
     QCOMPARE(item2->width() + item3->width() + st, root->width());
     item2->turnIntoPlaceholder();
     QVERIFY(root->checkSanity());
@@ -678,6 +682,28 @@ void TestMultiSplitter::tst_suggestedRect()
     QCOMPARE(topRect.topRight(), item2->geometry().topRight());
     QCOMPARE(bottomRect.bottomLeft(), item2->geometry().bottomLeft());
     QCOMPARE(bottomRect.bottomRight(), item2->geometry().bottomRight());
+}
+
+void TestMultiSplitter::tst_insertAnotherRoot()
+{
+    auto root1 = createRoot();
+    Item *item1 = createItem("1");
+    root1->insertItem(item1, Location_OnRight);
+    QWidget *host1 = root1->hostWidget();
+
+    auto root2 = createRoot();
+    Item *item2 = createItem("2");
+    root2->insertItem(item2, Location_OnRight);
+
+    root1->insertItem(root2.get(), Location_OnBottom);
+
+    QCOMPARE(root1->hostWidget(), host1);
+    QCOMPARE(root2->hostWidget(), host1);
+    for (Item *item : root1->items_recursive()) {
+        QCOMPARE(item->hostWidget(), host1);
+        QVERIFY(item->isVisible());
+    }
+    QVERIFY(root1->checkSanity());
 }
 
 QTEST_MAIN(TestMultiSplitter)

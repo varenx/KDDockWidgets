@@ -136,9 +136,13 @@ void Item::restorePlaceholder(QWidget *widget)
 
 void Item::setHostWidget(QWidget *host)
 {
-    m_hostWidget = host;
-    if (m_widget)
-        m_widget->setParent(host);
+    if (m_hostWidget != host) {
+        m_hostWidget = host;
+        if (m_widget) {
+            m_widget->setParent(host);
+            m_widget->setVisible(true);
+        }
+    }
 }
 
 void Item::resize(QSize newSize)
@@ -177,7 +181,8 @@ void Item::setParentContainer(ItemContainer *parent)
 
         if (parent) {
             connect(this, &Item::minSizeChanged, parent, &ItemContainer::onChildMinSizeChanged);
-            connect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);            
+            connect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);
+            setHostWidget(parent->hostWidget());
         }
 
         QObject::setParent(parent);
@@ -351,6 +356,11 @@ void Item::setLength(int length, Qt::Orientation o)
         setSize({ length, height() });
 }
 
+void Item::setLength_recursive(int length, Qt::Orientation o)
+{
+    setLength(length, o);
+}
+
 int Item::length(Qt::Orientation o) const
 {
     return Layouting::length(size(), o);
@@ -363,7 +373,7 @@ int Item::availableLength(Qt::Orientation o) const
 
 bool Item::isPlaceholder() const
 {
-    return !m_isVisible;
+    return !isVisible();
 }
 
 bool Item::isVisible() const
@@ -434,7 +444,7 @@ void Item::setGeometry(QRect rect)
         if (oldGeo.height() != height())
             Q_EMIT heightChanged();
 
-        if (m_isVisible && m_widget) {
+        if (m_widget && isVisible()) {
             m_widget->setGeometry(mapToRoot(m_geometry));
         }
     }
@@ -498,8 +508,8 @@ void Item::turnIntoPlaceholder()
 
 void Item::updateObjectName()
 {
-    if (m_widget && !m_widget->objectName().isEmpty()) {
-        setObjectName(m_widget->objectName());
+    if (m_widget) {
+        setObjectName(m_widget->objectName().isEmpty() ? QStringLiteral("widget") : m_widget->objectName());
     } else if (!isVisible()) {
         setObjectName(QStringLiteral("hidden"));
     } else if (!m_widget) {
@@ -540,7 +550,7 @@ bool Item::isHorizontal() const
 
 int Item::visibleCount_recursive() const
 {
-    return m_isVisible ? 1 : 0;
+    return isVisible() ? 1 : 0;
 }
 
 int Item::availableOnSide(Side, Qt::Orientation o) const
@@ -593,12 +603,13 @@ bool ItemContainer::checkSanity() const
     }
 
     // Check that the geometries don't overlap
-    int expectedPos = Layouting::pos(pos(), m_orientation);
+    int expectedPos = 0;
     for (Item *item : m_children) {
         if (!item->isVisible())
             continue;
         const int pos = Layouting::pos(item->pos(), m_orientation);
         if (expectedPos != pos) {
+            root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Unexpected pos" << pos << "; expected=" << expectedPos
                        << "; for item=" << item
                        << "; isContainer=" << item->isContainer();
@@ -640,6 +651,21 @@ bool ItemContainer::checkSanity() const
 
         if (!item->checkSanity())
             return false;
+    }
+
+    const Item::List visibleChildren = this->visibleChildren();
+    if (!visibleChildren.isEmpty()) {
+        int occupied = qMax(0, Item::separatorThickness() * (visibleChildren.size() - 1));
+        for (Item *item : visibleChildren) {
+            occupied += item->length(m_orientation);
+        }
+
+        if (occupied != length()) {
+            root()->dumpLayout();
+            qWarning() << Q_FUNC_INFO << "Unexpected length. Expected=" << length()
+                       << "; got=" << occupied;
+            return false;
+        }
     }
 
     return true;
@@ -837,11 +863,12 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
 
 void ItemContainer::onChildVisibleChanged(Item *child, bool visible)
 {
-    if (visible != isVisible()) {
-        if (visible)
-            setIsVisible(true);
-        else
-            setIsVisible(numVisibleChildren() > 0);
+    const int numVisible = numVisibleChildren();
+    if (visible && numVisible == 1) {
+        // Child became visible and there's only 1 visible child. Meaning there were 0 visible before.
+        Q_EMIT visibleChanged(this, true);
+    } else if (!visible && numVisible == 0) {
+        Q_EMIT visibleChanged(this, false);
     }
 
     if (!visible)
@@ -1139,10 +1166,26 @@ void ItemContainer::setHostWidget(QWidget *host)
 
 void ItemContainer::setIsVisible(bool is)
 {
-    Item::setIsVisible(is);
     for (Item *item : qAsConst(m_children)) {
         item->setIsVisible(is);
     }
+}
+
+bool ItemContainer::isVisible() const
+{
+    return hasVisibleChildren();
+}
+
+void ItemContainer::setLength_recursive(int length, Qt::Orientation o)
+{
+    QSize sz = size();
+    if (o == Qt::Vertical) {
+        sz.setHeight(length);
+    } else {
+        sz.setWidth(length);
+    }
+
+    resize(sz);
 }
 
 void ItemContainer::insertItem(Item *item, int index, bool growItem)
@@ -1296,7 +1339,7 @@ QSize ItemContainer::maxSize() const
     return { maxW, maxH };
 }
 
-void ItemContainer::resize(QSize newSize)
+void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 {
     const QSize minSize = this->minSize();
     if (newSize.width() < minSize.width() || newSize.height() < minSize.height()) {
@@ -1363,9 +1406,11 @@ void ItemContainer::dumpLayout(int level)
     indent.fill(QLatin1Char(' '), level);
     const QString beingInserted = m_sizingInfo.isBeingInserted ? QStringLiteral("; beingInserted;")
                                                                : QString();
+    const QString visible = !isVisible() ? QStringLiteral(";hidden;")
+                                         : QString();
     qDebug().noquote() << indent << "* Layout: " << m_orientation
                        << m_geometry << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
-                       << "; this=" << this << beingInserted;
+                       << "; this=" << this << beingInserted << visible;
     for (Item *item : qAsConst(m_children)) {
         item->dumpLayout(level + 1);
     }
@@ -1397,7 +1442,7 @@ void ItemContainer::restorePlaceholder(Item *item)
     const int proposedItemLength = item->length(m_orientation);
     const int newLength = proposedItemLength > maxItemLength ? maxItemLength
                                                              : proposedItemLength;
-    item->setLength(newLength, m_orientation);
+    item->setLength_recursive(newLength, m_orientation);
     Q_ASSERT(item->isVisible());
     growItem(item, newLength, GrowthStrategy::BothSidesEqually);
 }

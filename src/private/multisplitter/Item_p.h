@@ -229,11 +229,12 @@ public:
     virtual void resize(QSize newSize);
     int minLength(Qt::Orientation) const;
     void setLength(int length, Qt::Orientation);
+    virtual void setLength_recursive(int length, Qt::Orientation);
     int length(Qt::Orientation) const;
     int availableLength(Qt::Orientation) const;
     bool isPlaceholder() const;
 
-    bool isVisible() const;
+    virtual bool isVisible() const;
     virtual void setIsVisible(bool);
     virtual void setGeometry_recursive(QRect rect);
     Item* neighbour(Side) const;
@@ -386,6 +387,8 @@ public:
     Item::List items_recursive() const;
     void setHostWidget(QWidget *) override;
     void setIsVisible(bool) override;
+    bool isVisible() const override;
+    void setLength_recursive(int length, Qt::Orientation) override;
 Q_SIGNALS:
     void itemsChanged();
     void numVisibleItemsChanged(int);
