@@ -175,6 +175,7 @@ void Item::setParentContainer(ItemContainer *parent)
         if (m_parent) {
             disconnect(this, &Item::minSizeChanged, m_parent, &ItemContainer::onChildMinSizeChanged);
             disconnect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);
+            Q_EMIT visibleChanged(this, false);
         }
 
         m_parent = parent;
@@ -183,6 +184,7 @@ void Item::setParentContainer(ItemContainer *parent)
             connect(this, &Item::minSizeChanged, parent, &ItemContainer::onChildMinSizeChanged);
             connect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);
             setHostWidget(parent->hostWidget());
+            Q_EMIT visibleChanged(this, isVisible());
         }
 
         QObject::setParent(parent);
@@ -384,13 +386,20 @@ bool Item::isVisible() const
 void Item::setIsVisible(bool is)
 {
     if (is != m_isVisible) {
+
+        if (is)
+            setBeingInserted(true);
+
         m_isVisible = is;
         Q_EMIT minSizeChanged(this); // min-size is 0x0 when hidden
         Q_EMIT visibleChanged(this, is);
+
         if (m_widget) {
             m_widget->setGeometry(mapToRoot(m_geometry));
             m_widget->setVisible(is);
         }
+
+        setBeingInserted(false);
     }
 }
 
@@ -714,6 +723,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
 
         if (hardRemove) {
             m_children.removeOne(item);
+            item->setParentContainer(nullptr);
             delete item;
             if (!isContainer)
                 Q_EMIT root()->numItemsChanged();
@@ -1375,7 +1385,11 @@ void ItemContainer::dumpLayout(int level)
                                                                : QString();
     const QString visible = !isVisible() ? QStringLiteral(";hidden;")
                                          : QString();
-    qDebug().noquote() << indent << "* Layout: " << m_orientation
+
+    const QString typeStr = isRoot() ? QStringLiteral("* Root: ")
+                                     : "* Layout: ";
+
+    qDebug().noquote() << indent << typeStr << m_orientation
                        << m_geometry << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
                        << "; this=" << this << beingInserted << visible;
     for (Item *item : qAsConst(m_children)) {
@@ -1395,11 +1409,7 @@ void ItemContainer::updateChildPercentages()
 void ItemContainer::restorePlaceholder(Item *item)
 {
     Q_ASSERT(contains(item));
-
-    item->setBeingInserted(true); // TODO: Move into setIsVisible ?
     item->setIsVisible(true);
-    positionItems();
-    item->setBeingInserted(false);
 
     if (numVisibleChildren() == 1)
         return;

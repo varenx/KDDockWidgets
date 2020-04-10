@@ -256,12 +256,12 @@ private Q_SLOTS:
     void tst_dockDockWidgetNested();
     void tst_dockFloatingWindowNested();
 //    void tst_anchorsFromTo();
-//    void tst_dockWindowWithTwoSideBySideFramesIntoCenter();
+    void tst_dockWindowWithTwoSideBySideFramesIntoCenter();
 //    void tst_dockWindowWithTwoSideBySideFramesIntoLeft();
 //    void tst_dockWindowWithTwoSideBySideFramesIntoRight();
 //    void tst_posAfterLeftDetach();
 //    void tst_propagateMinSize();
-//    void tst_dockInternal();
+    void tst_dockInternal();
 //    void tst_propagateSizeHonoursMinSize();
 
 //    void tst_addDockWidgetAsTabToDockWidget();
@@ -906,6 +906,7 @@ void TestDocks::tst_anchorsFromTo()
         QCOMPARE(anchors[1]->from(), anchors[0]);
     }
 }
+#endif
 
 void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoCenter()
 {
@@ -930,7 +931,7 @@ void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoCenter()
     QVERIFY(Testing::waitForDeleted(fw));
     delete fw2;
 }
-
+#if 0
 void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoLeft()
 {
     EnsureTopLevelsDeleted e;
@@ -1112,6 +1113,7 @@ void TestDocks::tst_propagateMinSize()
     //QTest::qWait(50000);
 
 }
+#endif
 
 void TestDocks::tst_dockInternal()
 {
@@ -1123,12 +1125,12 @@ void TestDocks::tst_dockInternal()
     auto dock1 = createDockWidget("dock1", new QPushButton("one"));
     auto dropArea = m->dropArea();
 
-    Frame *centralWidget = dropArea->multiSplitterLayout()->items()[0]->frame();
+    auto centralWidget = static_cast<Frame*>(dropArea->multiSplitterLayout()->items()[0]->frame());
     nestDockWidget(dock1, dropArea, centralWidget, KDDockWidgets::Location_OnRight);
 
     QVERIFY(dock1->width() < dropArea->width() - centralWidget->width());
 }
-
+#if 0
 void TestDocks::tst_closeAllDockWidgets()
 {
     EnsureTopLevelsDeleted e;

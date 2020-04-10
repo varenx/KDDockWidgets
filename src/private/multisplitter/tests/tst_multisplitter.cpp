@@ -686,24 +686,52 @@ void TestMultiSplitter::tst_suggestedRect()
 
 void TestMultiSplitter::tst_insertAnotherRoot()
 {
-    auto root1 = createRoot();
-    Item *item1 = createItem("1");
-    root1->insertItem(item1, Location_OnRight);
-    QWidget *host1 = root1->hostWidget();
+    {
+        auto root1 = createRoot();
+        Item *item1 = createItem("1");
+        root1->insertItem(item1, Location_OnRight);
+        QWidget *host1 = root1->hostWidget();
 
-    auto root2 = createRoot();
-    Item *item2 = createItem("2");
-    root2->insertItem(item2, Location_OnRight);
+        auto root2 = createRoot();
+        Item *item2 = createItem("2");
+        root2->insertItem(item2, Location_OnRight);
 
-    root1->insertItem(root2.get(), Location_OnBottom);
+        root1->insertItem(root2.get(), Location_OnBottom);
 
-    QCOMPARE(root1->hostWidget(), host1);
-    QCOMPARE(root2->hostWidget(), host1);
-    for (Item *item : root1->items_recursive()) {
-        QCOMPARE(item->hostWidget(), host1);
-        QVERIFY(item->isVisible());
+        QCOMPARE(root1->hostWidget(), host1);
+        QCOMPARE(root2->hostWidget(), host1);
+        for (Item *item : root1->items_recursive()) {
+            QCOMPARE(item->hostWidget(), host1);
+            QVERIFY(item->isVisible());
+        }
+        QVERIFY(root1->checkSanity());
     }
-    QVERIFY(root1->checkSanity());
+
+    {
+        auto root1 = createRoot();
+        Item *item1 = createItem("1");
+        Item *item2 = createItem("2");
+        root1->insertItem(item1, Location_OnLeft);
+        root1->insertItem(item2, Location_OnRight);
+        QWidget *host1 = root1->hostWidget();
+
+        auto root2 = createRoot();
+        Item *item12 = createItem("12");
+        root2->insertItem(item12, Location_OnRight);
+
+        root1->insertItem(root2.get(), Location_OnTop);
+
+        QCOMPARE(root1->hostWidget(), host1);
+        QCOMPARE(root2->hostWidget(), host1);
+        for (Item *item : root1->items_recursive()) {
+            QCOMPARE(item->hostWidget(), host1);
+            QVERIFY(item->isVisible());
+        }
+        QVERIFY(root1->checkSanity());
+        root1->dumpLayout();
+    }
+
+
 }
 
 QTEST_MAIN(TestMultiSplitter)
