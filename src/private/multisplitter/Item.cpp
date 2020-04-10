@@ -443,6 +443,14 @@ void Item::setGeometry(QRect rect)
             Q_ASSERT(false);
         }
 
+        const QSize minSz = minSize();
+        if (rect.width() < minSz.width() || rect.height() < minSz.height()) {
+            qWarning() << Q_FUNC_INFO << this << "Constraints not honoured"
+                       << rect.size() << minSz << "dumping layout";
+            root()->dumpLayout();
+        }
+
+
         Q_EMIT geometryChanged();
 
         if (oldGeo.x() != x())
