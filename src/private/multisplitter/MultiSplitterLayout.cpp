@@ -170,21 +170,13 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     if (frame) {
         newItem = new Item(multiSplitter());
         newItem->setFrame(frame);
-        qDebug() << "geo frame" << frame->geometry();
     } else if (auto dw = qobject_cast<DockWidgetBase*>(w)) {
         newItem = new Item(multiSplitter());
         newItem->setFrame(new Frame(dw));
-        qDebug() << "geo dw" << dw->geometry();
     } else if (auto ms = qobject_cast<MultiSplitter*>(w)) {
         newItem = ms->multiSplitterLayout()->rootItem();
         Q_ASSERT(newItem->hostWidget() != multiSplitter());
         newItem->setHostWidget(multiSplitter());
-
-        qDebug() << ms->multiSplitterLayout()->frames()
-                 << ms->multiSplitterLayout()->frames().at(0)->parentWidget()
-                 << multiSplitter()
-                 << ms;
-
         delete ms;
     }
 

@@ -31,9 +31,9 @@ static int st = Item::separatorThickness();
 
 static std::unique_ptr<ItemContainer> createRoot()
 {
-    auto item = new ItemContainer(new QWidget()); // todo WIDGET
-    item->setSize({ 1000, 1000 });
-    return std::unique_ptr<ItemContainer>(item);
+    auto root = new ItemContainer(new QWidget()); // todo WIDGET
+    root->setSize({ 1000, 1000 });
+    return std::unique_ptr<ItemContainer>(root);
 }
 
 static Item* createItem(const QString &objName)
@@ -42,6 +42,17 @@ static Item* createItem(const QString &objName)
     item->setGeometry(QRect(0, 0, 200, 200));
     item->setObjectName(objName);
     return item;
+}
+
+static std::unique_ptr<ItemContainer> createRootWithSingleItem()
+{
+    auto root = new ItemContainer(new QWidget()); // todo WIDGET
+    root->setSize({ 1000, 1000 });
+
+    Item *item1 = createItem("1");
+    root->insertItem(item1, Location_OnTop);
+
+    return std::unique_ptr<ItemContainer>(root);
 }
 
 class TestMultiSplitter : public QObject
@@ -74,6 +85,8 @@ private Q_SLOTS:
     void tst_turnIntoPlaceholder();
     void tst_suggestedRect();
     void tst_insertAnotherRoot();
+    void tst_misc1();
+    void tst_misc2();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -728,6 +741,50 @@ void TestMultiSplitter::tst_insertAnotherRoot()
         }
         QVERIFY(root1->checkSanity());
     }
+}
+
+void TestMultiSplitter::tst_misc1()
+{
+    // Random test1
+
+    auto root = createRoot();
+    Item *item1 = createItem("1");
+    Item *item2 = createItem("2");
+    Item *item3 = createItem("3");
+    Item *item4 = createItem("4");
+    Item *item5 = createItem("5");
+
+    root->insertItem(item1, Location_OnTop);
+    item1->insertItem(item2, Location_OnRight);
+    root->insertItem(item3, Location_OnBottom);
+    item3->insertItem(item4, Location_OnRight);
+    root->insertItem(item5, Location_OnLeft);
+
+    QVERIFY(root->checkSanity());
+}
+
+void TestMultiSplitter::tst_misc2()
+{
+    // Random test1
+
+    auto root = createRoot();
+    auto item1 = createRootWithSingleItem();
+    auto item2 = createRootWithSingleItem();
+    auto item3 = createRootWithSingleItem();
+    auto item4 = createRootWithSingleItem();
+    auto item5 = createRootWithSingleItem();
+
+    root->insertItem(item1.get(), Location_OnTop);
+    QVERIFY(root->checkSanity());
+    item1->insertItem(item2.get(), Location_OnRight);
+    QVERIFY(root->checkSanity());
+    root->insertItem(item3.get(), Location_OnBottom);
+    QVERIFY(root->checkSanity());
+    item3->insertItem(item4.get(), Location_OnRight);
+    QVERIFY(root->checkSanity());
+
+    root->insertItem(item5.get(), Location_OnLeft);
+    QVERIFY(root->checkSanity());
 }
 
 QTEST_MAIN(TestMultiSplitter)

@@ -269,9 +269,9 @@ private Q_SLOTS:
 //    void tst_addDockWidgetToContainingWindow();
 //    void tst_addToSmallMainWindow();
 //    void tst_fairResizeAfterRemoveWidget();
-//    void tst_notClosable();
-//    void tst_maximizeAndRestore();
-//    void tst_propagateResize2();
+    void tst_notClosable();
+    void tst_maximizeAndRestore();
+    void tst_propagateResize2();
 
 //    void tst_availableLengthForDrop_data();
 //    void tst_availableLengthForDrop();
@@ -1983,6 +1983,7 @@ void TestDocks::tst_fairResizeAfterRemoveWidget()
     window->deleteLater();
     Testing::waitForDeleted(window);
 }
+#endif
 
 void TestDocks::tst_notClosable()
 {
@@ -2087,7 +2088,7 @@ void TestDocks::tst_propagateResize2()
     auto dropArea = m->dropArea();
     dropArea->checkSanity();
 }
-
+#if 0
 std::unique_ptr<MultiSplitter> TestDocks::createMultiSplitterFromSetup(MultiSplitterSetup setup, QHash<QWidget*, Frame*> &frameMap) const
 {
     auto widget = std::unique_ptr<MultiSplitter>(new MultiSplitter());
