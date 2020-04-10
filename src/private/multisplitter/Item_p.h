@@ -168,6 +168,7 @@ struct SizingInfo {
     QSize maxSize = QSize(16777215, 16777215); // TODO: Not supported yet
     QSize proposedSize;
     bool isBeingInserted = false;
+    double percentageWithinParent = 0.0;
 };
 
 class ItemContainer;
@@ -394,10 +395,12 @@ Q_SIGNALS:
     void numVisibleItemsChanged(int);
     void numItemsChanged();
 public:
-    QVector<qreal> m_childPercentages;
     Item::List m_children;
     bool m_isResizing = false;
     bool m_isRoot = false;
+    bool m_blockUpdatePercentages = false;
+private:
+    QVector<double> childPercentages() const;
 };
 
 /**

@@ -423,8 +423,9 @@ int Item::separatorThickness()
 bool Item::checkSanity() const
 {
     if (minSize().width() > width() || minSize().height() > height()) {
-        qWarning() << Q_FUNC_INFO << "Size constraints not honoured"
+        qWarning() << Q_FUNC_INFO << "Size constraints not honoured" << this
                    << "; min=" << minSize() << "; size=" << size();
+        root()->dumpLayout();
         return false;
     }
 
@@ -467,6 +468,7 @@ void Item::dumpLayout(int level)
                                                                : QString();
     const QString visible = !isVisible() ? QStringLiteral(";hidden;")
                                          : QString();
+
     qDebug().noquote() << indent << "- Widget: " << objectName()
                        << m_geometry << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
                        << visible << beingInserted;
@@ -675,6 +677,15 @@ bool ItemContainer::checkSanity() const
                        << "; got=" << occupied;
             return false;
         }
+
+        const QVector<double> percentages = childPercentages();
+        const double totalPercentage = std::accumulate(percentages.begin(), percentages.end(), 0.0);
+        if (!qFuzzyCompare(totalPercentage, 1.0)) {
+            qWarning() << Q_FUNC_INFO << "Percentages don't add up"
+                       << totalPercentage << percentages;
+            const_cast<ItemContainer*>(this)->updateChildPercentages();
+            qWarning() << Q_FUNC_INFO << childPercentages();
+        }
     }
 
     return true;
@@ -715,7 +726,6 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
 {
     Q_ASSERT(!item->isRoot());
     if (contains(item)) {
-        m_childPercentages.clear();
         Item *side1Item = visibleNeighbourFor(item, Side1);
         Item *side2Item = visibleNeighbourFor(item, Side2);
         const bool isContainer = item->isContainer();
@@ -750,6 +760,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             // Neighbours will occupy the space of the deleted item
             growNeighbours(side1Item, side2Item);
             Q_EMIT itemsChanged();
+            updateChildPercentages();
         }
     } else {
         // Not ours, ask parent
@@ -780,6 +791,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
     container->setGeometry(leaf->geometry());
     container->insertItem(leaf, Location_OnTop);
     Q_EMIT itemsChanged();
+    updateChildPercentages();
 
     return container;
 }
@@ -819,6 +831,8 @@ void ItemContainer::insertItem(Item *item, Location loc)
         // Now we have the correct orientation, we can insert
         insertItem(item, loc);
     }
+
+    updateChildPercentages();
     checkSanity();
 }
 
@@ -1037,14 +1051,14 @@ void ItemContainer::positionItems()
 
         // If the layout is horizontal, the item will have the height of the container. And vice-versa
         const int oppositeLength = Layouting::length(size(), oppositeOrientation);
-        item->setLength(oppositeLength, oppositeOrientation);
+        item->setLength_recursive(oppositeLength, oppositeOrientation);
 
         // Update the pos
         item->setPos(nextPos, m_orientation);
         nextPos += item->length(m_orientation) + Item::separatorThickness();
     }
 
-    m_childPercentages.clear();
+    updateChildPercentages();
 }
 
 void ItemContainer::clear()
@@ -1170,7 +1184,6 @@ void ItemContainer::insertItem(Item *item, int index, bool growItem)
 {
     m_children.insert(index, item);
     item->setParentContainer(this);
-    m_childPercentages.clear();
     Q_EMIT itemsChanged();
 
     if (growItem)
@@ -1319,6 +1332,9 @@ QSize ItemContainer::maxSize() const
 
 void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 {
+    QScopedValueRollback<bool>(m_blockUpdatePercentages, true);
+    checkSanity();
+
     const QSize minSize = this->minSize();
     if (newSize.width() < minSize.width() || newSize.height() < minSize.height()) {
         qWarning() << Q_FUNC_INFO << "New size doesn't respect size constraints";
@@ -1332,9 +1348,6 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 
     const bool lengthChanged = (isVertical() && heightChanged) || (isHorizontal() && widthChanged);
 
-    if (m_childPercentages.isEmpty())
-        updateChildPercentages();
-
     setSize(newSize);
 
     if (m_isResizing) {
@@ -1346,14 +1359,24 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
     int remaining = totalNewLength;
 
     int nextPos = 0;
-    for (int i = 0, count = m_children.size(); i < count; ++i) {
+    const QVector<double> childPercentages = this->childPercentages();
+    const Item::List children = visibleChildren();
+    for (int i = 0, count = children.size(); i < count; ++i) {
         const bool isLast = i == count - 1;
 
-        Item *item = m_children.at(i);
-        const qreal childPercentage = m_childPercentages.at(i);
+        Item *item = children.at(i);
+        const qreal childPercentage = childPercentages.at(i);
         const int newItemLength = lengthChanged ? (isLast ? remaining
                                                           : int(childPercentage * totalNewLength))
                                                 : item->length(m_orientation);
+
+        if (newItemLength <= 0) {
+            qWarning() << Q_FUNC_INFO << "Invalid resize. Dumping layout";
+            root()->dumpLayout();
+            Q_ASSERT(false);
+            return;
+        }
+
         item->setPos(nextPos, m_orientation);
         nextPos += newItemLength + separatorThickness();
         remaining = remaining - newItemLength;
@@ -1391,8 +1414,9 @@ void ItemContainer::dumpLayout(int level)
                                      : "* Layout: ";
 
     qDebug().noquote() << indent << typeStr << m_orientation
-                       << m_geometry << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
-                       << "; this=" << this << beingInserted << visible;
+                       << m_geometry /*<< "r=" << m_geometry.right() << "b=" << m_geometry.bottom()*/
+                       << "; this=" << this << beingInserted << visible
+                       << "; %=" << childPercentages();
     for (Item *item : qAsConst(m_children)) {
         item->dumpLayout(level + 1);
     }
@@ -1400,11 +1424,31 @@ void ItemContainer::dumpLayout(int level)
 
 void ItemContainer::updateChildPercentages()
 {
-    m_childPercentages.clear();
-    m_childPercentages.reserve(m_children.size());
-    const int available = usableLength();
-    for (Item *item : m_children)
-        m_childPercentages << (1.0 * item->length(m_orientation)) / available;
+    if (m_blockUpdatePercentages)
+        return;
+
+    const int usable = usableLength();
+    for (Item *item : m_children) {
+        if (item->isVisible()) {
+            item->m_sizingInfo.percentageWithinParent = (1.0 * item->length(m_orientation)) / usable;
+            Q_ASSERT(!qFuzzyIsNull(item->m_sizingInfo.percentageWithinParent));
+        } else {
+            item->m_sizingInfo.percentageWithinParent = 0.0;
+        }
+    }
+}
+
+QVector<double> ItemContainer::childPercentages() const
+{
+    QVector<double> percentages;
+    percentages.reserve(m_children.size());
+
+    for (Item *item : m_children) {
+        if (item->isVisible())
+            percentages << item->m_sizingInfo.percentageWithinParent;
+    }
+
+    return percentages;
 }
 
 void ItemContainer::restorePlaceholder(Item *item)

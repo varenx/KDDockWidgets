@@ -25,9 +25,23 @@
 
 // TODO: namespace
 
+
 using namespace Layouting;
 
 static int st = Item::separatorThickness();
+
+static QtMessageHandler s_original = nullptr;
+static QString s_expectedWarning;
+
+static void fatalWarningsMessageHandler(QtMsgType t, const QMessageLogContext &context, const QString &msg)
+{
+
+    s_original(t, context, msg);
+    if (t == QtWarningMsg) {
+        if (s_expectedWarning.isEmpty() ||!msg.contains(s_expectedWarning))
+            qFatal("Got a warning, category=%s", context.category);
+    }
+}
 
 static std::unique_ptr<ItemContainer> createRoot()
 {
@@ -63,6 +77,7 @@ class TestMultiSplitter : public QObject
 public Q_SLOTS:
     void initTestCase()
     {
+        s_original = qInstallMessageHandler(fatalWarningsMessageHandler);
     }
 
 private Q_SLOTS:
@@ -439,6 +454,8 @@ void TestMultiSplitter::tst_resize()
 
 void TestMultiSplitter::tst_resizeWithConstraints()
 {
+    s_expectedWarning = QStringLiteral("New size doesn't respect size constraints");
+
     {
         // Test that resizing below minSize isn't permitted.
 
@@ -471,6 +488,8 @@ void TestMultiSplitter::tst_resizeWithConstraints()
 
         // TODO: Resize further
     }
+
+    s_expectedWarning.clear();
 }
 
 void TestMultiSplitter::tst_availableSize()
