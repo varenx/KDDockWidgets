@@ -251,7 +251,7 @@ private Q_SLOTS:
     void tst_dock2FloatingWidgetsTabbed();
     void tst_close();
     void tst_doubleClose();
-//    void tst_preventClose();
+    void tst_preventClose();
     void tst_closeAllDockWidgets();
     void tst_dockDockWidgetNested();
     void tst_dockFloatingWindowNested();
@@ -771,7 +771,7 @@ void TestDocks::tst_doubleClose()
         Testing::waitForDeleted(window.data());
     }
 }
-#if 0
+
 void TestDocks::tst_preventClose()
 {
     EnsureTopLevelsDeleted e;
@@ -800,7 +800,7 @@ void TestDocks::tst_preventClose()
     dock1->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock1));
 }
-#endif
+
 void TestDocks::tst_dockDockWidgetNested()
 {
     EnsureTopLevelsDeleted e;

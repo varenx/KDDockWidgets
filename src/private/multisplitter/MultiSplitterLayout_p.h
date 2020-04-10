@@ -225,7 +225,7 @@ public:
      * @brief returns the layout's minimum size
      * @ref setMinimumSize
      */
-    QSize minimumSize() const { return m_minSize; }
+    QSize minimumSize() const;
 
     /**
      * @brief getter for the size
@@ -349,7 +349,6 @@ private:
     bool m_restoringPlaceholder = false;
     bool m_resizing = false;
 
-    QSize m_minSize = QSize(0, 0);
     QPointer<Layouting::Anchor> m_anchorBeingDragged;
     Layouting::ItemContainer *const m_rootItem;
 };

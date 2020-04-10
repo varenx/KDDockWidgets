@@ -56,6 +56,9 @@ MultiSplitterLayout::MultiSplitterLayout(MultiSplitter *parent)
 
     connect(m_rootItem, &ItemContainer::numItemsChanged, this, &MultiSplitterLayout::widgetCountChanged);
     connect(m_rootItem, &ItemContainer::numVisibleItemsChanged, this, &MultiSplitterLayout::visibleWidgetCountChanged);
+    connect(m_rootItem, &ItemContainer::minSizeChanged, this, [this] {
+        Q_EMIT minimumSizeChanged(minimumSize());
+    });
 
     clear();
 
@@ -272,7 +275,7 @@ int MultiSplitterLayout::numVisibleAnchors() const
 void MultiSplitterLayout::updateSizeConstraints()
 {
     const QSize newMinSize = m_rootItem->minSize();
-    qCDebug(sizing) << Q_FUNC_INFO << "Updating size constraints from" << m_minSize
+    qCDebug(sizing) << Q_FUNC_INFO << "Updating size constraints from" << minimumSize()
                     << "to" << newMinSize;
 
     setMinimumSize(newMinSize);
@@ -392,6 +395,11 @@ void MultiSplitterLayout::setContentLength(int value, Qt::Orientation o)
     }
 }
 
+QSize MultiSplitterLayout::minimumSize() const
+{
+    return m_rootItem->minSize();
+}
+
 int MultiSplitterLayout::length(Qt::Orientation o) const
 {
     return o == Qt::Vertical ? width()
@@ -401,11 +409,11 @@ int MultiSplitterLayout::length(Qt::Orientation o) const
 void MultiSplitterLayout::setMinimumSize(QSize sz)
 {
     if (sz != m_rootItem->minSize()) {
+        setSize(size().expandedTo(m_rootItem->minSize())); // Increase size in case we need to
         m_rootItem->setMinSize(sz);
-        setSize(size().expandedTo(m_rootItem->minSize())); // Increase size incase we need to
-        Q_EMIT minimumSizeChanged(sz);
     }
-    qCDebug(sizing) << Q_FUNC_INFO << "minSize = " << m_minSize;
+
+    qCDebug(sizing) << Q_FUNC_INFO << "minSize = " << m_rootItem->minSize();
 }
 
 const ItemList MultiSplitterLayout::items() const

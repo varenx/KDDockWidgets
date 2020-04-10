@@ -612,7 +612,6 @@ void TestMultiSplitter::tst_turnIntoPlaceholder()
 
     root->insertItem(item3, Location_OnLeft);
     QVERIFY(root->checkSanity());
-    root->dumpLayout();
     QCOMPARE(item2->width() + item3->width() + st, root->width());
     item2->turnIntoPlaceholder();
     QVERIFY(root->checkSanity());
@@ -728,10 +727,7 @@ void TestMultiSplitter::tst_insertAnotherRoot()
             QVERIFY(item->isVisible());
         }
         QVERIFY(root1->checkSanity());
-        root1->dumpLayout();
     }
-
-
 }
 
 QTEST_MAIN(TestMultiSplitter)
