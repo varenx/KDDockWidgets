@@ -1055,6 +1055,7 @@ void ItemContainer::clear()
 
         delete item;
     }
+    m_children.clear();
 }
 
 Item *ItemContainer::itemForFrame(const QWidget *w) const

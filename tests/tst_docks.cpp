@@ -252,7 +252,7 @@ private Q_SLOTS:
     void tst_close();
     void tst_doubleClose();
 //    void tst_preventClose();
-//    void tst_closeAllDockWidgets();
+    void tst_closeAllDockWidgets();
     void tst_dockDockWidgetNested();
     void tst_dockFloatingWindowNested();
 //    void tst_anchorsFromTo();
@@ -1130,7 +1130,7 @@ void TestDocks::tst_dockInternal()
 
     QVERIFY(dock1->width() < dropArea->width() - centralWidget->width());
 }
-#if 0
+
 void TestDocks::tst_closeAllDockWidgets()
 {
     EnsureTopLevelsDeleted e;
@@ -1192,7 +1192,7 @@ void TestDocks::tst_closeAllDockWidgets()
     delete dock5;
     delete dock6;
 }
-
+#if 0
 void TestDocks::tst_propagateSizeHonoursMinSize()
 {
     // Here we dock a widget on the left size, and on the right side.
