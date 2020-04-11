@@ -1820,9 +1820,14 @@ SizingInfo::List ItemContainer::sizingInfosPerNeighbour(Item *item, Side side) c
     return result;
 }
 
-QVector<int> ItemContainer::calculateSqueezes(QVector<int> availabilities, int needed) const
+QVector<int> ItemContainer::calculateSqueezes(const SizingInfo::List &sizes, int needed) const
 {
-    QVector<int> squeezes(availabilities.size(), 0);
+    const int count = sizes.count();
+    QVector<int> availabilities(count, 0);
+    for (int i = 0; i < count; ++i) {
+        availabilities[i] = sizes.at(i).availableLength(m_orientation);
+    }
+    QVector<int> squeezes(count, 0);
     int missing = needed;
     while (missing > 0) {
         const int numDonors = std::count_if(availabilities.cbegin(), availabilities.cend(), [] (int num) {
@@ -1839,11 +1844,11 @@ QVector<int> ItemContainer::calculateSqueezes(QVector<int> availabilities, int n
         if (toTake == 0)
             toTake = missing;
 
-        for (int i = 0; i < availabilities.size(); ++i) {
+        for (int i = 0; i < count; ++i) {
             const int available = availabilities.at(i);
             if (available == 0)
                 continue;
-            const int took = qMin(toTake, availabilities.at(i));
+            const int took = qMin(toTake, available);
             availabilities[i] -= took;
             missing -= took;
             squeezes[i] += took;
@@ -1862,8 +1867,8 @@ void ItemContainer::growItem(Item *child, int side1Growth, int side2Growth)
     Item::List children = visibleChildren();
 
     if (side1Growth > 0) {
-        const QVector<int> availables = availableLengthPerNeighbour(child, Side1);
-        const QVector<int> squeezes = calculateSqueezes(availables, side1Growth);
+        const SizingInfo::List sizes = sizingInfosPerNeighbour(child, Side1);
+        const QVector<int> squeezes = calculateSqueezes(sizes, side1Growth);
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
             Item *neighbour = children[i];
@@ -1872,9 +1877,9 @@ void ItemContainer::growItem(Item *child, int side1Growth, int side2Growth)
     }
 
     if (side2Growth > 0) {
-        const QVector<int> availables = availableLengthPerNeighbour(child, Side2);
+        const SizingInfo::List sizes = sizingInfosPerNeighbour(child, Side2);
+        const QVector<int> squeezes = calculateSqueezes(sizes, side2Growth);
         const int itemIndex = children.indexOf(child);
-        const QVector<int> squeezes = calculateSqueezes(availables, side2Growth);
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
             Item *neighbour = children[i + itemIndex + 1];

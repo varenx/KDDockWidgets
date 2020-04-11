@@ -164,6 +164,26 @@ inline Side sideForLocation(Location loc)
 }
 
 struct SizingInfo {
+    QSize size() const {
+        return geometry.size();
+    }
+
+    int length(Qt::Orientation o) const {
+        return Layouting::length(size(), o);
+    }
+
+    int minLength(Qt::Orientation o) const {
+        return Layouting::length(minSize, o);
+    }
+
+    int availableLength(Qt::Orientation o) const {
+        return qMax(0, length(o) - minLength(o));
+    }
+
+    int missingLength(Qt::Orientation o) const {
+        return qMax(0,  minLength(o) - length(o));
+    }
+
     typedef QVector<SizingInfo> List;
     QRect geometry;
     QSize minSize = QSize(40, 40); // TODO: Hardcoded
@@ -392,7 +412,7 @@ public:
     void onChildVisibleChanged(Item *child, bool visible);
     QVector<int> availableLengthPerNeighbour(Item *item, Side) const;
     SizingInfo::List sizingInfosPerNeighbour(Item *item, Side) const;
-    QVector<int> calculateSqueezes(QVector<int> availabilities, int needed) const;
+    QVector<int> calculateSqueezes(const SizingInfo::List &sizes, int needed) const;
     QRect suggestedDropRect(QSize minSize, const Item *relativeTo, Location) const;
     void positionItems();
     bool isResizing() const { return m_isResizing; }
