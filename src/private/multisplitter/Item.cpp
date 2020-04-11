@@ -50,7 +50,6 @@ QPoint Item::mapToRoot(QPoint p) const
 
 QPoint Item::mapFromRoot(QPoint p) const
 {
-
     ItemContainer *c = parentContainer();
     while (c) {
         p = p - c->pos();
@@ -157,6 +156,11 @@ QSize Item::missingSize() const
     missing.setHeight(qMax(missing.height(), 0));
 
     return missing;
+}
+
+int Item::missingLength(Qt::Orientation o) const
+{
+    return Layouting::length(missingSize(), o);
 }
 
 bool Item::isBeingInserted() const
@@ -446,10 +450,10 @@ void Item::setGeometry(QRect rect)
         const QSize minSz = minSize();
         if (rect.width() < minSz.width() || rect.height() < minSz.height()) {
             qWarning() << Q_FUNC_INFO << this << "Constraints not honoured"
-                       << rect.size() << minSz << "dumping layout";
+                       << rect.size() << minSz << "dumping layout"
+                       << ": parent=" << parentContainer();
             root()->dumpLayout();
         }
-
 
         Q_EMIT geometryChanged();
 
@@ -570,21 +574,6 @@ bool Item::isHorizontal() const
 int Item::visibleCount_recursive() const
 {
     return isVisible() ? 1 : 0;
-}
-
-int Item::availableOnSide(Side, Qt::Orientation o) const
-{
-    if (isRoot())
-        return 0;
-
-    ItemContainer *container = parentContainer();
-
-    if (o == container->orientation()) {
-
-    } else {
-
-    }
-    return 0;
 }
 
 ItemContainer::ItemContainer(QWidget *hostWidget, ItemContainer *parent)
@@ -1340,7 +1329,7 @@ QSize ItemContainer::maxSize() const
 
 void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 {
-    QScopedValueRollback<bool>(m_blockUpdatePercentages, true);
+    QScopedValueRollback<bool> block(m_blockUpdatePercentages, true);
 
     const QSize minSize = this->minSize();
     if (newSize.width() < minSize.width() || newSize.height() < minSize.height()) {
@@ -1368,7 +1357,9 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
     int nextPos = 0;
     const QVector<double> childPercentages = this->childPercentages();
     const Item::List children = visibleChildren();
-    for (int i = 0, count = children.size(); i < count; ++i) {
+
+    const int count = children.size();
+    for (int i = 0; i < count; ++i) {
         const bool isLast = i == count - 1;
 
         Item *item = children.at(i);
@@ -1798,6 +1789,30 @@ QVector<int> ItemContainer::availableLengthPerNeighbour(Item *item, Side side) c
     for (int i = start; i <= end; ++i) {
         Item *neighbour = children.at(i);
         result << neighbour->availableLength(m_orientation);
+    }
+
+    return result;
+}
+
+SizingInfo::List ItemContainer::sizingInfosPerNeighbour(Item *item, Side side) const
+{
+    Item::List children = visibleChildren();
+    const int indexOfChild = children.indexOf(item);
+    int start = 0;
+    int end = 0;
+    if (side == Side1) {
+        start = 0;
+        end = indexOfChild - 1;
+    } else {
+        start = indexOfChild + 1;
+        end = children.size() - 1;
+    }
+
+    SizingInfo::List result;
+    result.reserve(end - start + 1);
+    for (int i = start; i <= end; ++i) {
+        Item *neighbour = children.at(i);
+        result << neighbour->m_sizingInfo;
     }
 
     return result;

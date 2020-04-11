@@ -787,6 +787,8 @@ void TestMultiSplitter::tst_misc1()
 void TestMultiSplitter::tst_misc2()
 {
     // Random test1
+    // |5|1|2|
+    // | |3|4|
 
     auto root = createRoot();
     auto item1 = createRootWithSingleItem();

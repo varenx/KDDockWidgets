@@ -164,6 +164,7 @@ inline Side sideForLocation(Location loc)
 }
 
 struct SizingInfo {
+    typedef QVector<SizingInfo> List;
     QSize minSize = QSize(40, 40); // TODO: Hardcoded
     QSize maxSize = QSize(16777215, 16777215); // TODO: Not supported yet
     QSize proposedSize;
@@ -243,8 +244,8 @@ public:
     virtual void dumpLayout(int level = 0);
     void setGeometry(QRect rect);
     SizingInfo m_sizingInfo;
-    int availableOnSide(Side, Qt::Orientation) const;
     QSize missingSize() const;
+    int missingLength(Qt::Orientation) const;
     bool isBeingInserted() const;
     void setBeingInserted(bool);
     ItemContainer *root() const;
@@ -355,9 +356,24 @@ public:
     void dumpLayout(int level = 0);
     void updateChildPercentages();
     void restorePlaceholder(Item *);
+
+    ///@brief Grows the side1Neighbour to the right and the side2Neighbour to the left
+    ///So they occupy the empty space that's between them (or bottom/top if Qt::Vertical).
+    ///This is useful when an Item is removed. Its neighbours will occupy its space.
+    ///side1Neighbour or side2Neighbour are allowed to be null, in which case the non-null one
+    ///will occupy the entire space.
     void growNeighbours(Item *side1Neighbour, Item *side2Neighbour);
+
+    ///@brief grows an item by @p amount. It calculates how much to grow on side1 and on side2
+    ///Then calls growItem(item, side1Growth, side2Growth) which will effectively grow it,
+    ///and shrink the neighbours which are donating the size.
     void growItem(Item *, int amount, GrowthStrategy);
+
+    ///@brief Grows an item by @p side1Growth on the left and @p side2Growth on the right
+    ///(or top/bottom if Qt::Vertical). Squeezes the neighbours (not just the immediate ones).
+    ///at the end positions all items.
     void growItem(Item *, int side1Growth, int side2Growth);
+
     Item *neighbourFor(const Item *, Side) const;
     Item *visibleNeighbourFor(const Item *item, Side side) const;
     QSize availableSize() const;
@@ -375,6 +391,7 @@ public:
     void onChildMinSizeChanged(Item *child);
     void onChildVisibleChanged(Item *child, bool visible);
     QVector<int> availableLengthPerNeighbour(Item *item, Side) const;
+    SizingInfo::List sizingInfosPerNeighbour(Item *item, Side) const;
     QVector<int> calculateSqueezes(QVector<int> availabilities, int needed) const;
     QRect suggestedDropRect(QSize minSize, const Item *relativeTo, Location) const;
     void positionItems();
