@@ -919,9 +919,10 @@ QRect ItemContainer::suggestedDropRect(QSize minSize, const Item *relativeTo, Lo
 
     const int itemMin = Layouting::length(minSize, m_orientation);
     const int available = availableLength() - Item::separatorThickness();
-    const Item::List visibleChildren = this->visibleChildren();
+    const SizingInfo::List sizes = this->sizes();
+    const int count = sizes.count();
 
-    if (relativeTo && visibleChildren.size() == 1) {
+    if (relativeTo && count == 1) {
         // If it's the only item then the result is that it's relative to the whole layout
         // So simplify our code
         relativeTo = nullptr;
@@ -944,19 +945,19 @@ QRect ItemContainer::suggestedDropRect(QSize minSize, const Item *relativeTo, Lo
                 if (indexOfRelativeTo == 0) {
                     suggestedPos = 0;
                 } else {
-                    const LengthOnSide side1Length = lengthOnSide(indexOfRelativeTo - 1, Side1, m_orientation);
-                    const LengthOnSide side2Length = lengthOnSide(indexOfRelativeTo, Side2, m_orientation);
+                    const LengthOnSide side1Length = lengthOnSide(sizes, indexOfRelativeTo - 1, Side1, m_orientation);
+                    const LengthOnSide side2Length = lengthOnSide(sizes, indexOfRelativeTo, Side2, m_orientation);
                     const int min1 = relativeToPos - side1Length.available();
                     const int max2 = relativeToPos + side2Length.available() - suggestedLength;
                     suggestedPos = relativeToPos - suggestedLength / 2;
                     suggestedPos = qBound(min1, suggestedPos, max2);
                 }
             } else { // Side2
-                 if (indexOfRelativeTo == visibleChildren.size() - 1) { // is last
+                 if (indexOfRelativeTo == count - 1) { // is last
                      suggestedPos = length() - suggestedLength;
                  } else {
-                     const LengthOnSide side1Length = lengthOnSide(indexOfRelativeTo, Side1, m_orientation);
-                     const LengthOnSide side2Length  = lengthOnSide(indexOfRelativeTo + 1, Side2, m_orientation);
+                     const LengthOnSide side1Length = lengthOnSide(sizes, indexOfRelativeTo, Side1, m_orientation);
+                     const LengthOnSide side2Length  = lengthOnSide(sizes, indexOfRelativeTo + 1, Side2, m_orientation);
                      const int min1 = relativeToPos + relativeTo->length(m_orientation) - side1Length.available();
                      const int max2 = relativeToPos + relativeTo->length(m_orientation) + side2Length.available() - suggestedLength;
                      suggestedPos = relativeToPos + relativeTo->length(m_orientation) - (suggestedLength / 2);
@@ -1356,19 +1357,25 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
     const int totalNewLength = usableLength();
     int remaining = totalNewLength;
 
-    int nextPos = 0;
     const QVector<double> childPercentages = this->childPercentages();
     const Item::List children = visibleChildren();
-
     const int count = children.size();
+    SizingInfo::List childSizes = sizes();
+
+    // #1 Apply the new sizes, based on the % they occupied previously.
+    // But apply them to our SizingInfo::List first before setting actual Item/QWidget geometries
+    // Because we need step #2 where we ensure min sizes for each item are respected. We could
+    // calculate and do everything in a single-step, but we already have the code for #2 in growItem()
+    // so doing it in 2 steps will reuse much logic.
     for (int i = 0; i < count; ++i) {
         const bool isLast = i == count - 1;
 
-        Item *item = children.at(i);
+        SizingInfo &itemSize = childSizes[i];
+
         const qreal childPercentage = childPercentages.at(i);
         const int newItemLength = lengthChanged ? (isLast ? remaining
                                                           : int(childPercentage * totalNewLength))
-                                                : item->length(m_orientation);
+                                                : itemSize.length(m_orientation);
 
         if (newItemLength <= 0) {
             qWarning() << Q_FUNC_INFO << "Invalid resize. Dumping layout";
@@ -1377,16 +1384,31 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
             return;
         }
 
-        item->setPos(nextPos, m_orientation);
-        nextPos += newItemLength + separatorThickness();
         remaining = remaining - newItemLength;
 
         if (isVertical()) {
-            item->resize({ width(), newItemLength });
+            itemSize.geometry.setSize({ width(), newItemLength });
         } else {
-            item->resize({ newItemLength, height() });
+            itemSize.geometry.setSize({ newItemLength, height() });
         }
     }
+
+    // #2 Adjust sizes so that each item has at least Item::minSize.
+    for (int i = 0; i < count; ++i) {
+        SizingInfo &size = childSizes[i];
+        const int missing = size.missingLength(m_orientation);
+        if (missing == 0)
+            continue;
+
+        growItem(i, childSizes, missing, GrowthStrategy::BothSidesEqually);
+    }
+
+
+    // #3 Sizes are now correct and honour min/max sizes. So apply them to our Items
+    applySizes(childSizes);
+
+    // #4. All sizes are correct. Just layed them out at the correct position. Spaced with 5px in between each other
+    positionItems();
 }
 
 int ItemContainer::length() const
@@ -1501,13 +1523,14 @@ int ItemContainer::availableLength() const
                         : availableSize().width();
 }
 
-ItemContainer::LengthOnSide ItemContainer::lengthOnSide(int fromIndex, Side side, Qt::Orientation o) const
+ItemContainer::LengthOnSide ItemContainer::lengthOnSide(const SizingInfo::List &sizes, int fromIndex,
+                                                        Side side, Qt::Orientation o) const
 {
     if (fromIndex < 0)
         return {};
 
-    const Item::List visibleChildren = this->visibleChildren();
-    if (fromIndex >= visibleChildren.size())
+    const int count = sizes.count();
+    if (fromIndex >= count)
         return {};
 
     int start = 0;
@@ -1517,15 +1540,15 @@ ItemContainer::LengthOnSide ItemContainer::lengthOnSide(int fromIndex, Side side
         end = fromIndex;
     } else {
         start = fromIndex;
-        end = visibleChildren.size() - 1;
+        end = count - 1;
 
     }
 
     LengthOnSide result;
     for (int i = start; i <= end; ++i) {
-        Item *child = visibleChildren.at(i);
-        result.length += child->length(o);
-        result.minLength += child->minLength(o);
+        const SizingInfo &size = sizes.at(i);
+        result.length += size.length(o);
+        result.minLength += size.minLength(o);
     }
 
     return result;
@@ -1714,25 +1737,25 @@ void ItemContainer::growNeighbours(Item *side1Neighbour, Item *side2Neighbour)
     }
 }
 
-void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrategy)
+void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, GrowthStrategy growthStrategy)
 {
+    Q_ASSERT(index != -1);
     if (amount == 0)
         return;
 
-    Q_ASSERT(growthStrategy == GrowthStrategy::BothSidesEqually);
-    const Item::List visibleItems = visibleChildren();
-    const int index = visibleItems.indexOf(item);
-    Q_ASSERT(index != -1);
+    SizingInfo &sizingInfo = sizes[index];
 
-    if (visibleItems.size() == 1) {
+    Q_ASSERT(growthStrategy == GrowthStrategy::BothSidesEqually);
+    const int count = sizes.count();
+    if (count == 1) {
         //There's no neighbours to push, we're alone. Occupy the full container
-        item->setLength(item->length(m_orientation) + amount, m_orientation);
+        sizingInfo.setLength(sizingInfo.length(m_orientation) + amount, m_orientation);
         positionItems();
         return;
     }
 
-    const LengthOnSide side1Length = lengthOnSide(index - 1, Side1, m_orientation);
-    const LengthOnSide side2Length = lengthOnSide(index + 1, Side2, m_orientation);
+    const LengthOnSide side1Length = lengthOnSide(sizes, index - 1, Side1, m_orientation);
+    const LengthOnSide side2Length = lengthOnSide(sizes, index + 1, Side2, m_orientation);
 
     const int available1 = side1Length.available();
     const int available2 = side2Length.available();
@@ -1743,17 +1766,16 @@ void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrate
     int newPosition = 0;
     int side1Growth = 0;
 
-    Item *side1Neighbour = index > 0 ? visibleItems.at(index - 1)
-                                     : nullptr;
+    SizingInfo sizing1;
 
-    if (side1Neighbour) {
-        Item *side1Neighbour = visibleItems.at(index - 1);
-        min1 = side1Neighbour->position(m_orientation) + side1Neighbour->length(m_orientation) - available1;
-        newPosition = side1Neighbour->position(m_orientation) + side1Neighbour->length(m_orientation) - (amount / 2);
+    if (index > 0) {
+        sizing1 = sizes[index - 1];
+        min1 = sizing1.position(m_orientation) + sizing1.length(m_orientation) - available1;
+        newPosition = sizing1.position(m_orientation) + sizing1.length(m_orientation) - (amount / 2);
     }
 
-    if (index < visibleItems.size() - 1) {
-        max2 = visibleItems.at(index + 1)->position(m_orientation) + available2;
+    if (index < count - 1) {
+        max2 = sizes.at(index + 1).position(m_orientation) + available2;
     }
 
     // Now bound the position
@@ -1764,36 +1786,36 @@ void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrate
     }
 
     if (newPosition > 0) {
-        side1Growth = side1Neighbour->position(m_orientation) + side1Neighbour->length(m_orientation) - newPosition;
+        side1Growth = sizing1.position(m_orientation) + sizing1.length(m_orientation) - newPosition;
     }
 
     const int side2Growth = neededLength - side1Growth + Item::separatorThickness();
-    growItem(item, side1Growth, side2Growth);
+    growItem(index, sizes, side1Growth, side2Growth);
 }
 
-QVector<int> ItemContainer::availableLengthPerNeighbour(Item *item, Side side) const
+void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrategy)
 {
-    Item::List children = visibleChildren();
-    const int indexOfChild = children.indexOf(item);
+    const Item::List items = visibleChildren();
+    const int index = items.indexOf(item);
+    SizingInfo::List sizes = this->sizes();
 
-    int start = 0;
-    int end = 0;
-    if (side == Side1) {
-        start = 0;
-        end = indexOfChild - 1;
-    } else {
-        start = indexOfChild + 1;
-        end = children.size() - 1;
+    growItem(index, /*by-ref=*/sizes, amount, growthStrategy);
+    applySizes(sizes);
+}
+
+void ItemContainer::applySizes(const SizingInfo::List &sizes)
+{
+    const Item::List items = visibleChildren();
+
+    const int count = items.size();
+    Q_ASSERT(count == sizes.size());
+
+    for (int i = 0; i < count; ++i) {
+        Item *item = items.at(i);
+        item->resize(sizes[i].geometry.size());
     }
 
-    QVector<int> result;
-    result.reserve(end - start + 1);
-    for (int i = start; i <= end; ++i) {
-        Item *neighbour = children.at(i);
-        result << neighbour->availableLength(m_orientation);
-    }
-
-    return result;
+    positionItems();
 }
 
 SizingInfo::List ItemContainer::sizingInfosPerNeighbour(Item *item, Side side) const
@@ -1820,13 +1842,26 @@ SizingInfo::List ItemContainer::sizingInfosPerNeighbour(Item *item, Side side) c
     return result;
 }
 
-QVector<int> ItemContainer::calculateSqueezes(const SizingInfo::List &sizes, int needed) const
+SizingInfo::List ItemContainer::sizes() const
 {
-    const int count = sizes.count();
-    QVector<int> availabilities(count, 0);
-    for (int i = 0; i < count; ++i) {
-        availabilities[i] = sizes.at(i).availableLength(m_orientation);
+    const Item::List children = visibleChildren();
+    SizingInfo::List result;
+    result.reserve(children.count());
+    for (Item *item : children)
+        result << item->m_sizingInfo;
+
+    return result;
+}
+
+QVector<int> ItemContainer::calculateSqueezes(SizingInfo::List::ConstIterator begin, SizingInfo::List::ConstIterator end, int needed) const
+{
+    QVector<int> availabilities;
+    for (auto it = begin; it < end; ++it) {
+        availabilities << it->availableLength(m_orientation);
     }
+
+    const int count = availabilities.count();
+
     QVector<int> squeezes(count, 0);
     int missing = needed;
     while (missing > 0) {
@@ -1860,32 +1895,31 @@ QVector<int> ItemContainer::calculateSqueezes(const SizingInfo::List &sizes, int
     return squeezes;
 }
 
-void ItemContainer::growItem(Item *child, int side1Growth, int side2Growth)
+void ItemContainer::growItem(int index, SizingInfo::List &sizes, int side1Growth, int side2Growth)
 {
     Q_ASSERT(side1Growth > 0 || side2Growth > 0);
 
-    Item::List children = visibleChildren();
-
     if (side1Growth > 0) {
-        const SizingInfo::List sizes = sizingInfosPerNeighbour(child, Side1);
-        const QVector<int> squeezes = calculateSqueezes(sizes, side1Growth);
+        auto begin = sizes.cbegin();
+        auto end = sizes.cbegin() + index;
+
+        const QVector<int> squeezes = calculateSqueezes(begin, end, side1Growth);
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
-            Item *neighbour = children[i];
-            neighbour->setGeometry_recursive(adjustedRect(neighbour->geometry(), m_orientation, 0, -squeeze));
+            SizingInfo &sizing = sizes[i];
+            sizing.geometry = adjustedRect(sizing.geometry, m_orientation, 0, -squeeze);
         }
     }
 
     if (side2Growth > 0) {
-        const SizingInfo::List sizes = sizingInfosPerNeighbour(child, Side2);
-        const QVector<int> squeezes = calculateSqueezes(sizes, side2Growth);
-        const int itemIndex = children.indexOf(child);
+        auto begin = sizes.cbegin() + index + 1;
+        auto end = sizes.cend();
+
+        const QVector<int> squeezes = calculateSqueezes(begin, end, side2Growth);
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
-            Item *neighbour = children[i + itemIndex + 1];
-            neighbour->setGeometry_recursive(adjustedRect(neighbour->geometry(), m_orientation, squeeze, 0));
+            SizingInfo &sizing = sizes[i + index + 1];
+            sizing.geometry = adjustedRect(sizing.geometry, m_orientation, squeeze, 0);
         }
     }
-
-    positionItems();
 }
