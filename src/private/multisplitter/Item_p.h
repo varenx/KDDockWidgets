@@ -165,6 +165,7 @@ inline Side sideForLocation(Location loc)
 
 struct SizingInfo {
     typedef QVector<SizingInfo> List;
+    QRect geometry;
     QSize minSize = QSize(40, 40); // TODO: Hardcoded
     QSize maxSize = QSize(16777215, 16777215); // TODO: Not supported yet
     QSize proposedSize;
@@ -287,7 +288,6 @@ protected:
     Qt::Orientation m_orientation = Qt::Vertical;
 
     ItemContainer *m_parent = nullptr;
-    QRect m_geometry;
 
 private Q_SLOTS:
     void onWidgetLayoutRequested();

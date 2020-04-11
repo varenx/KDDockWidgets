@@ -238,7 +238,7 @@ QSize Item::maxSize() const
 
 void Item::setPos(QPoint pos)
 {
-    QRect geo = m_geometry;
+    QRect geo = m_sizingInfo.geometry;
     geo.moveTopLeft(pos);
     setGeometry(geo);
 }
@@ -291,39 +291,39 @@ QSize Item::hardcodedMinimumSize()
 
 int Item::x() const
 {
-    return m_geometry.x();
+    return m_sizingInfo.geometry.x();
 }
 
 int Item::y() const
 {
-    return m_geometry.y();
+    return m_sizingInfo.geometry.y();
 }
 
 int Item::width() const
 {
-    return m_geometry.width();
+    return m_sizingInfo.geometry.width();
 }
 
 int Item::height() const
 {
-    return m_geometry.height();
+    return m_sizingInfo.geometry.height();
 }
 
 QSize Item::size() const
 {
-    return m_geometry.size();
+    return m_sizingInfo.geometry.size();
 }
 
 void Item::setSize(QSize sz)
 {
-    QRect newGeo = m_geometry;
+    QRect newGeo = m_sizingInfo.geometry;
     newGeo.setSize(sz);
     setGeometry(newGeo);
 }
 
 QPoint Item::pos() const
 {
-    return m_geometry.topLeft();
+    return m_sizingInfo.geometry.topLeft();
 }
 
 int Item::position(Qt::Orientation o) const
@@ -335,7 +335,7 @@ int Item::position(Qt::Orientation o) const
 QRect Item::geometry() const
 {
     return isBeingInserted() ? QRect()
-                             : m_geometry;
+                             : m_sizingInfo.geometry;
 }
 
 bool Item::isContainer() const
@@ -399,7 +399,7 @@ void Item::setIsVisible(bool is)
         Q_EMIT visibleChanged(this, is);
 
         if (m_widget) {
-            m_widget->setGeometry(mapToRoot(m_geometry));
+            m_widget->setGeometry(mapToRoot(m_sizingInfo.geometry));
             m_widget->setVisible(is);
         }
 
@@ -438,6 +438,8 @@ bool Item::checkSanity() const
 
 void Item::setGeometry(QRect rect)
 {
+    QRect &m_geometry = m_sizingInfo.geometry;
+
     if (rect != m_geometry) {
         const QRect oldGeo = m_geometry;
         m_geometry = rect;
@@ -482,7 +484,7 @@ void Item::dumpLayout(int level)
                                          : QString();
 
     qDebug().noquote() << indent << "- Widget: " << objectName()
-                       << m_geometry << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
+                       << m_sizingInfo.geometry// << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
                        << visible << beingInserted;
 }
 
@@ -1394,7 +1396,7 @@ int ItemContainer::length() const
 
 QRect ItemContainer::rect() const
 {
-    QRect rect = m_geometry;
+    QRect rect = m_sizingInfo.geometry;
     rect.moveTo(QPoint(0, 0));
     return rect;
 }
@@ -1412,7 +1414,7 @@ void ItemContainer::dumpLayout(int level)
                                      : "* Layout: ";
 
     qDebug().noquote() << indent << typeStr << m_orientation
-                       << m_geometry /*<< "r=" << m_geometry.right() << "b=" << m_geometry.bottom()*/
+                       << m_sizingInfo.geometry /*<< "r=" << m_geometry.right() << "b=" << m_geometry.bottom()*/
                        << "; this=" << this << beingInserted << visible
                        << "; %=" << childPercentages();
     for (Item *item : qAsConst(m_children)) {
