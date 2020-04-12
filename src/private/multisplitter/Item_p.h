@@ -448,6 +448,7 @@ public:
     QVector<int> calculateSqueezes(SizingInfo::List::ConstIterator begin, SizingInfo::List::ConstIterator end, int needed) const;
     QRect suggestedDropRect(QSize minSize, const Item *relativeTo, Location) const;
     void positionItems();
+    void positionItems(SizingInfo::List &sizes);
     bool isResizing() const { return m_isResizing; }
     void clear();
     Item* itemForFrame(const QWidget *w) const; // TODO: Rename
@@ -461,6 +462,7 @@ public:
     bool isVisible() const override;
     void setLength_recursive(int length, Qt::Orientation) override;
     void applySizes(const SizingInfo::List &sizes);
+    void applyPositions(const SizingInfo::List &sizes);
 Q_SIGNALS:
     void itemsChanged();
     void numVisibleItemsChanged(int);

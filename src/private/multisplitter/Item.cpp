@@ -1039,26 +1039,52 @@ QRect ItemContainer::suggestedDropRect(QSize minSize, const Item *relativeTo, Lo
 
 void ItemContainer::positionItems()
 {
-    Item::List children = visibleChildren();
+    SizingInfo::List sizes = this->sizes();
+    positionItems(/*by-ref=*/sizes);
+    applyPositions(sizes);
+
+    updateChildPercentages();
+}
+
+void ItemContainer::applyPositions(const SizingInfo::List &sizes)
+{
+    const Item::List items = visibleChildren();
+    const int count = items.size();
+    Q_ASSERT(count == sizes.size());
+    for (int i = 0; i < count; ++i) {
+        Item *item = items.at(i);
+        const SizingInfo &sizing = sizes[i];
+        if (sizing.isBeingInserted) {
+            continue;
+        }
+
+        const Qt::Orientation oppositeOrientation = Layouting::oppositeOrientation(m_orientation);
+        // If the layout is horizontal, the item will have the height of the container. And vice-versa
+        item->setLength_recursive(sizing.length(oppositeOrientation), oppositeOrientation);
+
+        item->setPos(sizing.geometry.topLeft());
+    }
+}
+
+void ItemContainer::positionItems(SizingInfo::List &sizes)
+{
     int nextPos = 0;
+    const int count = sizes.count();
     const Qt::Orientation oppositeOrientation = Layouting::oppositeOrientation(m_orientation);
-    for (int i = 0; i < children.size(); ++i) {
-        Item *item = children.at(i);
-        if (item->isBeingInserted()) {
+    for (int i = 0; i < count; ++i) {
+        SizingInfo &sizing = sizes[i];
+        if (sizing.isBeingInserted) {
             nextPos += Item::separatorThickness();
             continue;
         }
 
         // If the layout is horizontal, the item will have the height of the container. And vice-versa
         const int oppositeLength = Layouting::length(size(), oppositeOrientation);
-        item->setLength_recursive(oppositeLength, oppositeOrientation);
+        sizing.setLength(oppositeLength, oppositeOrientation);
 
-        // Update the pos
-        item->setPos(nextPos, m_orientation);
-        nextPos += item->length(m_orientation) + Item::separatorThickness();
+        sizing.setPos(nextPos, m_orientation);
+        nextPos += sizing.length(m_orientation) + Item::separatorThickness();
     }
-
-    updateChildPercentages();
 }
 
 void ItemContainer::clear()
@@ -1393,6 +1419,8 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
         }
     }
 
+    positionItems(childSizes);
+
     // #2 Adjust sizes so that each item has at least Item::minSize.
     for (int i = 0; i < count; ++i) {
         SizingInfo &size = childSizes[i];
@@ -1401,13 +1429,14 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
             continue;
 
         growItem(i, childSizes, missing, GrowthStrategy::BothSidesEqually);
+        size.setLength(size.minLength(m_orientation), m_orientation); // TODO: growItem should do it instead ?
     }
 
     // #3 Sizes are now correct and honour min/max sizes. So apply them to our Items
     applySizes(childSizes);
 
     // #4. All sizes are correct. Just layed them out at the correct position. Spaced with 5px in between each other
-    positionItems();
+    positionItems(); // TODO: Just a single applyGeometries ?
 }
 
 int ItemContainer::length() const
@@ -1764,6 +1793,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     int max2 = length() - 1;
     int newPosition = 0;
     int side1Growth = 0;
+    int side2Separator = 0;
 
     SizingInfo sizing1;
 
@@ -1774,7 +1804,11 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     }
 
     if (index < count - 1) {
-        max2 = sizes.at(index + 1).position(m_orientation) + available2;
+        const SizingInfo &size2 = sizes.at(index + 1);
+        max2 = size2.position(m_orientation) + available2;
+        if (size2.position(m_orientation) - sizingInfo.edge(m_orientation) - 1 != Item::separatorThickness()) {
+            side2Separator = Item::separatorThickness();
+        }
     }
 
     // Now bound the position
@@ -1788,7 +1822,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
         side1Growth = sizing1.position(m_orientation) + sizing1.length(m_orientation) - newPosition;
     }
 
-    const int side2Growth = neededLength - side1Growth + Item::separatorThickness();
+    const int side2Growth = neededLength - side1Growth + side2Separator;
     growItem(index, sizes, side1Growth, side2Growth);
 }
 
@@ -1805,7 +1839,6 @@ void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrate
 void ItemContainer::applySizes(const SizingInfo::List &sizes)
 {
     const Item::List items = visibleChildren();
-
     const int count = items.size();
     Q_ASSERT(count == sizes.size());
 
