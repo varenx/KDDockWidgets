@@ -192,12 +192,24 @@ struct SizingInfo {
         return Layouting::pos(pos(), o);
     }
 
+    int edge(Qt::Orientation o) const {
+        return o == Qt::Vertical ? geometry.bottom()
+                                 : geometry.right();
+    }
+
     void setLength(int l, Qt::Orientation o) {
         if (o == Qt::Vertical) {
             geometry.setHeight(l);
         } else {
             geometry.setWidth(l);
         }
+    }
+
+    void setPos(int p, Qt::Orientation o) {
+        if (o == Qt::Vertical)
+            geometry.moveTop(p);
+        else
+            geometry.moveLeft(p);
     }
 
     bool isNull() const {
@@ -209,8 +221,8 @@ struct SizingInfo {
     QSize minSize = QSize(40, 40); // TODO: Hardcoded
     QSize maxSize = QSize(16777215, 16777215); // TODO: Not supported yet
     QSize proposedSize;
-    bool isBeingInserted = false;
     double percentageWithinParent = 0.0;
+    bool isBeingInserted = false;
 };
 
 class ItemContainer;
