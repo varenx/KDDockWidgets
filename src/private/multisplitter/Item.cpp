@@ -448,7 +448,7 @@ bool Item::checkSanity() const
         return false;
     }
 
-    if (m_widget) {
+    if (m_widget && false) { // Uncomment only after honouring layoutInvalidated()
         if (mapFromRoot(m_widget->geometry()) != geometry()) {
             qWarning() << Q_FUNC_INFO << "Guest widget doesn't have correct geometry. has="
                        << mapFromRoot(m_widget->geometry())
@@ -510,7 +510,7 @@ void Item::dumpLayout(int level)
 
     qDebug().noquote() << indent << "- Widget: " << objectName()
                        << m_sizingInfo.geometry// << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
-                       << visible << beingInserted;
+                       << visible << beingInserted << this;
 }
 
 Item::Item(QWidget *hostWidget, ItemContainer *parent)
@@ -582,7 +582,8 @@ void Item::onWidgetDestroyed()
 void Item::onWidgetLayoutRequested()
 {
     if (m_widget && m_widget->size() != size()) {
-        qWarning() << Q_FUNC_INFO << "TODO: Not implemented yet"
+        // TODO
+        qDebug() << Q_FUNC_INFO << "TODO: Not implemented yet"
                    << m_widget->size()
                    << m_sizingInfo.geometry
                    << m_sizingInfo.isBeingInserted;
@@ -1393,7 +1394,10 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 
     const QSize minSize = this->minSize();
     if (newSize.width() < minSize.width() || newSize.height() < minSize.height()) {
-        qWarning() << Q_FUNC_INFO << "New size doesn't respect size constraints";
+        root()->dumpLayout();
+        qWarning() << Q_FUNC_INFO << "New size doesn't respect size constraints"
+                   << "; new=" << newSize
+                   << "; min=" << minSize;
         return;
     }
 

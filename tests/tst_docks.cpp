@@ -2069,6 +2069,9 @@ void TestDocks::tst_maximizeAndRestore()
 
 void TestDocks::tst_propagateResize2()
 {
+    // |5|1|2|
+    // | |3|4|
+
     EnsureTopLevelsDeleted e;
     auto m = createMainWindow();
     auto dock1 = createDockWidget("dock1", new QPushButton("one"));
