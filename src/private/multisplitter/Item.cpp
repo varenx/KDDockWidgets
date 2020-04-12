@@ -53,7 +53,7 @@ QPoint Item::mapFromRoot(QPoint p) const
     ItemContainer *c = parentContainer();
     while (c) {
         p = p - c->pos();
-        c = parentContainer();
+        c = c->parentContainer();
     }
 
     return p;
@@ -80,7 +80,7 @@ void Item::setFrame(QWidget *w)
 
     if (m_widget) {
         m_widget->removeEventFilter(this);
-        disconnect(w, &QObject::destroyed, this, &Item::onWidgetDestroyed);
+        disconnect(m_widget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
         disconnect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested()));
         disconnect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
     }
@@ -94,11 +94,17 @@ void Item::setFrame(QWidget *w)
         connect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
         m_widget->setParent(m_hostWidget);
         setMinSize(widgetMinSize(m_widget));
-        setGeometry(m_widget->geometry());
+        updateWidgetGeometries();
     }
 
     updateObjectName();
 
+}
+
+void Item::updateWidgetGeometries()
+{
+    if (m_widget)
+        m_widget->setGeometry(mapToRoot(m_sizingInfo.geometry));
 }
 
 void Item::ref()
@@ -140,6 +146,7 @@ void Item::setHostWidget(QWidget *host)
         if (m_widget) {
             m_widget->setParent(host);
             m_widget->setVisible(true);
+            updateWidgetGeometries();
         }
     }
 }
@@ -188,6 +195,8 @@ void Item::setParentContainer(ItemContainer *parent)
             connect(this, &Item::minSizeChanged, parent, &ItemContainer::onChildMinSizeChanged);
             connect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);
             setHostWidget(parent->hostWidget());
+            updateWidgetGeometries();
+
             Q_EMIT visibleChanged(this, isVisible());
         }
 
@@ -433,6 +442,16 @@ bool Item::checkSanity() const
         return false;
     }
 
+    if (m_widget) {
+        if (mapFromRoot(m_widget->geometry()) != geometry()) {
+            qWarning() << Q_FUNC_INFO << "Guest widget doesn't have correct geometry. has="
+                       << mapFromRoot(m_widget->geometry())
+                       << m_widget->geometry()
+                       << geometry();
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -468,9 +487,7 @@ void Item::setGeometry(QRect rect)
         if (oldGeo.height() != height())
             Q_EMIT heightChanged();
 
-        if (m_widget && isVisible()) {
-            m_widget->setGeometry(mapToRoot(m_geometry));
-        }
+        updateWidgetGeometries();
     }
 }
 
@@ -1517,6 +1534,12 @@ void ItemContainer::restorePlaceholder(Item *item)
     item->setLength_recursive(newLength, m_orientation);
     Q_ASSERT(item->isVisible());
     growItem(item, newLength, GrowthStrategy::BothSidesEqually);
+}
+
+void ItemContainer::updateWidgetGeometries()
+{
+    for (Item *item : qAsConst(m_children))
+        item->updateWidgetGeometries();
 }
 
 Item *ItemContainer::visibleNeighbourFor(const Item *item, Side side) const

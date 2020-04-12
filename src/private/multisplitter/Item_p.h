@@ -324,6 +324,7 @@ public:
     QWidget *hostWidget() const;
     void restorePlaceholder(QWidget *);
     virtual void setHostWidget(QWidget *);
+    virtual void updateWidgetGeometries();
 
 Q_SIGNALS:
     void geometryChanged();
@@ -408,6 +409,7 @@ public:
     void dumpLayout(int level = 0);
     void updateChildPercentages();
     void restorePlaceholder(Item *);
+    void updateWidgetGeometries() override;
 
     ///@brief Grows the side1Neighbour to the right and the side2Neighbour to the left
     ///So they occupy the empty space that's between them (or bottom/top if Qt::Vertical).
