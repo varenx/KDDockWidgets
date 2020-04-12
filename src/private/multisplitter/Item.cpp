@@ -89,12 +89,18 @@ void Item::setFrame(QWidget *w)
 
     if (m_widget) {
         m_widget->installEventFilter(this);
+        m_widget->setParent(m_hostWidget);
+        setMinSize(widgetMinSize(m_widget));
+
         connect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
         connect(m_widget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
         connect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
-        m_widget->setParent(m_hostWidget);
-        setMinSize(widgetMinSize(m_widget));
-        updateWidgetGeometries();
+
+        if (m_sizingInfo.geometry.isEmpty()) {
+            setGeometry(mapFromRoot(m_widget->geometry()));
+        } else {
+            updateWidgetGeometries();
+        }
     }
 
     updateObjectName();
@@ -447,7 +453,9 @@ bool Item::checkSanity() const
             qWarning() << Q_FUNC_INFO << "Guest widget doesn't have correct geometry. has="
                        << mapFromRoot(m_widget->geometry())
                        << m_widget->geometry()
-                       << geometry();
+                       << geometry()
+                       << this
+                       << m_widget;
             return false;
         }
     }
@@ -573,6 +581,12 @@ void Item::onWidgetDestroyed()
 
 void Item::onWidgetLayoutRequested()
 {
+    if (m_widget && m_widget->size() != size()) {
+        qWarning() << Q_FUNC_INFO << "TODO: Not implemented yet"
+                   << m_widget->size()
+                   << m_sizingInfo.geometry
+                   << m_sizingInfo.isBeingInserted;
+    }
 }
 
 bool Item::isRoot() const
