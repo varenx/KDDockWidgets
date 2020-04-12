@@ -1403,7 +1403,6 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
         growItem(i, childSizes, missing, GrowthStrategy::BothSidesEqually);
     }
 
-
     // #3 Sizes are now correct and honour min/max sizes. So apply them to our Items
     applySizes(childSizes);
 
@@ -1750,7 +1749,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     if (count == 1) {
         //There's no neighbours to push, we're alone. Occupy the full container
         sizingInfo.setLength(sizingInfo.length(m_orientation) + amount, m_orientation);
-        positionItems();
+        positionItems(); // TODO REMOVE ?
         return;
     }
 
@@ -1853,7 +1852,8 @@ SizingInfo::List ItemContainer::sizes() const
     return result;
 }
 
-QVector<int> ItemContainer::calculateSqueezes(SizingInfo::List::ConstIterator begin, SizingInfo::List::ConstIterator end, int needed) const
+QVector<int> ItemContainer::calculateSqueezes(SizingInfo::List::ConstIterator begin,
+                                              SizingInfo::List::ConstIterator end, int needed) const
 {
     QVector<int> availabilities;
     for (auto it = begin; it < end; ++it) {
