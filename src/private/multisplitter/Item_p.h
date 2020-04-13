@@ -336,7 +336,7 @@ public:
     int refCount() const;
 
     QWidget *hostWidget() const;
-    void restorePlaceholder(GuestInterface *guest);
+    void restore(GuestInterface *guest);
     virtual void setHostWidget(QWidget *);
     virtual void updateWidgetGeometries();
 
@@ -423,7 +423,7 @@ public:
     QVariantList items() const;
     void dumpLayout(int level = 0);
     void updateChildPercentages();
-    void restorePlaceholder(Item *);
+    void restoreChild(Item *);
     void updateWidgetGeometries() override;
 
     ///@brief Grows the side1Neighbour to the right and the side2Neighbour to the left

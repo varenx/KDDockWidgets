@@ -141,11 +141,16 @@ QWidget *Item::hostWidget() const
     return m_hostWidget;
 }
 
-void Item::restorePlaceholder(GuestInterface *guest)
+void Item::restore(GuestInterface *guest)
 {
     Q_ASSERT(!isVisible() && !frame());
-    setFrame(guest);
-    setIsVisible(true);
+    if (isContainer()) {
+        qWarning() << Q_FUNC_INFO << "Containers can't be restored";
+    } else {
+        setFrame(guest);
+        parentContainer()->restoreChild(this);
+
+    }
 }
 
 void Item::setHostWidget(QWidget *host)
@@ -947,8 +952,6 @@ void ItemContainer::onChildVisibleChanged(Item */*child*/, bool visible)
     } else if (!visible && numVisible == 0) {
         Q_EMIT visibleChanged(this, false);
     }
-
-    updateChildPercentages();
 }
 
 QRect ItemContainer::suggestedDropRect(QSize minSize, const Item *relativeTo, Location loc) const
@@ -1262,14 +1265,14 @@ void ItemContainer::setLength_recursive(int length, Qt::Orientation o)
     resize(sz);
 }
 
-void ItemContainer::insertItem(Item *item, int index, bool growItem)
+void ItemContainer::insertItem(Item *item, int index, bool restoreItem)
 {
     m_children.insert(index, item);
     item->setParentContainer(this);
     Q_EMIT itemsChanged();
 
-    if (growItem)
-        restorePlaceholder(item);
+    if (restoreItem)
+        restoreChild(item);
 
     if (!item->isContainer()) {
         if (item->isVisible())
@@ -1561,13 +1564,15 @@ QVector<double> ItemContainer::childPercentages() const
     return percentages;
 }
 
-void ItemContainer::restorePlaceholder(Item *item)
+void ItemContainer::restoreChild(Item *item)
 {
     Q_ASSERT(contains(item));
 
     item->setIsVisible(true);
-    if (numVisibleChildren() == 1)
+    if (numVisibleChildren() == 1) {
+        updateChildPercentages();
         return;
+    }
 
     const int available = availableOnSide(item, Side1) + availableOnSide(item, Side2) - Item::separatorThickness();
 
@@ -1579,6 +1584,8 @@ void ItemContainer::restorePlaceholder(Item *item)
     item->setLength_recursive(newLength, m_orientation);
     Q_ASSERT(item->isVisible());
     growItem(item, newLength + Item::separatorThickness(), GrowthStrategy::BothSidesEqually);
+
+    updateChildPercentages();
 }
 
 void ItemContainer::updateWidgetGeometries()

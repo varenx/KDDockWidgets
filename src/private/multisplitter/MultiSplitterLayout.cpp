@@ -327,7 +327,7 @@ void MultiSplitterLayout::restorePlaceholder(DockWidgetBase *dw, Item *item, int
 {
     if (item->isPlaceholder()) {
         Frame *newFrame = Config::self().frameworkWidgetFactory()->createFrame(multiSplitter());
-        item->restorePlaceholder(newFrame);
+        item->restore(newFrame);
     }
 
     Frame *frame = qobject_cast<Frame*>(item->frame());
