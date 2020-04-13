@@ -478,10 +478,11 @@ void Item::setGeometry(QRect rect)
 
         const QSize minSz = minSize();
         if (rect.width() < minSz.width() || rect.height() < minSz.height()) {
-            qWarning() << Q_FUNC_INFO << this << "Constraints not honoured"
-                       << rect.size() << minSz << "dumping layout"
-                       << ": parent=" << parentContainer();
             root()->dumpLayout();
+            qWarning() << Q_FUNC_INFO << this << "Constraints not honoured."
+                       << "sz=" << rect.size() << "; min=" << minSz
+                       << ": parent=" << parentContainer();
+
         }
 
         Q_EMIT geometryChanged();
@@ -1394,7 +1395,6 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 
     const QSize minSize = this->minSize();
     if (newSize.width() < minSize.width() || newSize.height() < minSize.height()) {
-        root()->dumpLayout();
         qWarning() << Q_FUNC_INFO << "New size doesn't respect size constraints"
                    << "; new=" << newSize
                    << "; min=" << minSize
@@ -1540,19 +1540,21 @@ QVector<double> ItemContainer::childPercentages() const
 void ItemContainer::restorePlaceholder(Item *item)
 {
     Q_ASSERT(contains(item));
-    item->setIsVisible(true);
 
+    item->setIsVisible(true);
     if (numVisibleChildren() == 1)
         return;
 
-    const int available = availableLength();
-    const int maxItemLength = item->minLength(m_orientation) + available;
-    const int proposedItemLength = item->length(m_orientation);
-    const int newLength = proposedItemLength > maxItemLength ? maxItemLength
-                                                             : proposedItemLength;
+    const int available = availableLength(); // Already deduced separator thickness, as it's visible now.
+
+    const int max = item->length(m_orientation) + available;
+    const int min = item->minLength(m_orientation);
+    const int proposed = item->length(m_orientation);
+    const int newLength = qBound(min, proposed, max);
+
     item->setLength_recursive(newLength, m_orientation);
     Q_ASSERT(item->isVisible());
-    growItem(item, newLength, GrowthStrategy::BothSidesEqually);
+    growItem(item, newLength + Item::separatorThickness(), GrowthStrategy::BothSidesEqually);
 }
 
 void ItemContainer::updateWidgetGeometries()
@@ -1826,44 +1828,37 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     const LengthOnSide side1Length = lengthOnSide(sizes, index - 1, Side1, m_orientation);
     const LengthOnSide side2Length = lengthOnSide(sizes, index + 1, Side2, m_orientation);
 
-    const int available1 = side1Length.available();
-    const int available2 = side2Length.available();
-    const int neededLength = amount;
-
-    int min1 = 0;
-    int max2 = length() - 1;
-    int newPosition = 0;
+    int available1 = side1Length.available();
+    int available2 = side2Length.available();
     int side1Growth = 0;
-    int side2Separator = 0;
+    int side2Growth = 0;
 
-    SizingInfo sizing1;
+    Q_ASSERT(amount <= available1 + available2);
+    int missing = amount;
+    while (missing > 0) {
 
-    if (index > 0) {
-        sizing1 = sizes[index - 1];
-        min1 = sizing1.position(m_orientation) + sizing1.length(m_orientation) - available1;
-        newPosition = sizing1.position(m_orientation) + sizing1.length(m_orientation) - (amount / 2);
-    }
-
-    if (index < count - 1) {
-        const SizingInfo &size2 = sizes.at(index + 1);
-        max2 = size2.position(m_orientation) + available2;
-        if (size2.position(m_orientation) - sizingInfo.edge(m_orientation) - 1 != Item::separatorThickness()) {
-            side2Separator = Item::separatorThickness();
+        if (available1 == 0) {
+            Q_ASSERT(available2 >= missing);
+            side2Growth += missing;
+            break;
+        } else if (available2 == 0) {
+            Q_ASSERT(available1 >= missing);
+            side1Growth += missing;
+            break;
         }
+
+        const int toTake = qMax(1, missing / 2);
+        const int took1 = qMin(toTake, available1);
+        missing -= took1;
+        side1Growth += took1;
+        if (missing == 0)
+            break;
+
+        const int took2 = qMin(toTake, available2);
+        missing -= took2;
+        side2Growth += took2;
     }
 
-    // Now bound the position
-    if (newPosition < min1) {
-        newPosition = min1;
-    } else if (newPosition + neededLength > max2) {
-        newPosition = max2 - neededLength - Item::separatorThickness() + 1;
-    }
-
-    if (newPosition > 0) {
-        side1Growth = sizing1.position(m_orientation) + sizing1.length(m_orientation) - newPosition;
-    }
-
-    const int side2Growth = neededLength - side1Growth + side2Separator;
     growItem(index, sizes, side1Growth, side2Growth);
 }
 
