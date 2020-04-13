@@ -508,4 +508,8 @@ inline QSize widgetMinSize(const QWidget *w)
     return QSize(minW, minH).expandedTo(Item::hardcodedMinimumSize());
 }
 
+inline int widgetMinLength(const QWidget *w, Qt::Orientation o) {
+    return length(widgetMinSize(w), o);
+}
+
 }

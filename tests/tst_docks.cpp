@@ -246,7 +246,7 @@ private Q_SLOTS:
     void tst_simple1();
     void tst_simple2();
     void tst_shutdown();
-//    void tst_mainWindowAlwaysHasCentralWidget();
+    void tst_mainWindowAlwaysHasCentralWidget();
     void tst_createFloatingWindow();
     void tst_dock2FloatingWidgetsTabbed();
     void tst_close();
@@ -260,9 +260,9 @@ private Q_SLOTS:
 //    void tst_dockWindowWithTwoSideBySideFramesIntoLeft();
 //    void tst_dockWindowWithTwoSideBySideFramesIntoRight();
 //    void tst_posAfterLeftDetach();
-//    void tst_propagateMinSize();
+    void tst_propagateMinSize();
     void tst_dockInternal();
-//    void tst_propagateSizeHonoursMinSize();
+    void tst_propagateSizeHonoursMinSize();
 
 //    void tst_addDockWidgetAsTabToDockWidget();
 //    void tst_addDockWidgetToMainWindow(); // Tests MainWindow::addDockWidget();
@@ -276,13 +276,13 @@ private Q_SLOTS:
 //    void tst_availableLengthForDrop_data();
 //    void tst_availableLengthForDrop();
 
-//    void tst_clear();
+    void tst_clear();
 //    void tst_constraintsAfterPlaceholder();
 //    void tst_rectForDrop_data();
 //    void tst_rectForDrop();
 //    void tst_rectForDropMath_data();
 //    void tst_rectForDropMath();
-//    void tst_crash(); // tests some crash I got
+    void tst_crash(); // tests some crash I got
 //    void tst_crash2_data();
 //    void tst_crash2();
 //    void tst_setFloatingWhenWasTabbed();
@@ -316,14 +316,14 @@ private Q_SLOTS:
 //    void tst_negativeAnchorPositionWhenEmbedded_data();
 //    void tst_negativeAnchorPositionWhenEmbedded();
 //    void tst_availableSizeWithPlaceholders();
-//    void tst_stealFrame();
+    void tst_stealFrame();
 //    void tst_addAsPlaceholder();
 //    void tst_removeItem();
 //    void tst_startHidden();
 //    void tst_startClosed();
 //    void tst_sizeConstraintWarning();
 //    void tst_invalidLayoutAfterRestore();
-//    void tst_samePositionAfterHideRestore();
+    void tst_samePositionAfterHideRestore();
 //    void tst_anchorFollowingItselfAssert();
 //    void tst_positionWhenShown();
 //    void tst_restoreEmpty();
@@ -363,10 +363,10 @@ private Q_SLOTS:
 //    void tst_registry();
 //    void tst_dockNotFillingSpace();
 //    void tst_floatingLastPosAfterDoubleClose();
-//    void tst_addingOptionHiddenTabbed();
-//    void tst_flagDoubleClick();
-//    void tst_floatingWindowDeleted();
-//    void tst_raise();
+    void tst_addingOptionHiddenTabbed();
+    void tst_flagDoubleClick();
+    void tst_floatingWindowDeleted();
+    void tst_raise();
 
 private:
     std::unique_ptr<MultiSplitter> createMultiSplitterFromSetup(MultiSplitterSetup setup, QHash<QWidget *, Frame *> &frameMap) const;
@@ -1054,12 +1054,14 @@ void TestDocks::tst_shutdown()
     dock->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock));
 }
-#if 0
+
 void TestDocks::tst_mainWindowAlwaysHasCentralWidget()
 {
     EnsureTopLevelsDeleted e;
 
     auto m = createMainWindow();
+    QTest::qWait(10); // the DND state machine needs the event loop to start, otherwise activeState() is nullptr. (for offscreen QPA)
+
     QWidget *central = m->centralWidget();
     auto dropArea = m->dropArea();
     QVERIFY(dropArea);
@@ -1113,7 +1115,6 @@ void TestDocks::tst_propagateMinSize()
     //QTest::qWait(50000);
 
 }
-#endif
 
 void TestDocks::tst_dockInternal()
 {
@@ -1192,7 +1193,7 @@ void TestDocks::tst_closeAllDockWidgets()
     delete dock5;
     delete dock6;
 }
-#if 0
+
 void TestDocks::tst_propagateSizeHonoursMinSize()
 {
     // Here we dock a widget on the left size, and on the right side.
@@ -1204,8 +1205,8 @@ void TestDocks::tst_propagateSizeHonoursMinSize()
     auto dock1 = createDockWidget("dock1", new QPushButton("one"));
     auto dock2 = createDockWidget("dock2", new QPushButton("two"));
     auto dropArea = m->dropArea();
-    int min1 = widgetMinLength(dock1, Qt::Vertical);
-    int min2 = widgetMinLength(dock2, Qt::Vertical);
+    int min1 = widgetMinLength(dock1, Qt::Horizontal);
+    int min2 = widgetMinLength(dock2, Qt::Horizontal);
 
     QVERIFY(dock1->width() >= min1);
     QVERIFY(dock2->width() >= min2);
@@ -1214,14 +1215,18 @@ void TestDocks::tst_propagateSizeHonoursMinSize()
     nestDockWidget(dock2, dropArea, nullptr, KDDockWidgets::Location_OnLeft);
 
     // Calculate again, as the window frame has disappeared
-    min1 = widgetMinLength(dock1, Qt::Vertical);
-    min2 = widgetMinLength(dock2, Qt::Vertical);
+    min1 = widgetMinLength(dock1, Qt::Horizontal);
+    min2 = widgetMinLength(dock2, Qt::Horizontal);
+
+    auto l = m->dropArea()->multiSplitterLayout();
+    l->checkSanity();
 
     if (dock1->width() < min1) {
         qDebug() << "\ndock1->width()=" << dock1->width() << "\nmin1=" << min1
                  << "\ndock min sizes=" << dock1->minimumWidth() << dock1->minimumSizeHint().width()
                  << "\nframe1->width()=" << dock1->frame()->width()
-                 << "\nframe1->min=" << widgetMinLength(dock1->frame(), Qt::Vertical);
+                 << "\nframe1->min=" << widgetMinLength(dock1->frame(), Qt::Horizontal);
+        l->dumpDebug();
         QVERIFY(false);
     }
 
@@ -1236,10 +1241,10 @@ void TestDocks::tst_propagateSizeHonoursMinSize()
     m->addDockWidget(dock3, Location_OnTop);
     QVERIFY(m->dropArea()->checkSanity());
 
-    min1 = widgetMinLength(dock1, Qt::Horizontal);
+    min1 = widgetMinLength(dock1, Qt::Vertical);
     QVERIFY(dock1->height() >= min1);
 }
-
+#if 0
 void TestDocks::tst_restoreEmpty()
 {
     EnsureTopLevelsDeleted e;
@@ -2490,7 +2495,7 @@ void TestDocks::tst_rectForDrop()
         Testing::waitForDeleted(expected.widgetToDrop);
     }
 }
-
+#endif
 void TestDocks::tst_crash()
 {
     EnsureTopLevelsDeleted e;
@@ -2507,25 +2512,23 @@ void TestDocks::tst_crash()
 
         dock1->setFloating(true);
         Item *layoutItem = dock1->lastPosition()->layoutItem();
-        QVERIFY(layoutItem && layoutItem->isInMainWindow());
+        QVERIFY(layoutItem && DockRegistry::self()->itemIsInMainWindow(layoutItem));
         QCOMPARE(layoutItem, item1);
 
         QCOMPARE(layout->placeholderCount(), 0);
         QCOMPARE(layout->count(), 1);
-        QCOMPARE(layout->numAchorsFollowing(), 0);
 
         // Move from tab to bottom
         m->addDockWidget(dock2, KDDockWidgets::Location_OnBottom);
 
         QCOMPARE(layout->count(), 2);
         QCOMPARE(layout->placeholderCount(), 1);
-        QCOMPARE(layout->numAchorsFollowing(), 1);
 
         dock1->deleteLater();
         Testing::waitForDeleted(dock1);
     }
 }
-
+#if 0
 void TestDocks::tst_crash2_data()
 {
     QTest::addColumn<bool>("show");
@@ -4896,7 +4899,7 @@ void TestDocks::tst_invalidLayoutAfterRestore()
     QCOMPARE(layout->width(), oldContentsWidth);
     layout->checkSanity();
 }
-
+#endif
 void TestDocks::tst_stealFrame()
 {
     // Tests using addWidget() with dock widgets which are already in a layout
@@ -5001,7 +5004,7 @@ void TestDocks::tst_stealFrame()
     layout1->checkSanity();
     layout2->checkSanity();
 }
-
+#if 0
 void TestDocks::tst_addAsPlaceholder()
 {
     EnsureTopLevelsDeleted e;
@@ -5240,7 +5243,7 @@ void TestDocks::tst_startClosed()
     QCOMPARE(layout->placeholderCount(), 0);
     QCOMPARE(layout->numAchorsFollowing(), 0);
 }
-
+#endif
 void TestDocks::tst_samePositionAfterHideRestore()
 {
     EnsureTopLevelsDeleted e;
@@ -5261,6 +5264,7 @@ void TestDocks::tst_samePositionAfterHideRestore()
     QCOMPARE(geo2, dock2->frame()->geometry());
     m->multiSplitterLayout()->checkSanity();
 }
+
 
 void TestDocks::tst_clear()
 {
@@ -5293,7 +5297,7 @@ void TestDocks::tst_clear()
     dock3->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock3));
 }
-
+#if 0
 void TestDocks::tst_restoreEmbeddedMainWindow()
 {
     EnsureTopLevelsDeleted e;
@@ -5449,7 +5453,7 @@ void TestDocks::tst_resizeWindow2()
     QCOMPARE(anchor->position(), maxPos);
     layout->checkSanity();
 }
-
+#endif
 void TestDocks::tst_addingOptionHiddenTabbed()
 {
     EnsureTopLevelsDeleted e;
@@ -5568,8 +5572,6 @@ void TestDocks::tst_raise()
         QCOMPARE(qApp->widgetAt(dock3->window()->geometry().topLeft() + QPoint(50, 50))->window(), dock1->window());
     }
 }
-
-#endif
 
 QTEST_MAIN(KDDockWidgets::TestDocks)
 #include "tst_docks.moc"

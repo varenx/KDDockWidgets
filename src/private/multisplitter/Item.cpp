@@ -149,7 +149,6 @@ void Item::restore(GuestInterface *guest)
     } else {
         setFrame(guest);
         parentContainer()->restoreChild(this);
-
     }
 }
 
