@@ -1397,7 +1397,8 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
         root()->dumpLayout();
         qWarning() << Q_FUNC_INFO << "New size doesn't respect size constraints"
                    << "; new=" << newSize
-                   << "; min=" << minSize;
+                   << "; min=" << minSize
+                   << this;
         return;
     }
 
@@ -1819,7 +1820,6 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     if (count == 1) {
         //There's no neighbours to push, we're alone. Occupy the full container
         sizingInfo.setLength(sizingInfo.length(m_orientation) + amount, m_orientation);
-        positionItems(); // TODO REMOVE ?
         return;
     }
 
@@ -1920,8 +1920,12 @@ SizingInfo::List ItemContainer::sizes() const
     const Item::List children = visibleChildren();
     SizingInfo::List result;
     result.reserve(children.count());
-    for (Item *item : children)
+    for (Item *item : children) {
+        if (item->isContainer()) {
+            item->m_sizingInfo.minSize = item->minSize();
+        }
         result << item->m_sizingInfo;
+    }
 
     return result;
 }
@@ -1972,6 +1976,7 @@ QVector<int> ItemContainer::calculateSqueezes(SizingInfo::List::ConstIterator be
 void ItemContainer::growItem(int index, SizingInfo::List &sizes, int side1Growth, int side2Growth)
 {
     Q_ASSERT(side1Growth > 0 || side2Growth > 0);
+    //Q_ASSERT(side1Growth >= 0 && side2Growth >= 0); // never negative
 
     if (side1Growth > 0) {
         auto begin = sizes.cbegin();
@@ -1981,7 +1986,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int side1Growth
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
             SizingInfo &sizing = sizes[i];
-            sizing.geometry = adjustedRect(sizing.geometry, m_orientation, 0, -squeeze);
+            sizing.setGeometry(adjustedRect(sizing.geometry, m_orientation, 0, -squeeze));
         }
     }
 
@@ -1993,7 +1998,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int side1Growth
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
             SizingInfo &sizing = sizes[i + index + 1];
-            sizing.geometry = adjustedRect(sizing.geometry, m_orientation, squeeze, 0);
+            sizing.setGeometry(adjustedRect(sizing.geometry, m_orientation, squeeze, 0));
         }
     }
 }

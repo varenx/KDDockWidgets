@@ -25,6 +25,7 @@
 #include <QRect>
 #include <QVariant>
 #include <QWidget> // TODO: remove
+#include <QDebug>
 
 #include <memory>
 
@@ -214,6 +215,10 @@ struct SizingInfo {
 
     bool isNull() const {
         return geometry.isNull();
+    }
+
+    void setGeometry(QRect geo) {
+        geometry = geo;
     }
 
     typedef QVector<SizingInfo> List;
