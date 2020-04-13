@@ -122,6 +122,7 @@ private Q_SLOTS:
     void tst_misc1();
     void tst_misc2();
     void tst_misc3();
+    void tst_containerGetsHidden();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -845,6 +846,22 @@ void TestMultiSplitter::tst_misc3()
     root->insertItem(item1, Location_OnLeft);
     root->insertItem(item2, Location_OnRight);
     root->insertItem(root2, Location_OnRight);
+}
+
+void TestMultiSplitter::tst_containerGetsHidden()
+{
+    auto root = createRoot();
+    Item *item1 = createItem();
+    Item *item2 = createItem();
+    Item *item3 = createItem();
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnRight);
+    item2->insertItem(item3, Location_OnBottom);
+    item2->turnIntoPlaceholder();
+    root->checkSanity();
+
+    item3->turnIntoPlaceholder();
+    root->checkSanity();
 }
 
 QTEST_MAIN(TestMultiSplitter)

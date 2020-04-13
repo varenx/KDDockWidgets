@@ -393,6 +393,7 @@ public:
     explicit ItemContainer(QWidget *parent);
     void insertItem(Item *item, int index, bool growItem = true);
     bool checkSanity() const override;
+    void scheduleCheckSanity() const;
     bool hasOrientation() const;
     int numChildren() const;
     int numVisibleChildren() const;
@@ -490,6 +491,7 @@ public:
     bool m_blockUpdatePercentages = false;
 private:
     QVector<double> childPercentages() const;
+    mutable bool m_checkSanityScheduled = false;
 };
 
 /**

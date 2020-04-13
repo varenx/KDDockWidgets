@@ -23,6 +23,7 @@
 #include <QEvent>
 #include <QDebug>
 #include <QScopedValueRollback>
+#include <QTimer>
 
 using namespace Layouting;
 
@@ -451,7 +452,7 @@ bool Item::checkSanity() const
     }
 
     if (auto w = frame()) {
-        return true; // Uncomment only after honouring layoutInvalidated()
+        return true; // TODO Uncomment only after honouring layoutInvalidated()
         if (mapFromRoot(w->geometry()) != geometry()) {
             qWarning() << Q_FUNC_INFO << "Guest widget doesn't have correct geometry. has="
                        << mapFromRoot(w->geometry())
@@ -646,6 +647,7 @@ ItemContainer::ItemContainer(QWidget *hostWidget)
 
 bool ItemContainer::checkSanity() const
 {
+    m_checkSanityScheduled = false;
     if (!Item::checkSanity())
         return false;
 
@@ -722,6 +724,7 @@ bool ItemContainer::checkSanity() const
         const QVector<double> percentages = childPercentages();
         const double totalPercentage = std::accumulate(percentages.begin(), percentages.end(), 0.0);
         if (!qFuzzyCompare(totalPercentage, 1.0)) {
+            root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Percentages don't add up"
                        << totalPercentage << percentages;
             const_cast<ItemContainer*>(this)->updateChildPercentages();
@@ -730,6 +733,14 @@ bool ItemContainer::checkSanity() const
     }
 
     return true;
+}
+
+void ItemContainer::scheduleCheckSanity() const
+{
+    if (!m_checkSanityScheduled) {
+        m_checkSanityScheduled = true;
+        QTimer::singleShot(0, root(), &ItemContainer::checkSanity);
+    }
 }
 
 bool ItemContainer::hasOrientation() const
@@ -769,6 +780,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
     if (contains(item)) {
         Item *side1Item = visibleNeighbourFor(item, Side1);
         Item *side2Item = visibleNeighbourFor(item, Side2);
+
         const bool isContainer = item->isContainer();
         const bool wasVisible = !isContainer && item->isVisible();
 
@@ -782,8 +794,8 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             if (wasVisible) {
                 item->setIsVisible(false);
                 item->setFrame(nullptr);
-            } else {
-                // Nothing to do, item was already a placeholder.
+            } else if (!isContainer){
+                // Was already hidden
                 return;
             }
         }
@@ -874,7 +886,7 @@ void ItemContainer::insertItem(Item *item, Location loc)
     }
 
     updateChildPercentages();
-    root()->checkSanity();
+    scheduleCheckSanity();
 }
 
 void ItemContainer::onChildMinSizeChanged(Item *child)
@@ -1361,7 +1373,7 @@ QSize ItemContainer::minSize() const
             }
         }
 
-        const int separatorWaste = (visibleChildren.size() - 1) * separatorThickness();
+        const int separatorWaste = qMax(0, (visibleChildren.size() - 1) * separatorThickness());
         if (isVertical())
             minH += separatorWaste;
         else
@@ -1575,13 +1587,24 @@ void ItemContainer::updateWidgetGeometries()
 
 Item *ItemContainer::visibleNeighbourFor(const Item *item, Side side) const
 {
-    const Item::List children = visibleChildren();
-    const int index = children.indexOf(const_cast<Item *>(item));
-    const int neighbourIndex = side == Side1 ? index - 1
-                                             : index + 1;
+    // Item might not be visible, so use m_children instead of visibleChildren()
+    const int index = m_children.indexOf(const_cast<Item*>(item));
 
-    return (neighbourIndex >= 0 && neighbourIndex < children.size()) ? children.at(neighbourIndex)
-                                                                     : nullptr;
+    if (side == Side1) {
+        for (int i = index - 1; i >= 0; i--) {
+            Item *item = m_children.at(i);
+            if (item->isVisible())
+                return item;
+        }
+    } else {
+        for (int i = index + 1; i < m_children.size(); ++i) {
+            Item *item = m_children.at(i);
+            if (item->isVisible())
+                return item;
+        }
+    }
+
+    return nullptr;
 }
 
 Item *ItemContainer::neighbourFor(const Item *item, Side side) const
