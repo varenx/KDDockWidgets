@@ -140,7 +140,7 @@ struct ExpectedRectForDrop // struct for testing MultiSplitterLayout::availableL
 typedef QVector<ExpectedRectForDrop> ExpectedRectsForDrop;
 Q_DECLARE_METATYPE(ExpectedRectForDrop)
 
-/*static int osWindowMinWidth()
+static int osWindowMinWidth()
 {
 #ifdef Q_OS_WIN
     return GetSystemMetrics(SM_CXMIN);
@@ -148,7 +148,7 @@ Q_DECLARE_METATYPE(ExpectedRectForDrop)
     return 140; // Some random value for our windows. It's only important on Windows
 #endif
 }
-
+#if 0
 static int osWindowMinHeight()
 {
 #ifdef Q_OS_WIN
@@ -156,8 +156,8 @@ static int osWindowMinHeight()
 #else
     return 100; // Some random value for our windows. It's only important on Windows
 #endif
-}*/
-
+}
+#endif
 namespace KDDockWidgets {
 
 namespace {
@@ -259,16 +259,16 @@ private Q_SLOTS:
     void tst_dockWindowWithTwoSideBySideFramesIntoCenter();
 //    void tst_dockWindowWithTwoSideBySideFramesIntoLeft();
 //    void tst_dockWindowWithTwoSideBySideFramesIntoRight();
-//    void tst_posAfterLeftDetach();
+    void tst_posAfterLeftDetach();
     void tst_propagateMinSize();
     void tst_dockInternal();
     void tst_propagateSizeHonoursMinSize();
 
-//    void tst_addDockWidgetAsTabToDockWidget();
-//    void tst_addDockWidgetToMainWindow(); // Tests MainWindow::addDockWidget();
-//    void tst_addDockWidgetToContainingWindow();
-//    void tst_addToSmallMainWindow();
-//    void tst_fairResizeAfterRemoveWidget();
+    void tst_addDockWidgetAsTabToDockWidget();
+    void tst_addDockWidgetToMainWindow(); // Tests MainWindow::addDockWidget();
+    void tst_addDockWidgetToContainingWindow();
+    void tst_addToSmallMainWindow();
+    void tst_fairResizeAfterRemoveWidget();
     void tst_notClosable();
     void tst_maximizeAndRestore();
     void tst_propagateResize2();
@@ -1001,7 +1001,7 @@ void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoRight()
     fw2->deleteLater();
     Testing::waitForDeleted(fw2);
 }
-
+#endif
 void TestDocks::tst_posAfterLeftDetach()
 {
     {
@@ -1042,7 +1042,7 @@ void TestDocks::tst_posAfterLeftDetach()
         Testing::waitForDeleted(fw);
     }
 }
-#endif
+
 void TestDocks::tst_shutdown()
 {
     EnsureTopLevelsDeleted e;
@@ -1678,7 +1678,7 @@ void TestDocks::tst_marginsAfterRestore()
         layout->checkSanity();
     }
 }
-
+#endif
 void TestDocks::tst_addDockWidgetAsTabToDockWidget()
 {
     EnsureTopLevelsDeleted e;
@@ -1988,7 +1988,6 @@ void TestDocks::tst_fairResizeAfterRemoveWidget()
     window->deleteLater();
     Testing::waitForDeleted(window);
 }
-#endif
 
 void TestDocks::tst_notClosable()
 {
