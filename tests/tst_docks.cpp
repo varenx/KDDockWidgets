@@ -3012,13 +3012,18 @@ void TestDocks::tst_addAndReadd()
     // 1. This just tests some crash I got.
     // Make a dock widget float and immediately reattach it
     auto m = createMainWindow();
+    QTest::qWait(10); // the DND state machine needs the event loop to start, otherwise activeState() is nullptr. (for offscreen QPA)
+
     auto dock1 = createDockWidget("dock1", new QPushButton("1"));
     m->addDockWidget(dock1, KDDockWidgets::Location_OnLeft);
     dock1->setFloating(true);
+    m->multiSplitterLayout()->checkSanity();
     m->addDockWidget(dock1, KDDockWidgets::Location_OnLeft);
     dock1->frame()->titleBar()->makeWindow();
+    m->multiSplitterLayout()->checkSanity();
     m->addDockWidget(dock1, KDDockWidgets::Location_OnLeft);
     dock1->frame()->titleBar()->makeWindow();
+    m->multiSplitterLayout()->checkSanity();
 
     auto fw = dock1->floatingWindow();
     QVERIFY(fw);

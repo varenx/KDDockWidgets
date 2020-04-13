@@ -107,7 +107,6 @@ void Item::setFrame(GuestInterface *guest)
     }
 
     updateObjectName();
-
 }
 
 void Item::updateWidgetGeometries()
@@ -875,7 +874,7 @@ void ItemContainer::insertItem(Item *item, Location loc)
     }
 
     updateChildPercentages();
-    checkSanity();
+    root()->checkSanity();
 }
 
 void ItemContainer::onChildMinSizeChanged(Item *child)
