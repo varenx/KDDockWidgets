@@ -294,8 +294,8 @@ private Q_SLOTS:
     void tst_addAndReadd();
     void tst_placeholderCount();
 //    void tst_availableLengthForOrientation();
-//    void tst_setAstCurrentTab();
-//    void tst_closeShowWhenNoCentralFrame();
+    void tst_setAstCurrentTab();
+    void tst_closeShowWhenNoCentralFrame();
 //    void tst_placeholderDisappearsOnReadd();
 //    void tst_placeholdersAreRemovedPropertly();
 //    void tst_embeddedMainWindow();
@@ -3121,7 +3121,7 @@ void TestDocks::tst_availableLengthForOrientation()
     QCOMPARE(availableHeight, layout->height() - 2 *Anchor::thickness(true) - Anchor::thickness(false) -  dock1MinHeight);
     m->multiSplitterLayout()->checkSanity();
 }
-
+#endif
 void TestDocks::tst_setAstCurrentTab()
 {
     EnsureTopLevelsDeleted e;
@@ -3159,13 +3159,15 @@ void TestDocks::tst_closeShowWhenNoCentralFrame()
     QPointer<DockWidgetBase> dock1 = createDockWidget("1", new QPushButton("1"));
     m->addDockWidget(dock1, Location_OnLeft);
     dock1->close();
+    m->multiSplitterLayout()->checkSanity();
+
     QVERIFY(!dock1->frame());
     QVERIFY(!Testing::waitForDeleted(dock1)); // It was being deleted due to a bug
     QVERIFY(dock1);
     dock1->show();
     m->multiSplitterLayout()->checkSanity();
 }
-
+#if 0
 void TestDocks::tst_placeholderDisappearsOnReadd()
 {
     // This tests that addMultiSplitter also updates refcount of placeholders

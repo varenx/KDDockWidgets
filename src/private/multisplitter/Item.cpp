@@ -143,7 +143,7 @@ QWidget *Item::hostWidget() const
 
 void Item::restorePlaceholder(GuestInterface *guest)
 {
-    Q_ASSERT(isVisible() && !frame());
+    Q_ASSERT(!isVisible() && !frame());
     setFrame(guest);
     setIsVisible(true);
 }
@@ -947,6 +947,8 @@ void ItemContainer::onChildVisibleChanged(Item */*child*/, bool visible)
     } else if (!visible && numVisible == 0) {
         Q_EMIT visibleChanged(this, false);
     }
+
+    updateChildPercentages();
 }
 
 QRect ItemContainer::suggestedDropRect(QSize minSize, const Item *relativeTo, Location loc) const
