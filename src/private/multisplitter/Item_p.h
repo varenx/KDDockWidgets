@@ -29,12 +29,15 @@
 
 #include <memory>
 
+#define KDDOCKWIDGETS_MIN_WIDTH 80
+#define KDDOCKWIDGETS_MIN_HEIGHT 90
+
 class TestMultiSplitter;
 
 namespace Layouting {
 
-#define KDDOCKWIDGETS_MIN_WIDTH 80
-#define KDDOCKWIDGETS_MIN_HEIGHT 90
+class ItemContainer;
+class Item;
 
 enum Location {
     Location_None,
@@ -230,7 +233,12 @@ struct SizingInfo {
     bool isBeingInserted = false;
 };
 
-class ItemContainer;
+class GuestInterface
+{
+public:
+    virtual void setLayoutItem(Item *) = 0;
+    virtual QWidget *asWidget() = 0;
+};
 
 class Item : public QObject
 {
@@ -245,6 +253,7 @@ public:
     typedef QVector<Item*> List;
 
     explicit Item(QWidget *hostWidget, ItemContainer *parent = nullptr);
+    ~Item() override;
 
     bool isRoot() const;
 
@@ -315,11 +324,11 @@ public:
     QRect mapFromRoot(QRect) const;
     QPoint mapFromParent(QPoint) const;
 
-    QWidget *frame() const { return m_widget; } // TODO: rename
-    void setFrame(QWidget *w);
+    QWidget *frame() const { return m_guest ? m_guest->asWidget() : nullptr; } // TODO: rename
+    GuestInterface *guest() const { return m_guest; }
+    void setFrame(GuestInterface *);
     QWidget *window() const {
-        return m_widget ? m_widget->window()
-                        : nullptr;
+        return m_guest ? frame()->window() : nullptr;
     }
 
     void ref();
@@ -327,7 +336,7 @@ public:
     int refCount() const;
 
     QWidget *hostWidget() const;
-    void restorePlaceholder(QWidget *);
+    void restorePlaceholder(GuestInterface *guest);
     virtual void setHostWidget(QWidget *);
     virtual void updateWidgetGeometries();
 
@@ -359,7 +368,7 @@ private:
     bool m_isVisible = false;
     bool m_destroying = false; // TODO: Remove and check if unit-tests pass
     QWidget * m_hostWidget = nullptr;
-    QWidget *m_widget = nullptr; // TODO: Make generic
+    GuestInterface *m_guest = nullptr;
 };
 
 class ItemContainer : public Item {

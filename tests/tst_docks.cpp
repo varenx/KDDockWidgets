@@ -290,9 +290,9 @@ private Q_SLOTS:
 //    void tst_setFloatingAfterDraggedFromTabToSideBySide();
 //    void tst_setFloatingAFrameWithTabs();
 //    void tst_setVisibleFalseWhenSideBySide();
-//    void tst_refUnrefItem();
-//    void tst_addAndReadd();
-//    void tst_placeholderCount();
+    void tst_refUnrefItem();
+    void tst_addAndReadd();
+    void tst_placeholderCount();
 //    void tst_availableLengthForOrientation();
 //    void tst_setAstCurrentTab();
 //    void tst_closeShowWhenNoCentralFrame();
@@ -2937,7 +2937,7 @@ void TestDocks::tst_simple2()
     m->addDockWidget(dw, KDDockWidgets::Location_OnTop);
     m->multiSplitterLayout()->checkSanity();
 }
-#if 0
+
 void TestDocks::tst_refUnrefItem()
 {
     EnsureTopLevelsDeleted e;
@@ -3087,7 +3087,7 @@ void TestDocks::tst_placeholderCount()
 
     Testing::waitForDeleted(fw);
 }
-
+#if 0
 void TestDocks::tst_availableLengthForOrientation()
 {
     EnsureTopLevelsDeleted e;

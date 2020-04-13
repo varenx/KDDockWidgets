@@ -421,6 +421,11 @@ QString Frame::affinityName() const
     }
 }
 
+QWidget *Frame::asWidget()
+{
+    return this;
+}
+
 DockWidgetBase *Frame::dockWidgetAt(int index) const
 {
     return qobject_cast<DockWidgetBase *>(m_tabWidget->dockwidgetAt(index));

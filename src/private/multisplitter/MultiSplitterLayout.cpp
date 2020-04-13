@@ -166,6 +166,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     Item *newItem = nullptr;
 
     Frame::List frames = framesFrom(w);
+    unrefOldPlaceholders(frames);
 
     if (frame) {
         newItem = new Item(multiSplitter());
@@ -182,8 +183,6 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
 
     Q_ASSERT(!newItem->geometry().isEmpty());
     relativeTo->insertItem(newItem, Layouting::Location(location));
-
-    unrefOldPlaceholders(frames);
 }
 
 QString MultiSplitterLayout::affinityName() const

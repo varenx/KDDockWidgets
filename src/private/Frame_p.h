@@ -31,15 +31,12 @@
 #include "docks_export.h"
 #include "QWidgetAdapter.h"
 #include "LayoutSaver_p.h"
+#include "multisplitter/Item_p.h"
 
 #include <QWidget>
 #include <QVector>
 #include <QDebug>
 #include <QPointer>
-
-namespace Layouting {
-class Item;
-}
 
 namespace KDDockWidgets {
 
@@ -60,6 +57,7 @@ class FloatingWindow;
  * to a FloatingWindow.
  */
 class DOCKS_EXPORT Frame : public QWidgetAdapter
+                         , public Layouting::GuestInterface
 {
     Q_OBJECT
 
@@ -181,9 +179,6 @@ public:
     ///@brief Called when a dock widget child @p w is hidden
     void onDockWidgetHidden(DockWidgetBase *w);
 
-    ///@brief sets the layout item that either contains this Frame in the layout or is a placeholder
-    void setLayoutItem(Layouting::Item *item);
-
     ///@brief returns the layout item that either contains this Frame in the layout or is a placeholder
     Layouting::Item *layoutItem() const;
 
@@ -206,6 +201,12 @@ public:
     bool hasTabsVisible() const;
 
     QString affinityName() const;
+
+    ///@brief sets the layout item that either contains this Frame in the layout or is a placeholder
+    void setLayoutItem(Layouting::Item *item) override;
+
+    ///@brief Overriden from GuestInterface
+    QWidget *asWidget() override;
 
 Q_SIGNALS:
     void currentDockWidgetChanged(KDDockWidgets::DockWidgetBase *);

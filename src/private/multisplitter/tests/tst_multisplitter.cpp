@@ -34,9 +34,15 @@ static QtMessageHandler s_original = nullptr;
 static QString s_expectedWarning;
 
 class GuestWidget : public QWidget
+                  , public GuestInterface
 {
     Q_OBJECT
 public:
+    void setLayoutItem(Item *) override {}
+    QWidget * asWidget() override {
+        return this;
+    }
+
 Q_SIGNALS:
     void layoutInvalidated();
 };

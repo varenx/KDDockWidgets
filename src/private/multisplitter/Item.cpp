@@ -74,30 +74,33 @@ QPoint Item::mapFromParent(QPoint p) const
     return p - pos();
 }
 
-void Item::setFrame(QWidget *w)
-{
-    Q_ASSERT(!w || !m_widget);
+void Item::setFrame(GuestInterface *guest)
+{   
+    Q_ASSERT(!guest || !m_guest);
+    QWidget *newWidget = guest ? guest->asWidget() : nullptr;
+    QWidget *oldWidget = frame();
 
-    if (m_widget) {
-        m_widget->removeEventFilter(this);
-        disconnect(m_widget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
-        disconnect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested()));
-        disconnect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
+    if (oldWidget) {
+        oldWidget->removeEventFilter(this);
+        disconnect(oldWidget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
+        //disconnect(oldWidget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested()));
+        disconnect(oldWidget, &QObject::objectNameChanged, this, &Item::updateObjectName);
     }
 
-    m_widget = w;
+    m_guest = guest;
 
-    if (m_widget) {
-        m_widget->installEventFilter(this);
-        m_widget->setParent(m_hostWidget);
-        setMinSize(widgetMinSize(m_widget));
+    if (m_guest) {
+        m_guest->setLayoutItem(this);
+        newWidget->installEventFilter(this);
+        newWidget->setParent(m_hostWidget);
+        setMinSize(widgetMinSize(newWidget));
 
-        connect(m_widget, &QObject::objectNameChanged, this, &Item::updateObjectName);
-        connect(m_widget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
-        connect(m_widget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
+        connect(newWidget, &QObject::objectNameChanged, this, &Item::updateObjectName);
+        connect(newWidget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
+        connect(newWidget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested())); // TODO: old-style
 
         if (m_sizingInfo.geometry.isEmpty()) {
-            setGeometry(mapFromRoot(m_widget->geometry()));
+            setGeometry(mapFromRoot(newWidget->geometry()));
         } else {
             updateWidgetGeometries();
         }
@@ -109,8 +112,8 @@ void Item::setFrame(QWidget *w)
 
 void Item::updateWidgetGeometries()
 {
-    if (m_widget)
-        m_widget->setGeometry(mapToRoot(m_sizingInfo.geometry));
+    if (auto w = frame())
+        w->setGeometry(mapToRoot(m_sizingInfo.geometry));
 }
 
 void Item::ref()
@@ -138,10 +141,10 @@ QWidget *Item::hostWidget() const
     return m_hostWidget;
 }
 
-void Item::restorePlaceholder(QWidget *widget)
+void Item::restorePlaceholder(GuestInterface *guest)
 {
     Q_ASSERT(isVisible() && !frame());
-    setFrame(widget);
+    setFrame(guest);
     setIsVisible(true);
 }
 
@@ -149,9 +152,9 @@ void Item::setHostWidget(QWidget *host)
 {
     if (m_hostWidget != host) {
         m_hostWidget = host;
-        if (m_widget) {
-            m_widget->setParent(host);
-            m_widget->setVisible(true);
+        if (auto w = frame()) {
+            w->setParent(host);
+            w->setVisible(true);
             updateWidgetGeometries();
         }
     }
@@ -413,9 +416,9 @@ void Item::setIsVisible(bool is)
         Q_EMIT minSizeChanged(this); // min-size is 0x0 when hidden
         Q_EMIT visibleChanged(this, is);
 
-        if (m_widget) {
-            m_widget->setGeometry(mapToRoot(m_sizingInfo.geometry));
-            m_widget->setVisible(is);
+        if (auto w = frame()) {
+            w->setGeometry(mapToRoot(m_sizingInfo.geometry));
+            w->setVisible(is);
         }
 
         setBeingInserted(false);
@@ -448,14 +451,15 @@ bool Item::checkSanity() const
         return false;
     }
 
-    if (m_widget && false) { // Uncomment only after honouring layoutInvalidated()
-        if (mapFromRoot(m_widget->geometry()) != geometry()) {
+    if (auto w = frame()) {
+        return true; // Uncomment only after honouring layoutInvalidated()
+        if (mapFromRoot(w->geometry()) != geometry()) {
             qWarning() << Q_FUNC_INFO << "Guest widget doesn't have correct geometry. has="
-                       << mapFromRoot(m_widget->geometry())
-                       << m_widget->geometry()
+                       << mapFromRoot(w->geometry())
+                       << w->geometry()
                        << geometry()
                        << this
-                       << m_widget;
+                       << w;
             return false;
         }
     }
@@ -523,6 +527,10 @@ Item::Item(QWidget *hostWidget, ItemContainer *parent)
 {
 }
 
+Item::~Item()
+{
+}
+
 Item::Item(bool isContainer, QWidget *hostWidget, ItemContainer *parent)
     : QObject(parent)
     , m_isContainer(isContainer)
@@ -560,11 +568,11 @@ void Item::turnIntoPlaceholder()
 
 void Item::updateObjectName()
 {
-    if (m_widget) {
-        setObjectName(m_widget->objectName().isEmpty() ? QStringLiteral("widget") : m_widget->objectName());
+    if (auto w = frame()) {
+        setObjectName(w->objectName().isEmpty() ? QStringLiteral("widget") : w->objectName());
     } else if (!isVisible()) {
         setObjectName(QStringLiteral("hidden"));
-    } else if (!m_widget) {
+    } else if (!m_guest) {
         setObjectName(QStringLiteral("null"));
     } else {
         setObjectName(QStringLiteral("empty"));
@@ -583,10 +591,11 @@ void Item::onWidgetDestroyed()
 
 void Item::onWidgetLayoutRequested()
 {
-    if (m_widget && m_widget->size() != size()) {
+    QWidget *w = frame();
+    if (w && w->size() != size()) {
         // TODO
         qDebug() << Q_FUNC_INFO << "TODO: Not implemented yet"
-                   << m_widget->size()
+                   << w->size()
                    << m_sizingInfo.geometry
                    << m_sizingInfo.isBeingInserted;
     }
