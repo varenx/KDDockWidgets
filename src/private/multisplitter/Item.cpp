@@ -511,6 +511,7 @@ void Item::dumpLayout(int level)
 
     qDebug().noquote() << indent << "- Widget: " << objectName()
                        << m_sizingInfo.geometry// << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
+                       << "; min=" << minSize()
                        << visible << beingInserted << this;
 }
 
@@ -1501,6 +1502,7 @@ void ItemContainer::dumpLayout(int level)
 
     qDebug().noquote() << indent << typeStr << m_orientation
                        << m_sizingInfo.geometry /*<< "r=" << m_geometry.right() << "b=" << m_geometry.bottom()*/
+                       << "; min=" << minSize()
                        << "; this=" << this << beingInserted << visible
                        << "; %=" << childPercentages();
     for (Item *item : qAsConst(m_children)) {
@@ -1545,9 +1547,9 @@ void ItemContainer::restorePlaceholder(Item *item)
     if (numVisibleChildren() == 1)
         return;
 
-    const int available = availableLength(); // Already deduced separator thickness, as it's visible now.
+    const int available = availableOnSide(item, Side1) + availableOnSide(item, Side2) - Item::separatorThickness();
 
-    const int max = item->length(m_orientation) + available;
+    const int max = available;
     const int min = item->minLength(m_orientation);
     const int proposed = item->length(m_orientation);
     const int newLength = qBound(min, proposed, max);
@@ -1833,7 +1835,11 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     int side1Growth = 0;
     int side2Growth = 0;
 
-    Q_ASSERT(amount <= available1 + available2);
+    if (amount > available1 + available2) {
+        root()->dumpLayout();
+        Q_ASSERT(false);
+    }
+
     int missing = amount;
     while (missing > 0) {
 

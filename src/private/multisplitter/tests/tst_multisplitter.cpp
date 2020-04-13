@@ -65,7 +65,9 @@ static Item* createItem()
     auto item = new Item(new QWidget());
     item->setGeometry(QRect(0, 0, 200, 200));
     item->setObjectName(QStringLiteral("%1").arg(count));
-    item->setFrame(new GuestWidget());
+    auto guest = new GuestWidget();
+    guest->setObjectName(item->objectName());
+    item->setFrame(guest);
     return item;
 }
 
