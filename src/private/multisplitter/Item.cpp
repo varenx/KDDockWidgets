@@ -19,6 +19,7 @@
 */
 
 #include "Item_p.h"
+#include "Anchor_p.h"
 
 #include <QEvent>
 #include <QDebug>
@@ -917,10 +918,10 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
                 lastChild->setGeometry(r);
             }
         }
-
-        // Our min-size changed, notify our parent, and so on until it reaches root()
-        Q_EMIT minSizeChanged(this);
     }
+
+    // Our min-size changed, notify our parent, and so on until it reaches root()
+    Q_EMIT minSizeChanged(this);
 
     if (numVisibleChildren() == 1) {
         // The easy case. Child is alone in the layout, occupies everything.
@@ -2041,4 +2042,21 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int side1Growth
             sizing.setGeometry(adjustedRect(sizing.geometry, m_orientation, squeeze, 0));
         }
     }
+}
+
+Anchor::List ItemContainer::separators() const
+{
+    return m_separators;
+}
+
+void ItemContainer::createSeparators()
+{
+    const Item::List items = visibleChildren();
+    const int numSeparators = qMax(0, items.size() - 1);
+    m_separators.reserve(numSeparators);
+
+    for (int i = m_separators.size(); i < numSeparators; ++i) {
+        m_separators << new Anchor(m_orientation, Anchor::Option::None, hostWidget());
+    }
+
 }

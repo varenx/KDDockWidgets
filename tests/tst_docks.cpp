@@ -277,7 +277,7 @@ private Q_SLOTS:
 //    void tst_availableLengthForDrop();
 
     void tst_clear();
-//    void tst_constraintsAfterPlaceholder();
+    void tst_constraintsAfterPlaceholder();
 //    void tst_rectForDrop_data();
 //    void tst_rectForDrop();
 //    void tst_rectForDropMath_data();
@@ -2238,6 +2238,7 @@ void TestDocks::tst_availableLengthForDrop()
         ++i;
     }
 }
+#endif
 
 void TestDocks::tst_constraintsAfterPlaceholder()
 {
@@ -2257,7 +2258,7 @@ void TestDocks::tst_constraintsAfterPlaceholder()
 
     QVERIFY(Testing::waitForResize(m.get()));
 
-    QVERIFY(widgetMinLength(m.get(), Qt::Horizontal) > minHeight * 3); // > since some vertical space is occupied by the separators
+    QVERIFY(widgetMinLength(m.get(), Qt::Vertical) > minHeight * 3); // > since some vertical space is occupied by the separators
 
     // Now close dock1 and check again
     dock1->close();
@@ -2267,18 +2268,19 @@ void TestDocks::tst_constraintsAfterPlaceholder()
     Item *item3 = layout->itemForFrame(dock3->frame());
 
     QMargins margins = m->centralWidget()->layout()->contentsMargins();
-    const int expectedMinHeight = item2->minLength(Qt::Horizontal) +
-                                  item3->minLength(Qt::Horizontal) +
-                                  2 * Anchor::thickness(true) +
-                                  1 * Anchor::thickness(false)
+    const int expectedMinHeight = item2->minLength(Qt::Vertical) +
+                                  item3->minLength(Qt::Vertical) +
+                                  1 * Item::separatorThickness()
                                   + margins.top() + margins.bottom();
+
+    qDebug() << layout->rootItem()->minSize() << margins;
 
     QCOMPARE(m->minimumSizeHint().height(), expectedMinHeight);
 
     dock1->deleteLater();
     Testing::waitForDeleted(dock1);
 }
-
+#if 0
 void TestDocks::tst_rectForDropMath_data()
 {
     QTest::addColumn<QSize>("layoutContentsSize");
@@ -2290,7 +2292,7 @@ void TestDocks::tst_rectForDropMath_data()
     const QRect layoutRect(0, 0, 1000, 1000);
     const QSize contentsSize = layoutRect.size();
     const int staticAnchorThickness = Anchor::thickness(true);
-    const int anchorThickness = Anchor::thickness(false);
+    const int anchorThickness = Item::separatorThickness();
     const QRect relativeToWindowRect = layoutRect.adjusted(staticAnchorThickness, staticAnchorThickness, -staticAnchorThickness, -staticAnchorThickness);
 
     MultiSplitterLayout::Length length = { 0, 100 };
@@ -3119,8 +3121,8 @@ void TestDocks::tst_availableLengthForOrientation()
 
     availableWidth = layout->availableLengthForOrientation(Qt::Vertical);
     availableHeight = layout->availableLengthForOrientation(Qt::Horizontal);
-    QCOMPARE(availableWidth, layout->width() - 2 * Anchor::thickness(true) - Anchor::thickness(false) - dock1MinWidth);
-    QCOMPARE(availableHeight, layout->height() - 2 *Anchor::thickness(true) - Anchor::thickness(false) -  dock1MinHeight);
+    QCOMPARE(availableWidth, layout->width() - 2 * Anchor::thickness(true) - Item::separatorThickness() - dock1MinWidth);
+    QCOMPARE(availableHeight, layout->height() - 2 *Anchor::thickness(true) - Item::separatorThickness() -  dock1MinHeight);
     m->multiSplitterLayout()->checkSanity();
 }
 #endif
@@ -3756,7 +3758,7 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
         int boundToTheRight = layout->boundPositionForAnchor(anchor, Anchor::Side2);
         int expectedBoundToTheRight = layout->size().width() -
                                       Anchor::thickness(true) -
-                                      3*Anchor::thickness(false) -
+                                      3*Item::separatorThickness() -
                                       item2->minLength(Qt::Vertical) -
                                       item3->minLength(Qt::Vertical) -
                                       item4->minLength(Qt::Vertical);
@@ -3779,7 +3781,7 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
         boundToTheRight = layout->boundPositionForAnchor(anchor, Anchor::Side2);
         expectedBoundToTheRight = layout->size().width() -
                                   Anchor::thickness(true) -
-                                  2*Anchor::thickness(false) -
+                                  2*Item::separatorThickness() -
                                   item2->minLength(Qt::Vertical) -
                                   item4->minLength(Qt::Vertical) ;
 
@@ -4876,7 +4878,7 @@ void TestDocks::tst_invalidLayoutAfterRestore()
     QTest::qWait(200); // Not sure why. Some event we're waiting for. TODO: Investigate
     auto fw2 = dock2->floatingWindow();
     const int newAvailableWidth = layout->availableLengthForOrientation(Qt::Vertical);
-    QCOMPARE(layout->minimumSize().width(), 2*Anchor::thickness(true) + 2*Anchor::thickness(false) + item1->minimumSize().width() + item3->minimumSize().width() + item4->minimumSize().width());
+    QCOMPARE(layout->minimumSize().width(), 2*Anchor::thickness(true) + 2*Item::separatorThickness() + item1->minimumSize().width() + item3->minimumSize().width() + item4->minimumSize().width());
 
     MultiSplitterLayout::Length availableForDock2 = layout->availableLengthForDrop(Location_OnLeft, item3);
 

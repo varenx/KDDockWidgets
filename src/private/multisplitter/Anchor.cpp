@@ -19,13 +19,8 @@
 */
 
 #include "Anchor_p.h"
-#include "MultiSplitterLayout_p.h"
-#include "MultiSplitter_p.h"
 #include "Logging_p.h"
-#include "LayoutSaver.h"
-#include "Config.h"
 #include "Separator_p.h"
-#include "FrameworkWidgetFactory.h"
 
 #include <QRubberBand>
 #include <QApplication>
@@ -38,15 +33,17 @@
 using namespace KDDockWidgets;
 using namespace Layouting;
 
+typedef QWidget QWidgetAdapter ; // TODO
+
 bool Anchor::s_isResizing = false;
 
-Anchor::Anchor(Qt::Orientation orientation, MultiSplitterLayout *multiSplitter)
-    : QObject(multiSplitter->multiSplitter())
+Anchor::Anchor(Qt::Orientation orientation, Options options, QWidget *hostWidget)
+    : QObject(hostWidget)
     , m_orientation(orientation)
-    , m_layout(multiSplitter)
-    , m_separatorWidget(Config::self().frameworkWidgetFactory()->createSeparator(this, multiSplitter->multiSplitter()))
-    , m_lazyResize(Config::self().flags() & Config::Flag_LazyResize)
-    , m_lazyResizeRubberBand(m_lazyResize ? new QRubberBand(QRubberBand::Line, multiSplitter->multiSplitter()) : nullptr)
+    , m_hostWidget(hostWidget)
+    , m_separatorWidget(/*Config::self().frameworkWidgetFactory()->createSeparator(this, m_hostWidget)*/ new Separator(this, m_hostWidget)) // TODO
+    , m_options(options)
+    , m_lazyResizeRubberBand((options & Option::LazyResize) ? new QRubberBand(QRubberBand::Line, hostWidget) : nullptr)
 {
     connect(this, &QObject::objectNameChanged, m_separatorWidget, &QObject::setObjectName);
 }
@@ -55,7 +52,7 @@ Anchor::~Anchor()
 {
     m_separatorWidget->setEnabled(false);
     m_separatorWidget->deleteLater();
-    qCDebug(multisplittercreation) << "~Anchor; this=" << this << "; m_to=" << m_to << "; m_from=" << m_from;
+    qCDebug(separators) << "~Anchor; this=" << this << "; m_to=" << m_to << "; m_from=" << m_from;
 }
 
 void Anchor::setFrom(Anchor *from)
@@ -103,7 +100,7 @@ void Anchor::updateSize()
         }
     }
 
-    qCDebug(anchors) << "Anchor::updateSize" << this << geometry();
+    qCDebug(separators) << "Anchor::updateSize" << this << geometry();
 }
 
 void Anchor::setGeometry(QRect r)
@@ -111,7 +108,7 @@ void Anchor::setGeometry(QRect r)
     if (r != m_geometry) {
 
         if (position() < 0) {
-            qCDebug(anchors) << Q_FUNC_INFO << "Old position was negative" << position() << "; new=" << r;
+            qCDebug(separators) << Q_FUNC_INFO << "Old position was negative" << position() << "; new=" << r;
         }
 
         m_geometry = r;
@@ -214,13 +211,19 @@ const QVector<Item *> Anchor::items(Side side) const
 
 bool Anchor::isBeingDragged() const
 {
-    return m_layout->anchorBeingDragged() == this;
+    return false; // TODO
+    //return m_layout->anchorBeingDragged() == this;
 }
 
 void Anchor::clear()
 {
     m_side1Items.clear();
     m_side2Items.clear();
+}
+
+bool Anchor::lazyResizeEnabled() const
+{
+    return m_options & Option::LazyResize;
 }
 
 Separator *Anchor::separatorWidget() const
@@ -252,10 +255,10 @@ int Anchor::position(QPoint p) const
 void Anchor::onMousePress()
 {
     s_isResizing = true;
-    m_layout->setAnchorBeingDragged(this);
-    qCDebug(anchors) << "Drag started";
+    //m_layout->setAnchorBeingDragged(this); TODO
+    qCDebug(separators) << "Drag started";
 
-    if (m_lazyResize) {
+    if (lazyResizeEnabled()) {
         setLazyPosition(position());
         m_lazyResizeRubberBand->show();
     }
@@ -263,13 +266,13 @@ void Anchor::onMousePress()
 
 void Anchor::onMouseReleased()
 {
-    if (m_lazyResize) {
+    if (m_lazyResizeRubberBand) {
         m_lazyResizeRubberBand->hide();
         setPosition(m_lazyPosition);
     }
 
     s_isResizing = false;
-    m_layout->setAnchorBeingDragged(nullptr);
+    // m_layout->setAnchorBeingDragged(nullptr); TODO
 }
 
 void Anchor::onMouseMoved(QPoint)
@@ -278,7 +281,7 @@ void Anchor::onMouseMoved(QPoint)
         return;
 
     if (!(qApp->mouseButtons() & Qt::LeftButton)) {
-        qCDebug(mouseevents) << Q_FUNC_INFO << "Ignoring spurious mouse event. Someone ate our ReleaseEvent";
+        qCDebug(separators) << Q_FUNC_INFO << "Ignoring spurious mouse event. Someone ate our ReleaseEvent";
         onMouseReleased();
         return;
     }
@@ -313,8 +316,8 @@ void Anchor::onMouseMoved(QPoint)
 
 void Anchor::onWidgetMoved(int p)
 {
-    if (m_layout->anchorBeingDragged() != this) // We only care if it's being dragged by mouse
-        return;
+   /* if (m_layout->anchorBeingDragged() != this) // We only care if it's being dragged by mouse
+        return;*/ // TODO
 
 
     setPosition(p);

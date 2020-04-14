@@ -18,30 +18,12 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef KD_MULTISPLITTER_SEPARATORWIDGET_P_H
-#define KD_MULTISPLITTER_SEPARATORWIDGET_P_H
+#ifndef KD_DOCKWIDGETS_MULTISPLITTER_LOGGING_P_H
+#define KD_DOCKWIDGETS_MULTISPLITTER_LOGGING_P_H
 
-#include "docks_export.h"
-#include "multisplitter/Separator_p.h"
+#include <QLoggingCategory>
 
-QT_BEGIN_NAMESPACE
-class QPaintEvent;
-QT_END_NAMESPACE
+Q_DECLARE_LOGGING_CATEGORY(separators)
 
-namespace KDDockWidgets {
-
-class DOCKS_EXPORT SeparatorWidget : public Separator
-{
-    Q_OBJECT
-public:
-    explicit SeparatorWidget(Layouting::Anchor *anchor, QWidget *parent = nullptr);
-
-protected:
-    void paintEvent(QPaintEvent *) override;
-    void enterEvent(QEvent *) override;
-    void leaveEvent(QEvent *) override;
-};
-
-}
 
 #endif

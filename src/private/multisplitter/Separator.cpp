@@ -19,17 +19,17 @@
 */
 
 #include "Separator_p.h"
-#include "multisplitter/Item_p.h"
-#include "multisplitter/MultiSplitterLayout_p.h"
-#include "multisplitter/Anchor_p.h"
+#include "Anchor_p.h"
 #include "Logging_p.h"
 #include "Item_p.h"
+
+#include <QMouseEvent>
 
 using namespace KDDockWidgets;
 using namespace Layouting;
 
-Separator::Separator(Layouting::Anchor *anchor, QWidgetAdapter *parent)
-    : QWidgetAdapter(parent)
+Separator::Separator(Layouting::Anchor *anchor, QWidget *hostWidget)
+    : QWidget(hostWidget)
     , m_anchor(anchor)
 {
     Q_ASSERT(anchor);
@@ -37,9 +37,9 @@ Separator::Separator(Layouting::Anchor *anchor, QWidgetAdapter *parent)
 
     const int thickness = Item::separatorThickness();
     if (isVertical())
-        setFixedWidth(thickness);
-    else
         setFixedHeight(thickness);
+    else
+        setFixedWidth(thickness);
 }
 
 bool Separator::isVertical() const
@@ -49,29 +49,29 @@ bool Separator::isVertical() const
 
 int Separator::position() const
 {
-    return isVertical() ? x() : y();
-}
-
-void Separator::onMousePress()
-{
-    m_anchor->onMousePress();
-}
-
-void Separator::onMouseMove(QPoint globalPos)
-{
-    m_anchor->onMouseMoved(parentWidget()->mapFromGlobal(globalPos));
-}
-
-void Separator::onMouseRelease()
-{
-    m_anchor->onMouseReleased();
+    return isVertical() ? y() : x();
 }
 
 void Separator::move(int p)
 {
     if (isVertical()) {
-        QWidgetAdapter::move(p, y());
+        QWidget::move(p, y());
     } else {
-        QWidgetAdapter::move(x(), p);
+        QWidget::move(x(), p);
     }
+}
+
+void Separator::mousePressEvent(QMouseEvent *)
+{
+    m_anchor->onMousePress();
+}
+
+void Separator::mouseMoveEvent(QMouseEvent *ev)
+{
+    m_anchor->onMouseMoved(parentWidget()->mapFromGlobal(ev->globalPos() ));
+}
+
+void Separator::mouseReleaseEvent(QMouseEvent *)
+{
+    m_anchor->onMouseReleased();
 }

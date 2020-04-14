@@ -38,6 +38,7 @@ namespace Layouting {
 
 class ItemContainer;
 class Item;
+class Anchor;
 
 enum Location {
     Location_None,
@@ -421,7 +422,7 @@ public:
     int length() const;
     QRect rect() const;
     QVariantList items() const;
-    void dumpLayout(int level = 0);
+    void dumpLayout(int level = 0) override;
     void updateChildPercentages();
     void restoreChild(Item *);
     void updateWidgetGeometries() override;
@@ -489,9 +490,12 @@ public:
     bool m_isResizing = false;
     bool m_isRoot = false;
     bool m_blockUpdatePercentages = false;
+    QVector<Layouting::Anchor*> separators() const;
 private:
+    void createSeparators();
     QVector<double> childPercentages() const;
     mutable bool m_checkSanityScheduled = false;
+    QVector<Layouting::Anchor*> m_separators;
 };
 
 /**

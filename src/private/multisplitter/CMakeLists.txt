@@ -1,6 +1,13 @@
 set(MULTISPLITTER_SRCS
+    Anchor.cpp
+    Anchor_p.h
     Item.cpp
-    Item_p.h)
+    Item_p.h
+    Logging.cpp
+    Logging_p.h
+    Separator.cpp
+    Separator_p.h
+)
 
 add_library(kddockwidgets_layouting ${MULTISPLITTER_SRCS})
 target_link_libraries(kddockwidgets_layouting Qt5::Core Qt5::Widgets)

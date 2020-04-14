@@ -21,8 +21,6 @@
 #ifndef KD_MULTISPLITTER_ANCHOR_P_H
 #define KD_MULTISPLITTER_ANCHOR_P_H
 
-#include "docks_export.h"
-#include "LayoutSaver_p.h"
 #include "Item_p.h"
 
 #include <QObject>
@@ -33,6 +31,12 @@
 QT_BEGIN_NAMESPACE
 class QRubberBand;
 QT_END_NAMESPACE
+
+
+
+namespace Layouting {
+class Item;
+}
 
 namespace KDDockWidgets {
 class MultiSplitterLayout;
@@ -84,13 +88,9 @@ class Item;
  * side1Widgets (Foo) and side2Widgets (Bar). This non-static anchors has from=top anchor, and to=bottom anchor.
  *
  */
-class DOCKS_EXPORT_FOR_UNIT_TESTS Anchor : public QObject // clazy:exclude=ctor-missing-parent-argument
+class Anchor : public QObject // clazy:exclude=ctor-missing-parent-argument
 {
     Q_OBJECT
-
-    // properties for GammaRay
-    Q_PROPERTY(KDDockWidgets::ItemList side1Items READ side1Items NOTIFY itemsChanged)
-    Q_PROPERTY(KDDockWidgets::ItemList side2Items READ side2Items NOTIFY itemsChanged)
 
     Q_PROPERTY(QString debug_side1ItemNames READ debug_side1ItemNames NOTIFY debug_itemNamesChanged)
     Q_PROPERTY(QString debug_side2ItemNames READ debug_side2ItemNames NOTIFY debug_itemNamesChanged)
@@ -101,8 +101,14 @@ class DOCKS_EXPORT_FOR_UNIT_TESTS Anchor : public QObject // clazy:exclude=ctor-
     Q_PROPERTY(Qt::Orientation orientation READ orientation CONSTANT)
 public:
 
+    enum class Option {
+        None = 0,
+        LazyResize
+    };
+    Q_DECLARE_FLAGS(Options, Option);
+
     typedef QVector<Anchor *> List;
-    explicit Anchor(Qt::Orientation orientation, KDDockWidgets::MultiSplitterLayout *multiSplitter);
+    explicit Anchor(Qt::Orientation orientation, Options options, QWidget *hostWidget);
     ~Anchor() override;
 
     void setFrom(Anchor *);
@@ -152,14 +158,14 @@ public:
     bool containsItem(const Item *w, Side side) const;
 
     const QVector<Item*> items(Side side) const;
-    const QVector<Item*> side1Items() const { return m_side1Items; }
-    const QVector<Item*> side2Items() const { return m_side2Items; }
 
     void setPositionOffset(int);
     bool isBeingDragged() const;
 
     ///@brief removes the side1 and side2 items. Doesn't delete them
     void clear();
+
+    bool lazyResizeEnabled() const;
 
     void onMousePress();
     void onMouseReleased();
@@ -195,9 +201,9 @@ public:
     QPointer<Anchor> m_to;
 
     // Only set when anchor is moved through mouse. Side1 if going towards left or top, Side2 otherwise.
-    Side m_lastMoveDirection = Side1;
+    Layouting::Side m_lastMoveDirection = Side1;
 
-    KDDockWidgets::MultiSplitterLayout *m_layout = nullptr;
+    QWidget *const m_hostWidget;
     bool m_showingSide1Rubberband = false;
     bool m_showingSide2Rubberband = false;
     bool m_initialized = false;
@@ -207,8 +213,8 @@ public:
     QString m_debug_side2ItemNames;
     KDDockWidgets::Separator *const m_separatorWidget;
     QRect m_geometry;
-    const bool m_lazyResize;
     int m_lazyPosition = 0;
+    const Options m_options;
     QRubberBand *const m_lazyResizeRubberBand;
 };
 

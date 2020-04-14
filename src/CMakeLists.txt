@@ -24,8 +24,6 @@ set(DOCKSLIBS_SRCS
     # private/indicators/AnimatedIndicators.cpp
     private/DropArea.cpp
     private/multisplitter/MultiSplitter.cpp
-    private/multisplitter/Anchor.cpp
-    private/multisplitter/Separator.cpp
     private/multisplitter/MultiSplitterLayout.cpp
     private/TabWidget.cpp
     private/FloatingWindow.cpp
