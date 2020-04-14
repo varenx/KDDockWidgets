@@ -64,7 +64,7 @@ set(DOCKS_INSTALLABLE_PRIVATE_WIDGET_INCLUDES
     private/widgets/QWidgetAdapter_widgets_p.h
     private/widgets/TitleBarWidget_p.h
     private/widgets/SeparatorWidget_p.h
-        private/widgets/FloatingWindowWidget_p.h
+    private/widgets/FloatingWindowWidget_p.h
     private/widgets/FrameWidget_p.h
     private/widgets/TabBarWidget_p.h
     private/widgets/TabWidgetWidget_p.h
@@ -162,6 +162,7 @@ install (TARGETS kddockwidgets
          ARCHIVE DESTINATION lib)
 install (FILES ${DOCKS_INSTALLABLE_INCLUDES} DESTINATION include/kddockwidgets)
 install (FILES ${DOCKS_INSTALLABLE_PRIVATE_INCLUDES} DESTINATION include/kddockwidgets/private)
+install (FILES private/multisplitter/Item_p.h DESTINATION include/kddockwidgets/multisplitter)
 install (FILES ${DOCKS_INSTALLABLE_PRIVATE_WIDGET_INCLUDES} DESTINATION include/kddockwidgets/private/widgets)
 
 include(CMakePackageConfigHelpers)
