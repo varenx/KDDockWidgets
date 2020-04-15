@@ -148,16 +148,7 @@ static int osWindowMinWidth()
     return 140; // Some random value for our windows. It's only important on Windows
 #endif
 }
-#if 0
-static int osWindowMinHeight()
-{
-#ifdef Q_OS_WIN
-    return GetSystemMetrics(SM_CYMIN);
-#else
-    return 100; // Some random value for our windows. It's only important on Windows
-#endif
-}
-#endif
+
 namespace KDDockWidgets {
 
 namespace {
@@ -1894,7 +1885,6 @@ void TestDocks::tst_addToSmallMainWindow()
         MultiSplitterLayout *layout = dropArea->multiSplitterLayout();
         m->addDockWidget(dock1, KDDockWidgets::Location_OnBottom);
         Testing::waitForResize(m.get());
-        qDebug() << "Size=" << m->size();
 
         m->addDockWidget(dock2, KDDockWidgets::Location_OnBottom);
         Testing::waitForResize(m.get());
