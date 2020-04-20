@@ -293,7 +293,9 @@ void TestMultiSplitter::tst_insertOnWidgetItem2DifferentOrientation()
     item2->insertItem(item3, Location_OnRight);
     item3->insertItem(item31, Location_OnBottom);
     auto container3Parent = item3->parentContainer();
+    root->dumpLayout();
     item3->insertItem(item32, Location_OnRight);
+    QVERIFY(root->checkSanity());
     auto container3 = item3->parentContainer();
 
     QCOMPARE(container3->parentContainer(), container3Parent);
@@ -345,6 +347,7 @@ void TestMultiSplitter::tst_insertOnRootDifferentOrientation()
     item2->insertItem(item3, Location_OnRight);
     item3->insertItem(item31, Location_OnBottom);
     item3->insertItem(item32, Location_OnRight);
+    root->dumpLayout();
     root->insertItem(item4, Location_OnTop);
 
     QCOMPARE(item4->parentContainer(), root.get());

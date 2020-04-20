@@ -257,9 +257,6 @@ public:
     ~Item() override;
 
     bool isRoot() const;
-
-    bool isVertical() const;
-    bool isHorizontal() const;
     virtual int visibleCount_recursive() const;
 
     virtual void insertItem(Item *item, Location);
@@ -353,10 +350,7 @@ protected:
     friend class ::TestMultiSplitter;
     explicit Item(bool isContainer, QWidget *hostWidget, ItemContainer *parent);
     const bool m_isContainer;
-    Qt::Orientation m_orientation = Qt::Vertical;
-
     ItemContainer *m_parent = nullptr;
-
 private Q_SLOTS:
     void onWidgetLayoutRequested();
 
@@ -410,12 +404,14 @@ public:
     void insertItem(Item *item, Location) override;
     bool hasOrientationFor(Location) const;
     Item::List children() const;
-    Item::List visibleChildren() const;
+    Item::List visibleChildren(bool includeBeingInserted = false) const;
     int usableLength() const;
     bool hasSingleVisibleItem() const;
     bool contains(const Item *item) const;
     bool contains_recursive(const Item *item) const;
-    void setChildren(const Item::List children);
+    void setChildren(const Item::List children, Qt::Orientation o);
+    void updateMinSize();
+    void setOrientation(Qt::Orientation);
     QSize minSize() const override;
     QSize maxSize() const override;
     void resize(QSize newSize) override;
@@ -462,7 +458,7 @@ public:
     void onChildMinSizeChanged(Item *child);
     void onChildVisibleChanged(Item *child, bool visible);
     SizingInfo::List sizingInfosPerNeighbour(Item *item, Side) const;
-    SizingInfo::List sizes() const;
+    SizingInfo::List sizes(bool ignoreBeingInserted = false) const;
     QVector<int> calculateSqueezes(SizingInfo::List::ConstIterator begin, SizingInfo::List::ConstIterator end, int needed) const;
     QRect suggestedDropRect(QSize minSize, const Item *relativeTo, Location) const;
     void positionItems();
@@ -481,6 +477,9 @@ public:
     void setLength_recursive(int length, Qt::Orientation) override;
     void applySizes(const SizingInfo::List &sizes);
     void applyPositions(const SizingInfo::List &sizes);
+    Qt::Orientation orientation() const;
+    bool isVertical() const;
+    bool isHorizontal() const;
 Q_SIGNALS:
     void itemsChanged();
     void numVisibleItemsChanged(int);
@@ -491,6 +490,7 @@ public:
     bool m_isRoot = false;
     bool m_blockUpdatePercentages = false;
     QVector<Layouting::Anchor*> separators() const;
+    Qt::Orientation m_orientation = Qt::Vertical;
 private:
     void createSeparators();
     QVector<double> childPercentages() const;

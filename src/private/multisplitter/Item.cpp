@@ -191,7 +191,11 @@ bool Item::isBeingInserted() const
 
 void Item::setBeingInserted(bool is)
 {
-    m_sizingInfo.isBeingInserted = is;
+    if (is != m_sizingInfo.isBeingInserted) {
+        m_sizingInfo.isBeingInserted = is;
+        if (is)
+            Q_EMIT minSizeChanged(this); // min-size is 0x0 when hidden
+    }
 }
 
 void Item::setParentContainer(ItemContainer *parent)
@@ -235,11 +239,9 @@ ItemContainer *Item::asContainer()
 
 void Item::setMinSize(QSize sz)
 {
-    Q_ASSERT(!isContainer());
-
     if (sz != m_sizingInfo.minSize) {
         m_sizingInfo.minSize = sz;
-        setSize(size().expandedTo(sz));
+        resize(size().expandedTo(sz));
     }
 }
 
@@ -294,7 +296,7 @@ void Item::insertItem(Item *item, Location loc)
             Q_ASSERT(m_parent->visibleChildren().size() == 1);
             // This is the case where the container only has one item, so it's both vertical and horizontal
             // Now its orientation gets defined
-            m_parent->m_orientation = orientation;
+            m_parent->setOrientation(orientation);
         }
 
         m_parent->insertItem(item, indexInParent);
@@ -303,7 +305,7 @@ void Item::insertItem(Item *item, Location loc)
         container->insertItem(item, loc);
     }
 
-    checkSanity();
+    root()->checkSanity();
 }
 
 /** static */
@@ -366,11 +368,6 @@ bool Item::isContainer() const
     return m_isContainer;
 }
 
-Qt::Orientation Item::orientation() const
-{
-    return m_orientation;
-}
-
 int Item::minLength(Qt::Orientation o) const
 {
     return Layouting::length(minSize(), o);
@@ -418,7 +415,6 @@ void Item::setIsVisible(bool is)
             setBeingInserted(true);
 
         m_isVisible = is;
-        Q_EMIT minSizeChanged(this); // min-size is 0x0 when hidden
         Q_EMIT visibleChanged(this, is);
 
         if (auto w = frame()) {
@@ -478,6 +474,13 @@ void Item::setGeometry(QRect rect)
 
     if (rect != m_geometry) {
         const QRect oldGeo = m_geometry;
+        if (rect == QRect(0,0, 80, 185)) {
+            qDebug() << "BUG";
+        }
+        if (rect == QRect(0,0, 4000, 2000)) {
+            qDebug() << "BUG2";
+        }
+
         m_geometry = rect;
 
         if (rect.isEmpty()) {
@@ -611,16 +614,6 @@ bool Item::isRoot() const
     return m_parent == nullptr;
 }
 
-bool Item::isVertical() const
-{
-    return m_orientation == Qt::Vertical;
-}
-
-bool Item::isHorizontal() const
-{
-    return m_orientation == Qt::Horizontal;
-}
-
 int Item::visibleCount_recursive() const
 {
     return isVisible() ? 1 : 0;
@@ -722,7 +715,7 @@ bool ItemContainer::checkSanity() const
         if (occupied != length()) {
             root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Unexpected length. Expected=" << length()
-                       << "; got=" << occupied;
+                       << "; got=" << occupied << "; this=" << this;
             return false;
         }
 
@@ -818,6 +811,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             // Neighbours will occupy the space of the deleted item
             growNeighbours(side1Item, side2Item);
             Q_EMIT itemsChanged();
+            updateMinSize();
             updateChildPercentages();
         }
     } else {
@@ -844,6 +838,9 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
     const int index = indexOfChild(leaf);
     Q_ASSERT(index != -1);
     auto container = new ItemContainer(hostWidget(), this);
+    container->setParentContainer(nullptr);
+    container->setParentContainer(this);
+
     insertItem(container, index, /*growItem=*/false);
     m_children.removeOne(leaf);
     container->setGeometry(leaf->geometry());
@@ -867,7 +864,7 @@ void ItemContainer::insertItem(Item *item, Location loc)
     const Qt::Orientation locOrientation = orientationForLocation(loc);
 
     if (hasOrientationFor(loc)) {
-        if (m_children.size() == 1) {
+        if (numVisibleChildren() == 1) {
             // 2 items is the minimum to know which orientation we're layedout
             m_orientation = locOrientation;
         }
@@ -878,12 +875,11 @@ void ItemContainer::insertItem(Item *item, Location loc)
         // Inserting directly in a container ? Only if it's root.
         Q_ASSERT(isRoot());
         auto container = new ItemContainer(hostWidget(), this);
-        container->setChildren(m_children);
-        container->m_orientation = m_orientation;
-        m_children.clear();
-        m_orientation = oppositeOrientation(m_orientation);
-        insertItem(container, 0, /*grow=*/ false);
         container->setGeometry(rect());
+        container->setChildren(m_children, m_orientation);
+        m_children.clear();
+        setOrientation(oppositeOrientation(m_orientation));
+        insertItem(container, 0, /*grow=*/ false);
         container->setIsVisible(container->numVisibleChildren() > 0);
 
         // Now we have the correct orientation, we can insert
@@ -896,6 +892,8 @@ void ItemContainer::insertItem(Item *item, Location loc)
 
 void ItemContainer::onChildMinSizeChanged(Item *child)
 {
+    updateMinSize();
+
     const QSize missingSize = this->missingSize();
     if (!missingSize.isNull()) {
         QScopedValueRollback<bool> resizing(m_isResizing, true);
@@ -1125,6 +1123,11 @@ void ItemContainer::applyPositions(const SizingInfo::List &sizes)
     }
 }
 
+Qt::Orientation ItemContainer::orientation() const
+{
+    return m_orientation;
+}
+
 void ItemContainer::positionItems(SizingInfo::List &sizes)
 {
     int nextPos = 0;
@@ -1155,6 +1158,7 @@ void ItemContainer::clear()
         delete item;
     }
     m_children.clear();
+    updateMinSize();
 }
 
 Item *ItemContainer::itemForFrame(const QWidget *w) const
@@ -1308,12 +1312,12 @@ Item::List ItemContainer::children() const
     return m_children;
 }
 
-Item::List ItemContainer::visibleChildren() const
+Item::List ItemContainer::visibleChildren(bool includeBeingInserted) const
 {
     Item::List items;
     items.reserve(m_children.size());
     for (Item *item : m_children) {
-        if (item->isVisible())
+        if (item->isVisible() || (includeBeingInserted && item->isBeingInserted()))
             items << item;
     }
 
@@ -1354,20 +1358,21 @@ bool ItemContainer::contains_recursive(const Item *item) const
     return false;
 }
 
-void ItemContainer::setChildren(const Item::List children)
+void ItemContainer::setChildren(const Item::List children, Qt::Orientation o)
 {
     m_children = children;
     for (Item *item : children)
         item->setParentContainer(this);
+
+    setOrientation(o);
 }
 
-QSize ItemContainer::minSize() const
+void ItemContainer::updateMinSize()
 {
     int minW = 0;
     int minH = 0;
-
-    if (!isEmpty()) {
-        const Item::List visibleChildren = this->visibleChildren();
+    const Item::List visibleChildren = this->visibleChildren(/*includeBeingInserted=*/ true); // TODO Iterate m_children directly
+    if (!visibleChildren.isEmpty()) {
         for (Item *item : visibleChildren) {
             if (isVertical()) {
                 minW = qMax(minW, item->minSize().width());
@@ -1385,7 +1390,22 @@ QSize ItemContainer::minSize() const
             minW += separatorWaste;
     }
 
-    return { minW, minH };
+    setMinSize(QSize(minW, minH));
+}
+
+void ItemContainer::setOrientation(Qt::Orientation o)
+{
+    if (o != m_orientation) {
+        m_orientation = o;
+        updateMinSize();
+        updateChildPercentages();
+    }
+}
+
+QSize ItemContainer::minSize() const
+{
+    return hasVisibleChildren() ? Item::minSize()
+                                : QSize(0, 0); // otherwise we get a min of 40x40
 }
 
 QSize ItemContainer::maxSize() const
@@ -1466,8 +1486,8 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
                                                 : itemSize.length(m_orientation);
 
         if (newItemLength <= 0) {
-            qWarning() << Q_FUNC_INFO << "Invalid resize. Dumping layout";
             root()->dumpLayout();
+            qWarning() << Q_FUNC_INFO << "Invalid resize";
             Q_ASSERT(false);
             return;
         }
@@ -1542,7 +1562,7 @@ void ItemContainer::updateChildPercentages()
 
     const int usable = usableLength();
     for (Item *item : m_children) {
-        if (item->isVisible()) {
+        if (item->isVisible() && !item->isBeingInserted()) {
             item->m_sizingInfo.percentageWithinParent = (1.0 * item->length(m_orientation)) / usable;
             Q_ASSERT(!qFuzzyIsNull(item->m_sizingInfo.percentageWithinParent));
         } else {
@@ -1569,7 +1589,10 @@ void ItemContainer::restoreChild(Item *item)
     Q_ASSERT(contains(item));
 
     item->setIsVisible(true);
+    updateMinSize();
     if (numVisibleChildren() == 1) {
+        // The easy case. Child is alone in the layout, occupies everything.
+        item->setGeometry(rect());
         updateChildPercentages();
         return;
     }
@@ -1956,9 +1979,9 @@ SizingInfo::List ItemContainer::sizingInfosPerNeighbour(Item *item, Side side) c
     return result;
 }
 
-SizingInfo::List ItemContainer::sizes() const
+SizingInfo::List ItemContainer::sizes(bool ignoreBeingInserted) const
 {
-    const Item::List children = visibleChildren();
+    const Item::List children = visibleChildren(ignoreBeingInserted);
     SizingInfo::List result;
     result.reserve(children.count());
     for (Item *item : children) {
@@ -2059,4 +2082,14 @@ void ItemContainer::createSeparators()
         m_separators << new Anchor(m_orientation, Anchor::Option::None, hostWidget());
     }
 
+}
+
+bool ItemContainer::isVertical() const
+{
+    return m_orientation == Qt::Vertical;
+}
+
+bool ItemContainer::isHorizontal() const
+{
+    return m_orientation == Qt::Horizontal;
 }
