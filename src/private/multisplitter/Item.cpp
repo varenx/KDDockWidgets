@@ -925,10 +925,9 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
     if (child->isBeingInserted())
         return;
 
-    if (numVisibleChildren() == 1) {
+    if (numVisibleChildren() == 1 && child->isVisible()) {
         // The easy case. Child is alone in the layout, occupies everything.
         child->setGeometry(rect());
-        Q_ASSERT(child->isVisible());
         return;
     }
 
