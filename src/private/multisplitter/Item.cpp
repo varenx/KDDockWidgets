@@ -474,10 +474,6 @@ void Item::setGeometry(QRect rect)
 
     if (rect != m_geometry) {
         const QRect oldGeo = m_geometry;
-        if (objectName() == QLatin1String("3"))
-            if (rect == QRect(0,0, 80, 1000)) {
-                qDebug() << "BUG" << objectName();
-            }
 
         m_geometry = rect;
 
@@ -833,6 +829,8 @@ void ItemContainer::setGeometry_recursive(QRect rect)
 
 ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
 {
+    QScopedValueRollback<bool> converting(m_convertingItemToContainer, true);
+
     const int index = indexOfChild(leaf);
     Q_ASSERT(index != -1);
     auto container = new ItemContainer(hostWidget(), this);
@@ -892,6 +890,11 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
 {
     updateMinSize();
 
+    if (m_convertingItemToContainer) {
+        // Don't bother our parents, we're converting
+        return;
+    }
+
     const QSize missingSize = this->missingSize();
     if (!missingSize.isNull()) {
         QScopedValueRollback<bool> resizing(m_isResizing, true);
@@ -919,14 +922,15 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
     // Our min-size changed, notify our parent, and so on until it reaches root()
     Q_EMIT minSizeChanged(this);
 
+    if (child->isBeingInserted())
+        return;
+
     if (numVisibleChildren() == 1) {
         // The easy case. Child is alone in the layout, occupies everything.
         child->setGeometry(rect());
+        Q_ASSERT(child->isVisible());
         return;
     }
-
-    if (child->isBeingInserted())
-        return;
 
     const QSize missingForChild = child->missingSize();
     if (missingForChild.isNull()) {

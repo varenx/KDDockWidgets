@@ -496,6 +496,7 @@ private:
     QVector<double> childPercentages() const;
     mutable bool m_checkSanityScheduled = false;
     QVector<Layouting::Anchor*> m_separators;
+    bool m_convertingItemToContainer = false;
 };
 
 /**

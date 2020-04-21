@@ -293,7 +293,6 @@ void TestMultiSplitter::tst_insertOnWidgetItem2DifferentOrientation()
     item2->insertItem(item3, Location_OnRight);
     item3->insertItem(item4, Location_OnBottom);
     auto container3Parent = item3->parentContainer();
-    root->dumpLayout();
     item3->insertItem(item5, Location_OnRight);
     QVERIFY(root->checkSanity());
     auto container3 = item3->parentContainer();
