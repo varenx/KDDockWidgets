@@ -286,15 +286,15 @@ void TestMultiSplitter::tst_insertOnWidgetItem2DifferentOrientation()
     auto item1 = createItem();
     auto item2 = createItem();
     auto item3 = createItem();
-    auto item31 = createItem();
-    auto item32 = createItem();
+    auto item5 = createItem();
+    auto item4 = createItem();
     root->insertItem(item1, Location_OnLeft);
     root->insertItem(item2, Location_OnRight);
     item2->insertItem(item3, Location_OnRight);
-    item3->insertItem(item31, Location_OnBottom);
+    item3->insertItem(item4, Location_OnBottom);
     auto container3Parent = item3->parentContainer();
     root->dumpLayout();
-    item3->insertItem(item32, Location_OnRight);
+    item3->insertItem(item5, Location_OnRight);
     QVERIFY(root->checkSanity());
     auto container3 = item3->parentContainer();
 
@@ -317,14 +317,14 @@ void TestMultiSplitter::tst_insertOnWidgetItem2DifferentOrientation()
     QCOMPARE(item3->y(), item2->y());
     QCOMPARE(item1->y(), item2->y());
 
-    QVERIFY(item31->y() >= item3->y());
-    QCOMPARE(item31->parentContainer(), container3Parent);
+    QVERIFY(item4->y() >= item3->y());
+    QCOMPARE(item4->parentContainer(), container3Parent);
     QCOMPARE(item3->parentContainer(), container3);
     QCOMPARE(container3Parent->parentContainer(), root.get());
     QCOMPARE(container3->pos(), item3->pos());
-    QCOMPARE(container3->width(), item3->width() + item32->width() + st);
+    QCOMPARE(container3->width(), item3->width() + item5->width() + st);
     QCOMPARE(container3->height(), item3->height());
-    QCOMPARE(container3Parent->height(), item3->height() + st + item31->height());
+    QCOMPARE(container3Parent->height(), item3->height() + st + item4->height());
 
     QVERIFY(root->checkSanity());
 }

@@ -474,12 +474,10 @@ void Item::setGeometry(QRect rect)
 
     if (rect != m_geometry) {
         const QRect oldGeo = m_geometry;
-        if (rect == QRect(0,0, 80, 185)) {
-            qDebug() << "BUG";
-        }
-        if (rect == QRect(0,0, 4000, 2000)) {
-            qDebug() << "BUG2";
-        }
+        if (objectName() == QLatin1String("3"))
+            if (rect == QRect(0,0, 80, 1000)) {
+                qDebug() << "BUG" << objectName();
+            }
 
         m_geometry = rect;
 
