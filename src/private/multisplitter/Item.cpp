@@ -682,16 +682,16 @@ bool ItemContainer::checkSanity() const
         // Check the children height (if horizontal, and vice-versa)
         const int h2 = Layouting::length(item->size(), oppositeOrientation(m_orientation));
         if (h1 != h2) {
+            root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Invalid size for item." << item
                        << "Container.length=" << h1 << "; item.length=" << h2;
-            root()->dumpLayout();
             return false;
         }
 
         if (!rect().contains(item->geometry())) {
+            root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Item geo is out of bounds. item=" << item << "; geo="
                        << item->geometry() << "; container.rect=" << rect();
-            root()->dumpLayout();
             return false;
         }
 
@@ -860,7 +860,7 @@ void ItemContainer::insertItem(Item *item, Location loc)
     const Qt::Orientation locOrientation = orientationForLocation(loc);
 
     if (hasOrientationFor(loc)) {
-        if (numVisibleChildren() == 1) {
+        if (m_children.size() == 1) {
             // 2 items is the minimum to know which orientation we're layedout
             m_orientation = locOrientation;
         }
