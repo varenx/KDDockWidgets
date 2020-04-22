@@ -1865,7 +1865,7 @@ void TestDocks::tst_addToSmallMainWindow3()
     auto fw = dock2->morphIntoFloatingWindow();
     QVERIFY(fw->isVisible());
     QVERIFY(dropArea->checkSanity());
-
+    m->multiSplitterLayout()->dumpDebug();
     dragFloatingWindowTo(fw, dropArea, DropIndicatorOverlayInterface::DropLocation_Right);
     QVERIFY(m->dropArea()->checkSanity());
     delete fw;

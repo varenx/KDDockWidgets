@@ -725,16 +725,6 @@ bool ItemContainer::checkSanity()
         }
     }
 
-    const QSize minSz = minSize();
-    updateMinSize();
-    if (minSz != minSize()) {
-        root()->dumpLayout();
-        qWarning() << Q_FUNC_INFO << "Had an outdated minSize=" << minSz
-                   << "; new=" << minSize()
-                   << "; this=" << this;
-        return false;
-    }
-
     return true;
 }
 
@@ -816,7 +806,6 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             // Neighbours will occupy the space of the deleted item
             growNeighbours(side1Item, side2Item);
             Q_EMIT itemsChanged();
-            updateMinSize();
             updateChildPercentages();
         }
     } else {
@@ -899,8 +888,6 @@ void ItemContainer::insertItem(Item *item, Location loc)
 
 void ItemContainer::onChildMinSizeChanged(Item *child)
 {
-    updateMinSize();
-
     if (m_convertingItemToContainer) {
         // Don't bother our parents, we're converting
         return;
@@ -1170,7 +1157,6 @@ void ItemContainer::clear()
         delete item;
     }
     m_children.clear();
-    updateMinSize();
 }
 
 Item *ItemContainer::itemForFrame(const QWidget *w) const
@@ -1379,37 +1365,10 @@ void ItemContainer::setChildren(const Item::List children, Qt::Orientation o)
     setOrientation(o);
 }
 
-void ItemContainer::updateMinSize()
-{
-    int minW = 0;
-    int minH = 0;
-    const Item::List visibleChildren = this->visibleChildren(/*includeBeingInserted=*/ true); // TODO Iterate m_children directly
-    if (!visibleChildren.isEmpty()) {
-        for (Item *item : visibleChildren) {
-            if (isVertical()) {
-                minW = qMax(minW, item->minSize().width());
-                minH += item->minSize().height();
-            } else {
-                minH = qMax(minH, item->minSize().height());
-                minW += item->minSize().width();
-            }
-        }
-
-        const int separatorWaste = qMax(0, (visibleChildren.size() - 1) * separatorThickness());
-        if (isVertical())
-            minH += separatorWaste;
-        else
-            minW += separatorWaste;
-    }
-
-    setMinSize(QSize(minW, minH));
-}
-
 void ItemContainer::setOrientation(Qt::Orientation o)
 {
     if (o != m_orientation) {
         m_orientation = o;
-        updateMinSize();
         updateChildPercentages();
     }
 }
@@ -1520,7 +1479,7 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 
         if (newItemLength <= 0) {
             root()->dumpLayout();
-            qWarning() << Q_FUNC_INFO << "Invalid resize";
+            qWarning() << Q_FUNC_INFO << "Invalid resize newItemLength=" << newItemLength;
             Q_ASSERT(false);
             return;
         }
@@ -1622,7 +1581,6 @@ void ItemContainer::restoreChild(Item *item)
     Q_ASSERT(contains(item));
 
     item->setIsVisible(true);
-    updateMinSize();
     if (numVisibleChildren() == 1) {
         // The easy case. Child is alone in the layout, occupies everything.
         item->setGeometry(rect());
