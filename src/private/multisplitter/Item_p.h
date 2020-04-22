@@ -281,7 +281,7 @@ public:
 
     Qt::Orientation orientation() const;
     static int separatorThickness();
-    virtual bool checkSanity() const;
+    virtual bool checkSanity();
     void setParentContainer(ItemContainer *parent); // TODO: Make private
     ItemContainer *parentContainer() const;
     void setPos(QPoint); // TODO: Make private
@@ -387,7 +387,7 @@ public:
     explicit ItemContainer(QWidget *hostWidget, ItemContainer *parent);
     explicit ItemContainer(QWidget *parent);
     void insertItem(Item *item, int index, bool growItem = true);
-    bool checkSanity() const override;
+    bool checkSanity() override;
     void scheduleCheckSanity() const;
     bool hasOrientation() const;
     int numChildren() const;
@@ -487,7 +487,6 @@ Q_SIGNALS:
 public:
     Item::List m_children;
     bool m_isResizing = false;
-    bool m_isRoot = false;
     bool m_blockUpdatePercentages = false;
     QVector<Layouting::Anchor*> separators() const;
     Qt::Orientation m_orientation = Qt::Vertical;

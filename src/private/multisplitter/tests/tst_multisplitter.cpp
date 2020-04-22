@@ -346,7 +346,6 @@ void TestMultiSplitter::tst_insertOnRootDifferentOrientation()
     item2->insertItem(item3, Location_OnRight);
     item3->insertItem(item31, Location_OnBottom);
     item3->insertItem(item32, Location_OnRight);
-    root->dumpLayout();
     root->insertItem(item4, Location_OnTop);
 
     QCOMPARE(item4->parentContainer(), root.get());
@@ -375,9 +374,11 @@ void TestMultiSplitter::tst_removeItem1()
     item3->insertItem(item31, Location_OnBottom);
     item3->insertItem(item32, Location_OnRight);
     root->insertItem(item4, Location_OnTop);
-
+    QVERIFY(root->checkSanity());
     QCOMPARE(root->numChildren(), 2);
+
     root->removeItem(item4);
+    QVERIFY(root->checkSanity());
     QCOMPARE(root->numChildren(), 1);
 
     auto c1 = item1->parentContainer();
@@ -388,11 +389,12 @@ void TestMultiSplitter::tst_removeItem1()
 
     const int item3and32Width = item3->width() + item32->width() + st;
     root->removeItem(item32);
+
     QCOMPARE(item3->width(), item3and32Width);
-    root->checkSanity();
+    QVERIFY(root->checkSanity());
 
     root->removeItem(item31);
-    root->checkSanity();
+    QVERIFY(root->checkSanity());
 
     QCOMPARE(item2->height(), item3->height());
 
@@ -857,10 +859,16 @@ void TestMultiSplitter::tst_containerGetsHidden()
     Item *item2 = createItem();
     Item *item3 = createItem();
     root->insertItem(item1, Location_OnLeft);
+    QVERIFY(root->checkSanity());
+
     root->insertItem(item2, Location_OnRight);
+    QVERIFY(root->checkSanity());
+
     item2->insertItem(item3, Location_OnBottom);
+    QVERIFY(root->checkSanity());
+
     item2->turnIntoPlaceholder();
-    root->checkSanity();
+    QVERIFY(root->checkSanity());
 
     item3->turnIntoPlaceholder();
     root->checkSanity();

@@ -241,6 +241,7 @@ void Item::setMinSize(QSize sz)
 {
     if (sz != m_sizingInfo.minSize) {
         m_sizingInfo.minSize = sz;
+        Q_EMIT minSizeChanged(this);
         resize(size().expandedTo(sz));
     }
 }
@@ -443,7 +444,7 @@ int Item::separatorThickness()
     return 5;
 }
 
-bool Item::checkSanity() const
+bool Item::checkSanity()
 {
     if (minSize().width() > width() || minSize().height() > height()) {
         qWarning() << Q_FUNC_INFO << "Size constraints not honoured" << this
@@ -637,7 +638,7 @@ ItemContainer::ItemContainer(QWidget *hostWidget)
     Q_ASSERT(hostWidget);
 }
 
-bool ItemContainer::checkSanity() const
+bool ItemContainer::checkSanity()
 {
     m_checkSanityScheduled = false;
     if (!Item::checkSanity())
@@ -724,6 +725,16 @@ bool ItemContainer::checkSanity() const
         }
     }
 
+    const QSize minSz = minSize();
+    updateMinSize();
+    if (minSz != minSize()) {
+        root()->dumpLayout();
+        qWarning() << Q_FUNC_INFO << "Had an outdated minSize=" << minSz
+                   << "; new=" << minSize()
+                   << "; this=" << this;
+        return false;
+    }
+
     return true;
 }
 
@@ -786,7 +797,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             if (wasVisible) {
                 item->setIsVisible(false);
                 item->setFrame(nullptr);
-            } else if (!isContainer){
+            } else if (!isContainer) {
                 // Was already hidden
                 return;
             }
