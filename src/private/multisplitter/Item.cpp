@@ -798,6 +798,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             // Neighbours will occupy the space of the deleted item
             growNeighbours(side1Item, side2Item);
             Q_EMIT itemsChanged();
+            updateSizeConstraints();
             updateChildPercentages();
         }
     } else {
