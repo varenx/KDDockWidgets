@@ -876,7 +876,7 @@ void TestMultiSplitter::tst_containerGetsHidden()
     QVERIFY(root->checkSanity());
 
     item3->turnIntoPlaceholder();
-    root->checkSanity();
+    QVERIFY(root->checkSanity());
 }
 
 QTEST_MAIN(TestMultiSplitter)

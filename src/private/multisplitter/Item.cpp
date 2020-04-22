@@ -306,7 +306,7 @@ void Item::insertItem(Item *item, Location loc)
         container->insertItem(item, loc);
     }
 
-    root()->checkSanity();
+    (void) root()->checkSanity();
 }
 
 /** static */
@@ -2124,4 +2124,8 @@ bool ItemContainer::isVertical() const
 bool ItemContainer::isHorizontal() const
 {
     return m_orientation == Qt::Horizontal;
+}
+
+GuestInterface::~GuestInterface()
+{
 }

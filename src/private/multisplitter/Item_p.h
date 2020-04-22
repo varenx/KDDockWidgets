@@ -237,6 +237,7 @@ struct SizingInfo {
 class GuestInterface
 {
 public:
+    virtual ~GuestInterface();
     virtual void setLayoutItem(Item *) = 0;
     virtual QWidget *asWidget() = 0;
 };
@@ -281,7 +282,7 @@ public:
 
     Qt::Orientation orientation() const;
     static int separatorThickness();
-    virtual bool checkSanity();
+    [[nodiscard]] virtual bool checkSanity();
     void setParentContainer(ItemContainer *parent); // TODO: Make private
     ItemContainer *parentContainer() const;
     void setPos(QPoint); // TODO: Make private
@@ -387,7 +388,7 @@ public:
     explicit ItemContainer(QWidget *hostWidget, ItemContainer *parent);
     explicit ItemContainer(QWidget *parent);
     void insertItem(Item *item, int index, bool growItem = true);
-    bool checkSanity() override;
+    [[nodiscard]] bool checkSanity() override;
     void scheduleCheckSanity() const;
     bool hasOrientation() const;
     int numChildren() const;
