@@ -284,15 +284,15 @@ private Q_SLOTS:
 //    void tst_setFloatingWhenWasTabbed();
 //    void tst_setFloatingWhenSideBySide();
 //    void tst_setFloatingAfterDraggedFromTabToSideBySide();
-//    void tst_setFloatingAFrameWithTabs();
-//    void tst_setVisibleFalseWhenSideBySide();
+    void tst_setFloatingAFrameWithTabs();
+    void tst_setVisibleFalseWhenSideBySide();
     void tst_refUnrefItem();
     void tst_addAndReadd();
     void tst_placeholderCount();
 //    void tst_availableLengthForOrientation();
     void tst_setAstCurrentTab();
     void tst_closeShowWhenNoCentralFrame();
-//    void tst_placeholderDisappearsOnReadd();
+    void tst_placeholderDisappearsOnReadd();
 //    void tst_placeholdersAreRemovedPropertly();
 //    void tst_embeddedMainWindow();
 //    void tst_toggleMiddleDockCrash(); // tests some crash I got
@@ -2846,7 +2846,7 @@ void TestDocks::tst_setFloatingAfterDraggedFromTabToSideBySide()
         Testing::waitForDeleted(fw2);
     }
 }
-
+#endif
 void TestDocks::tst_setFloatingAFrameWithTabs()
 {
     EnsureTopLevelsDeleted e;
@@ -2912,7 +2912,7 @@ void TestDocks::tst_setVisibleFalseWhenSideBySide()
     auto window = m.release();
     Testing::waitForDeleted(window);
 }
-#endif
+
 void TestDocks::tst_simple1()
 {
     // Simply create a MainWindow
@@ -3160,7 +3160,7 @@ void TestDocks::tst_closeShowWhenNoCentralFrame()
     dock1->show();
     m->multiSplitterLayout()->checkSanity();
 }
-#if 0
+
 void TestDocks::tst_placeholderDisappearsOnReadd()
 {
     // This tests that addMultiSplitter also updates refcount of placeholders
@@ -3193,11 +3193,11 @@ void TestDocks::tst_placeholderDisappearsOnReadd()
     QCOMPARE(layout->placeholderCount(), 0);
 
     // The dock1 should occupy the entire width
-    QCOMPARE(dock1->frame()->width(), layout->width() - 2 * Anchor::thickness(true));
+    QCOMPARE(dock1->frame()->width(), layout->width());
 
     QVERIFY(Testing::waitForDeleted(fw));
 }
-
+#if 0
 void TestDocks::tst_placeholdersAreRemovedPropertly()
 {
     EnsureTopLevelsDeleted e;

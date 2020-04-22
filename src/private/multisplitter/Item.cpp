@@ -1581,7 +1581,7 @@ void ItemContainer::restoreChild(Item *item)
 
     if (numVisibleChildren() == 1) {
         // The easy case. Child is alone in the layout, occupies everything.
-        item->setGeometry(rect());
+        item->setGeometry_recursive(rect());
         updateChildPercentages();
         return;
     }
