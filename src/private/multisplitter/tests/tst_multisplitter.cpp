@@ -52,6 +52,11 @@ static void fatalWarningsMessageHandler(QtMsgType t, const QMessageLogContext &c
 
     s_original(t, context, msg);
     if (t == QtWarningMsg) {
+        if (msg.contains(QLatin1String("checkSanity"))) {
+            // These will already fail in QVERIFY(checkSanity())
+            return;
+        }
+
         if (s_expectedWarning.isEmpty() ||!msg.contains(s_expectedWarning))
             qFatal("Got a warning, category=%s", context.category);
     }

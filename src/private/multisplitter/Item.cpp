@@ -1416,8 +1416,28 @@ void ItemContainer::setOrientation(Qt::Orientation o)
 
 QSize ItemContainer::minSize() const
 {
-    return hasVisibleChildren() ? Item::minSize()
-                                : QSize(0, 0); // otherwise we get a min of 40x40
+    int minW = 0;
+    int minH = 0;
+    const Item::List visibleChildren = this->visibleChildren(/*includeBeingInserted=*/ true); // TODO Iterate m_children directly
+    if (!visibleChildren.isEmpty()) {
+        for (Item *item : visibleChildren) {
+            if (isVertical()) {
+                minW = qMax(minW, item->minSize().width());
+                minH += item->minSize().height();
+            } else {
+                minH = qMax(minH, item->minSize().height());
+                minW += item->minSize().width();
+            }
+        }
+
+        const int separatorWaste = qMax(0, (visibleChildren.size() - 1) * separatorThickness());
+        if (isVertical())
+            minH += separatorWaste;
+        else
+            minW += separatorWaste;
+    }
+
+    return QSize(minW, minH);
 }
 
 QSize ItemContainer::maxSize() const
@@ -1998,9 +2018,8 @@ SizingInfo::List ItemContainer::sizes(bool ignoreBeingInserted) const
     SizingInfo::List result;
     result.reserve(children.count());
     for (Item *item : children) {
-        if (item->isContainer()) {
+        if (item->isContainer())
             item->m_sizingInfo.minSize = item->minSize();
-        }
         result << item->m_sizingInfo;
     }
 
