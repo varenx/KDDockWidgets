@@ -48,6 +48,11 @@ enum Location {
     Location_OnBottom ///> Bottom docking location
 };
 
+enum AddingOption {
+    AddingOption_None = 0, ///> No option set
+    AddingOption_StartHidden ///< Don't show the dock widget when adding it
+};
+
 ///@internal
 inline Location oppositeLocation(Location loc)
 {
@@ -259,7 +264,7 @@ public:
     bool isRoot() const;
     virtual int visibleCount_recursive() const;
 
-    virtual void insertItem(Item *item, Location);
+    virtual void insertItem(Item *item, Location, AddingOption = AddingOption_None);
 
     /**
      * @brief No widget can have a minimum size smaller than this, regardless of their minimum size.
@@ -386,7 +391,7 @@ public:
 
     explicit ItemContainer(QWidget *hostWidget, ItemContainer *parent);
     explicit ItemContainer(QWidget *parent);
-    void insertItem(Item *item, int index, bool growItem = true);
+    void insertItem(Item *item, int index, AddingOption);
     [[nodiscard]] bool checkSanity() override;
     void scheduleCheckSanity() const;
     bool hasOrientation() const;
@@ -401,7 +406,7 @@ public:
     void setGeometry_recursive(QRect rect) override;
 
     ItemContainer *convertChildToContainer(Item *leaf);
-    void insertItem(Item *item, Location) override;
+    void insertItem(Item *item, Location, AddingOption = AddingOption_None) override;
     bool hasOrientationFor(Location) const;
     Item::List children() const;
     Item::List visibleChildren(bool includeBeingInserted = false) const;

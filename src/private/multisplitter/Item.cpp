@@ -281,7 +281,7 @@ int Item::pos(Qt::Orientation o) const
     return o == Qt::Vertical ? y() : x();
 }
 
-void Item::insertItem(Item *item, Location loc)
+void Item::insertItem(Item *item, Location loc, AddingOption option)
 {
     Q_ASSERT(item != this);
     if (m_parent->hasOrientationFor(loc)) {
@@ -298,10 +298,10 @@ void Item::insertItem(Item *item, Location loc)
             m_parent->setOrientation(orientation);
         }
 
-        m_parent->insertItem(item, indexInParent);
+        m_parent->insertItem(item, indexInParent, option);
     } else {
         ItemContainer *container = m_parent->convertChildToContainer(this);
-        container->insertItem(item, loc);
+        container->insertItem(item, loc, option);
     }
 
     (void) root()->checkSanity();
@@ -830,7 +830,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
     container->setParentContainer(nullptr);
     container->setParentContainer(this);
 
-    insertItem(container, index, /*growItem=*/false);
+    insertItem(container, index, AddingOption_StartHidden);
     m_children.removeOne(leaf);
     container->setGeometry(leaf->geometry());
     container->insertItem(leaf, Location_OnTop);
@@ -840,7 +840,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
     return container;
 }
 
-void ItemContainer::insertItem(Item *item, Location loc)
+void ItemContainer::insertItem(Item *item, Location loc, AddingOption option)
 {
     item->setIsVisible(false);
 
@@ -859,7 +859,7 @@ void ItemContainer::insertItem(Item *item, Location loc)
         }
 
         const int index = locationIsSide1(loc) ? 0 : m_children.size();
-        insertItem(item, index);
+        insertItem(item, index, option);
     } else {
         // Inserting directly in a container ? Only if it's root.
         Q_ASSERT(isRoot());
@@ -868,11 +868,11 @@ void ItemContainer::insertItem(Item *item, Location loc)
         container->setChildren(m_children, m_orientation);
         m_children.clear();
         setOrientation(oppositeOrientation(m_orientation));
-        insertItem(container, 0, /*grow=*/ false);
+        insertItem(container, 0, AddingOption_StartHidden);
         container->setIsVisible(container->numVisibleChildren() > 0);
 
         // Now we have the correct orientation, we can insert
-        insertItem(item, loc);
+        insertItem(item, loc, option);
     }
 
     updateChildPercentages();
@@ -1251,14 +1251,18 @@ void ItemContainer::setLength_recursive(int length, Qt::Orientation o)
     resize(sz);
 }
 
-void ItemContainer::insertItem(Item *item, int index, bool restoreItem)
+void ItemContainer::insertItem(Item *item, int index, AddingOption option)
 {
     m_children.insert(index, item);
     item->setParentContainer(this);
     Q_EMIT itemsChanged();
 
-    if (restoreItem)
+    if (option & AddingOption_StartHidden) {
+        if (!item->isContainer())
+            item->setIsVisible(false);
+    } else {
         restoreChild(item);
+    }
 
     if (!item->isContainer()) {
         if (item->isVisible())

@@ -174,7 +174,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     } else if (auto dw = qobject_cast<DockWidgetBase*>(w)) {
         newItem = new Item(multiSplitter());
         frame = new Frame();
-        frame->addWidget(dw);
+        frame->addWidget(dw, option);
         newItem->setFrame(frame);
     } else if (auto ms = qobject_cast<MultiSplitter*>(w)) {
         newItem = ms->multiSplitterLayout()->rootItem();
@@ -184,12 +184,7 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     }
 
     Q_ASSERT(!newItem->geometry().isEmpty());
-    relativeTo->insertItem(newItem, Layouting::Location(location));
-
-    if (option & AddingOption_StartHidden) {
-        // TODO: Make the layouting engine support this out of the box, to reduce possible flicker
-        newItem->parentContainer()->removeItem(newItem, /*hard delete=*/ false);
-    }
+    relativeTo->insertItem(newItem, Layouting::Location(location), Layouting::AddingOption(option));
 }
 
 QString MultiSplitterLayout::affinityName() const

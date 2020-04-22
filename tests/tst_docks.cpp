@@ -315,7 +315,7 @@ private Q_SLOTS:
     void tst_stealFrame();
 //    void tst_addAsPlaceholder();
     void tst_removeItem();
-//    void tst_startHidden();
+    void tst_startHidden();
 //    void tst_startClosed();
 //    void tst_sizeConstraintWarning();
 //    void tst_invalidLayoutAfterRestore();
@@ -5119,7 +5119,7 @@ void TestDocks::tst_removeItem()
     dock3->deleteLater();
     Testing::waitForDeleted(dock3);
 }
-#if 0
+
 void TestDocks::tst_startHidden()
 {
     EnsureTopLevelsDeleted e;
@@ -5132,23 +5132,28 @@ void TestDocks::tst_startHidden()
         MultiSplitterLayout *layout = dropArea->multiSplitterLayout();
 
         m->addDockWidget(dock1, Location_OnTop, nullptr, AddingOption_StartHidden);
+        layout->dumpDebug();
+
+        QTest::qWait(1000);
+
+        /*Frame *f = static_cast<Frame*>(layout->items().constFirst()->frame());
+        qDebug() << "FOOD:" << f << f->parentWidget() << dock1->isVisible();*/
 
         QCOMPARE(layout->count(), 1);
         QCOMPARE(layout->placeholderCount(), 1);
-        QCOMPARE(layout->numAchorsFollowing(), 0);
 
         m->addDockWidget(dock2, Location_OnTop);
         layout->checkSanity();
 
         QCOMPARE(layout->count(), 2);
         QCOMPARE(layout->placeholderCount(), 1);
-        QCOMPARE(layout->numAchorsFollowing(), 1);
 
+        qDebug() << dock1->isVisible();
         dock1->show();
+        layout->dumpDebug();
 
         QCOMPARE(layout->count(), 2);
         QCOMPARE(layout->placeholderCount(), 0);
-        QCOMPARE(layout->numAchorsFollowing(), 0);
 
         Testing::waitForResize(dock2);
     }
@@ -5166,21 +5171,10 @@ void TestDocks::tst_startHidden()
         m->addDockWidget(dock2, Location_OnBottom, nullptr, AddingOption_StartHidden);
         m->addDockWidget(dock3, Location_OnRight, nullptr, AddingOption_StartHidden);
 
-
-        Item *item1 = dock1->lastPosition()->layoutItem();
-        Item *item2 = dock2->lastPosition()->layoutItem();
-        Item *item3 = dock3->lastPosition()->layoutItem();
-
-        qDebug() << item1 << item1->anchorGroup();
-        qDebug() << item2 << item2->anchorGroup();
-        qDebug() << item3 << item3->anchorGroup();
-        QCOMPARE(layout->numAchorsFollowing(), 2);
-        qDebug() << "About to show dock1";
         dock1->show();
 
         QCOMPARE(layout->count(), 3);
         QCOMPARE(layout->placeholderCount(), 2);
-        QCOMPARE(layout->numAchorsFollowing(), 2);
 
         dock2->show();
         dock3->show();
@@ -5188,7 +5182,7 @@ void TestDocks::tst_startHidden()
         layout->checkSanity();
     }
 }
-
+#if 0
 void TestDocks::tst_startClosed()
 {
     EnsureTopLevelsDeleted e;
