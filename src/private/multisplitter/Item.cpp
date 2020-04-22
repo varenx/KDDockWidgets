@@ -1442,6 +1442,7 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 
     const QSize minSize = this->minSize();
     if (newSize.width() < minSize.width() || newSize.height() < minSize.height()) {
+        root()->dumpLayout();
         qWarning() << Q_FUNC_INFO << "New size doesn't respect size constraints"
                    << "; new=" << newSize
                    << "; min=" << minSize
