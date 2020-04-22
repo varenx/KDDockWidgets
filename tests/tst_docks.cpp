@@ -1886,7 +1886,7 @@ void TestDocks::tst_addToSmallMainWindow4()
     Testing::waitForResize(m.get());
     QVERIFY(m->dropArea()->checkSanity());
 
-    const int item2MinHeight =  layout->itemForFrame(dock2->frame())->minLength(Qt::Horizontal);
+    const int item2MinHeight = layout->itemForFrame(dock2->frame())->minLength(Qt::Vertical);
     QCOMPARE(dropArea->height(), dock1->frame()->height() + item2MinHeight + Item::separatorThickness());
 }
 

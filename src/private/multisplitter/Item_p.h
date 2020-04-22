@@ -456,6 +456,7 @@ public:
     QSize missingSizeFor(Item *item, Qt::Orientation) const;
     void onChildMinSizeChanged(Item *child);
     void onChildVisibleChanged(Item *child, bool visible);
+    void updateSizeConstraints();
     SizingInfo::List sizingInfosPerNeighbour(Item *item, Side) const;
     SizingInfo::List sizes(bool ignoreBeingInserted = false) const;
     QVector<int> calculateSqueezes(SizingInfo::List::ConstIterator begin, SizingInfo::List::ConstIterator end, int needed) const;

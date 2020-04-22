@@ -193,8 +193,6 @@ void Item::setBeingInserted(bool is)
 {
     if (is != m_sizingInfo.isBeingInserted) {
         m_sizingInfo.isBeingInserted = is;
-        if (is)
-            Q_EMIT minSizeChanged(this); // min-size is 0x0 when hidden
     }
 }
 
@@ -411,10 +409,6 @@ bool Item::isVisible() const
 void Item::setIsVisible(bool is)
 {
     if (is != m_isVisible) {
-
-        if (is)
-            setBeingInserted(true);
-
         m_isVisible = is;
         Q_EMIT visibleChanged(this, is);
 
@@ -422,8 +416,6 @@ void Item::setIsVisible(bool is)
             w->setGeometry(mapToRoot(m_sizingInfo.geometry));
             w->setVisible(is);
         }
-
-        setBeingInserted(false);
     }
 }
 
@@ -893,32 +885,7 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
         return;
     }
 
-    const QSize missingSize = this->missingSize();
-    if (!missingSize.isNull()) {
-        QScopedValueRollback<bool> resizing(m_isResizing, true);
-
-        if (isRoot()) {
-            // Resize the whole layout
-            resize(size() + missingSize);
-            Item::List childs = visibleChildren();
-            Item *lastChild = nullptr;
-            for (int i = childs.size() - 1; i >= 0; i--) {
-                if (!childs[i]->isBeingInserted()) {
-                    lastChild = childs[i];
-                    break;
-                }
-            }
-
-            if (lastChild) {
-                QRect r = lastChild->geometry();
-                r.adjust(0, 0, missingSize.width(), missingSize.height());
-                lastChild->setGeometry(r);
-            }
-        }
-    }
-
-    // Our min-size changed, notify our parent, and so on until it reaches root()
-    Q_EMIT minSizeChanged(this);
+    updateSizeConstraints();
 
     if (child->isBeingInserted())
         return;
@@ -938,6 +905,22 @@ void ItemContainer::onChildMinSizeChanged(Item *child)
     }
     // Child has some growing to do. It will grow left and right equally, (and top-bottom), as needed.
     growItem(child, Layouting::length(missingForChild, m_orientation), GrowthStrategy::BothSidesEqually);
+}
+
+void ItemContainer::updateSizeConstraints()
+{
+    const QSize missingSize = this->missingSize();
+    if (!missingSize.isNull()) {
+        //QScopedValueRollback<bool> resizing(m_isResizing, true);
+
+        if (isRoot()) {
+            // Resize the whole layout
+            resize(size() + missingSize);
+        }
+    }
+
+    // Our min-size changed, notify our parent, and so on until it reaches root()
+    Q_EMIT minSizeChanged(this);
 }
 
 void ItemContainer::onChildVisibleChanged(Item */*child*/, bool visible)
@@ -1315,8 +1298,13 @@ Item::List ItemContainer::visibleChildren(bool includeBeingInserted) const
     Item::List items;
     items.reserve(m_children.size());
     for (Item *item : m_children) {
-        if (item->isVisible() || (includeBeingInserted && item->isBeingInserted()))
-            items << item;
+        if (includeBeingInserted) {
+            if (item->isVisible() || item->isBeingInserted())
+                items << item;
+        } else {
+            if (item->isVisible() && !item->isBeingInserted())
+                items << item;
+        }
     }
 
     return items;
@@ -1324,8 +1312,10 @@ Item::List ItemContainer::visibleChildren(bool includeBeingInserted) const
 
 int ItemContainer::usableLength() const
 {
-    const int numVisibleChildren = this->numVisibleChildren();
-    if (numVisibleChildren <= 1)
+    const Item::List children = visibleChildren();
+    const int numVisibleChildren = children.size();
+
+    if (children.size() <= 1)
         return Layouting::length(size(), m_orientation);
 
     const int separatorWaste = separatorThickness() * (numVisibleChildren - 1);
@@ -1527,6 +1517,9 @@ QRect ItemContainer::rect() const
 
 void ItemContainer::dumpLayout(int level)
 {
+    if (level == 0 && hostWidget())
+        qDebug().noquote() << " Dump Start: Host=" << hostWidget() << hostWidget()->rect() << ")";
+
     QString indent;
     indent.fill(QLatin1Char(' '), level);
     const QString beingInserted = m_sizingInfo.isBeingInserted ? QStringLiteral("; beingInserted;")
@@ -1569,7 +1562,7 @@ QVector<double> ItemContainer::childPercentages() const
     percentages.reserve(m_children.size());
 
     for (Item *item : m_children) {
-        if (item->isVisible())
+        if (item->isVisible() && !item->isBeingInserted())
             percentages << item->m_sizingInfo.percentageWithinParent;
     }
 
@@ -1581,6 +1574,10 @@ void ItemContainer::restoreChild(Item *item)
     Q_ASSERT(contains(item));
 
     item->setIsVisible(true);
+    item->setBeingInserted(true);
+    updateSizeConstraints();
+    item->setBeingInserted(false);
+
     if (numVisibleChildren() == 1) {
         // The easy case. Child is alone in the layout, occupies everything.
         item->setGeometry(rect());
