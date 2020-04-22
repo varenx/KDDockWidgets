@@ -295,7 +295,7 @@ private Q_SLOTS:
     void tst_placeholderDisappearsOnReadd();
 //    void tst_placeholdersAreRemovedPropertly();
 //    void tst_embeddedMainWindow();
-//    void tst_toggleMiddleDockCrash(); // tests some crash I got
+    void tst_toggleMiddleDockCrash(); // tests some crash I got
 //    void tst_28NestedWidgets();
 //    void tst_28NestedWidgets_data();
 //    void tst_invalidPlaceholderPosition_data();
@@ -314,7 +314,7 @@ private Q_SLOTS:
 //    void tst_availableSizeWithPlaceholders();
     void tst_stealFrame();
 //    void tst_addAsPlaceholder();
-//    void tst_removeItem();
+    void tst_removeItem();
 //    void tst_startHidden();
 //    void tst_startClosed();
 //    void tst_sizeConstraintWarning();
@@ -3256,7 +3256,7 @@ void TestDocks::tst_embeddedMainWindow()
 
     delete window;
 }
-
+#endif
 void TestDocks::tst_toggleMiddleDockCrash()
 {
     EnsureTopLevelsDeleted e;
@@ -3280,15 +3280,12 @@ void TestDocks::tst_toggleMiddleDockCrash()
     QCOMPARE(layout->count(), 3);
     QCOMPARE(layout->placeholderCount(), 1);
     QVERIFY(layout->checkSanity());
-    QCOMPARE(layout->numAchorsFollowing(), 1);
-
-    qDebug() << "Dock1.min=" << KDDockWidgets::widgetMinLength(dock1->frame(), Qt::Vertical);
-    qDebug() << "Dock3.min=" << KDDockWidgets::widgetMinLength(dock3->frame(), Qt::Vertical);
+    //QCOMPARE(layout->numAchorsFollowing(), 1);
 
     dock2->show();
     layout->checkSanity();
 }
-
+#if 0
 void TestDocks::tst_invalidPlaceholderPosition_data()
 {
     QTest::addColumn<bool>("restore1First");
@@ -5022,6 +5019,7 @@ void TestDocks::tst_addAsPlaceholder()
     dock2->deleteLater();
     Testing::waitForDeleted(dock2);
 }
+#endif
 
 void TestDocks::tst_removeItem()
 {
@@ -5034,28 +5032,25 @@ void TestDocks::tst_removeItem()
 
     m->addDockWidget(dock1, Location_OnBottom);
     m->addDockWidget(dock2, Location_OnTop, nullptr, AddingOption_StartHidden);
+    Item *item2 = dock2->lastPosition()->layoutItem();
 
     auto dropArea = m->dropArea();
     MultiSplitterLayout *layout = dropArea->multiSplitterLayout();
 
     QCOMPARE(layout->count(), 2);
     QCOMPARE(layout->placeholderCount(), 1);
-    QCOMPARE(layout->numAchorsFollowing(), 1);
 
     // 1. Remove an item that's a placeholder
-    Item *item2 = dock2->lastPosition()->layoutItem();
+
     layout->removeItem(item2);
     QCOMPARE(layout->count(), 1);
     QCOMPARE(layout->placeholderCount(), 0);
-    QCOMPARE(layout->numAchorsFollowing(), 0);
 
     // 2. Remove an item that has an actual widget
     Item *item1 = dock1->lastPosition()->layoutItem();
     layout->removeItem(item1);
     QCOMPARE(layout->count(), 0);
     QCOMPARE(layout->placeholderCount(), 0);
-    QCOMPARE(layout->numAchorsFollowing(), 0);
-
 
     // 3. Remove an item that has anchors following one of its other anchors (Tests that anchors stop following)
     // Stack 1, 2, 3
@@ -5064,7 +5059,6 @@ void TestDocks::tst_removeItem()
     m->addDockWidget(dock1, Location_OnBottom);
     QCOMPARE(layout->count(), 3);
     QCOMPARE(layout->placeholderCount(), 0);
-    QCOMPARE(layout->numAchorsFollowing(), 0);
 
     qDebug() << "Closing... ";
     dock2->close();
@@ -5074,18 +5068,15 @@ void TestDocks::tst_removeItem()
 
     QCOMPARE(layout->count(), 3);
     QCOMPARE(layout->placeholderCount(), 2);
-    QCOMPARE(layout->numAchorsFollowing(), 2);
 
     // Now remove the items
     layout->removeItem(dock2->lastPosition()->layoutItem());
     QCOMPARE(layout->count(), 2);
     QCOMPARE(layout->placeholderCount(), 1);
-    QCOMPARE(layout->numAchorsFollowing(), 1);
     layout->checkSanity();
     layout->removeItem(dock1->lastPosition()->layoutItem());
     QCOMPARE(layout->count(), 1);
     QCOMPARE(layout->placeholderCount(), 0);
-    QCOMPARE(layout->numAchorsFollowing(), 0);
 
     // Add again
     m->addDockWidget(dock2, Location_OnBottom);
@@ -5099,12 +5090,10 @@ void TestDocks::tst_removeItem()
     layout->removeItem(dock1->lastPosition()->layoutItem());
     QCOMPARE(layout->count(), 2);
     QCOMPARE(layout->placeholderCount(), 1);
-    QCOMPARE(layout->numAchorsFollowing(), 1);
     layout->checkSanity();
     layout->removeItem(dock2->lastPosition()->layoutItem());
     QCOMPARE(layout->count(), 1);
     QCOMPARE(layout->placeholderCount(), 0);
-    QCOMPARE(layout->numAchorsFollowing(), 0);
     layout->checkSanity();
 
     // Add again, stacked as 1, 2, 3, then close 2 and 3.
@@ -5123,7 +5112,6 @@ void TestDocks::tst_removeItem()
     layout->removeItem(dock3->lastPosition()->layoutItem()); // will trigger the 3rd anchor to be removed
     QCOMPARE(layout->count(), 2);
     QCOMPARE(layout->placeholderCount(), 1);
-    QCOMPARE(layout->numAchorsFollowing(), 1);
     layout->checkSanity();
 
     dock1->deleteLater();
@@ -5131,7 +5119,7 @@ void TestDocks::tst_removeItem()
     dock3->deleteLater();
     Testing::waitForDeleted(dock3);
 }
-
+#if 0
 void TestDocks::tst_startHidden()
 {
     EnsureTopLevelsDeleted e;
