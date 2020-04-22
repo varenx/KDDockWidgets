@@ -2125,7 +2125,3 @@ bool ItemContainer::isHorizontal() const
 {
     return m_orientation == Qt::Horizontal;
 }
-
-GuestInterface::~GuestInterface()
-{
-}

@@ -237,7 +237,6 @@ struct SizingInfo {
 class GuestInterface
 {
 public:
-    virtual ~GuestInterface();
     virtual void setLayoutItem(Item *) = 0;
     virtual QWidget *asWidget() = 0;
 };
