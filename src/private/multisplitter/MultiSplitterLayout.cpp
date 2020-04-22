@@ -174,8 +174,8 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
     } else if (auto dw = qobject_cast<DockWidgetBase*>(w)) {
         newItem = new Item(multiSplitter());
         frame = new Frame();
-        frame->addWidget(dw, option);
         newItem->setFrame(frame);
+        frame->addWidget(dw, option);
     } else if (auto ms = qobject_cast<MultiSplitter*>(w)) {
         newItem = ms->multiSplitterLayout()->rootItem();
         Q_ASSERT(newItem->hostWidget() != multiSplitter());
@@ -210,11 +210,13 @@ void MultiSplitterLayout::addMultiSplitter(MultiSplitter *sourceMultiSplitter,
 
 void MultiSplitterLayout::removeItem(Item *item)
 {
+    if (!item)
+        qWarning() << Q_FUNC_INFO << "nullptr item";
+
     if (!item || m_inDestructor)
         return;
 
     item->parentContainer()->removeItem(item);
-
 
     Q_EMIT widgetRemoved(item);     // TODO Remove.
 }

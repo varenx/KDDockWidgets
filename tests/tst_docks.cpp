@@ -5043,6 +5043,7 @@ void TestDocks::tst_removeItem()
     // 1. Remove an item that's a placeholder
 
     layout->removeItem(item2);
+
     QCOMPARE(layout->count(), 1);
     QCOMPARE(layout->placeholderCount(), 0);
 
@@ -5060,7 +5061,6 @@ void TestDocks::tst_removeItem()
     QCOMPARE(layout->count(), 3);
     QCOMPARE(layout->placeholderCount(), 0);
 
-    qDebug() << "Closing... ";
     dock2->close();
     auto frame1 = dock1->frame();
     dock1->close();
