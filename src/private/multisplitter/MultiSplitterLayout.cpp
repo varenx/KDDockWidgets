@@ -167,11 +167,12 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
 
     Frame::List frames = framesFrom(w);
     unrefOldPlaceholders(frames);
+    auto dw = qobject_cast<DockWidgetBase*>(w);
 
     if (frame) {
         newItem = new Item(multiSplitter());
         newItem->setFrame(frame);
-    } else if (auto dw = qobject_cast<DockWidgetBase*>(w)) {
+    } else if (dw) {
         newItem = new Item(multiSplitter());
         frame = new Frame();
         newItem->setFrame(frame);
@@ -185,6 +186,9 @@ void MultiSplitterLayout::addWidget(QWidgetOrQuick *w, Location location, Frame 
 
     Q_ASSERT(!newItem->geometry().isEmpty());
     relativeTo->insertItem(newItem, Layouting::Location(location), Layouting::AddingOption(option));
+
+    if (dw && option && AddingOption_StartHidden)
+        delete frame;
 }
 
 QString MultiSplitterLayout::affinityName() const

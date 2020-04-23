@@ -778,10 +778,10 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             if (!isContainer)
                 Q_EMIT root()->numItemsChanged();
         } else {
-            if (wasVisible) {
-                item->setIsVisible(false);
-                item->setFrame(nullptr);
-            } else if (!isContainer) {
+            item->setIsVisible(false);
+            item->setFrame(nullptr);
+
+            if (!wasVisible && !isContainer) {
                 // Was already hidden
                 return;
             }
