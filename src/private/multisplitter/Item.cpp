@@ -672,20 +672,22 @@ bool ItemContainer::checkSanity()
             return false;
         }
 
-        // Check the children height (if horizontal, and vice-versa)
-        const int h2 = Layouting::length(item->size(), oppositeOrientation(m_orientation));
-        if (h1 != h2) {
-            root()->dumpLayout();
-            qWarning() << Q_FUNC_INFO << "Invalid size for item." << item
-                       << "Container.length=" << h1 << "; item.length=" << h2;
-            return false;
-        }
+        if (item->isVisible()) {
+            // Check the children height (if horizontal, and vice-versa)
+            const int h2 = Layouting::length(item->size(), oppositeOrientation(m_orientation));
+            if (h1 != h2) {
+                root()->dumpLayout();
+                qWarning() << Q_FUNC_INFO << "Invalid size for item." << item
+                           << "Container.length=" << h1 << "; item.length=" << h2;
+                return false;
+            }
 
-        if (!rect().contains(item->geometry())) {
-            root()->dumpLayout();
-            qWarning() << Q_FUNC_INFO << "Item geo is out of bounds. item=" << item << "; geo="
-                       << item->geometry() << "; container.rect=" << rect();
-            return false;
+            if (!rect().contains(item->geometry())) {
+                root()->dumpLayout();
+                qWarning() << Q_FUNC_INFO << "Item geo is out of bounds. item=" << item << "; geo="
+                           << item->geometry() << "; container.rect=" << rect();
+                return false;
+            }
         }
 
         if (!item->checkSanity())

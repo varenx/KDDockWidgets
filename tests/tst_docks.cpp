@@ -5132,25 +5132,19 @@ void TestDocks::tst_startHidden()
         MultiSplitterLayout *layout = dropArea->multiSplitterLayout();
 
         m->addDockWidget(dock1, Location_OnTop, nullptr, AddingOption_StartHidden);
-        layout->dumpDebug();
-
-        QTest::qWait(1000);
-
-        /*Frame *f = static_cast<Frame*>(layout->items().constFirst()->frame());
-        qDebug() << "FOOD:" << f << f->parentWidget() << dock1->isVisible();*/
+        QVERIFY(layout->checkSanity());
 
         QCOMPARE(layout->count(), 1);
         QCOMPARE(layout->placeholderCount(), 1);
 
         m->addDockWidget(dock2, Location_OnTop);
-        layout->checkSanity();
+        QVERIFY(layout->checkSanity());
 
         QCOMPARE(layout->count(), 2);
         QCOMPARE(layout->placeholderCount(), 1);
 
         qDebug() << dock1->isVisible();
         dock1->show();
-        layout->dumpDebug();
 
         QCOMPARE(layout->count(), 2);
         QCOMPARE(layout->placeholderCount(), 0);
