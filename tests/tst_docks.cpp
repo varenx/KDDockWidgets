@@ -313,7 +313,7 @@ private Q_SLOTS:
 //    void tst_negativeAnchorPositionWhenEmbedded();
 //    void tst_availableSizeWithPlaceholders();
     void tst_stealFrame();
-//    void tst_addAsPlaceholder();
+    void tst_addAsPlaceholder();
     void tst_removeItem();
     void tst_startHidden();
     void tst_startClosed();
@@ -344,21 +344,21 @@ private Q_SLOTS:
 
     void tst_tabBarWithHiddenTitleBar_data();
     void tst_tabBarWithHiddenTitleBar();
-//    void tst_toggleDockWidgetWithHiddenTitleBar();
+    void tst_toggleDockWidgetWithHiddenTitleBar();
     void tst_dragByTabBar_data();
-//    void tst_dragByTabBar();
-//    void tst_dragBySingleTab();
+    void tst_dragByTabBar();
+    void tst_dragBySingleTab();
 
-//    void tst_addToHiddenMainWindow();
+    void tst_addToHiddenMainWindow();
 //    void tst_minSizeChanges();
 //    void tst_complex();
-//    void tst_titlebar_getter();
+    void tst_titlebar_getter();
     void tst_0_data();
     void tst_0();
-//    void tst_honourGeometryOfHiddenWindow();
-//    void tst_registry();
+    void tst_honourGeometryOfHiddenWindow();
+    void tst_registry();
 //    void tst_dockNotFillingSpace();
-//    void tst_floatingLastPosAfterDoubleClose();
+    void tst_floatingLastPosAfterDoubleClose();
     void tst_addingOptionHiddenTabbed();
     void tst_flagDoubleClick();
     void tst_floatingWindowDeleted();
@@ -4112,7 +4112,7 @@ void TestDocks::tst_tabBarWithHiddenTitleBar()
         QVERIFY(d1->frame()->titleBar()->isVisible());
     }
 }
-#if 0
+
 void TestDocks::tst_toggleDockWidgetWithHiddenTitleBar()
 {
     EnsureTopLevelsDeleted e;
@@ -4130,7 +4130,7 @@ void TestDocks::tst_toggleDockWidgetWithHiddenTitleBar()
     d1->toggleAction()->setChecked(true);
     QVERIFY(!d1->frame()->titleBar()->isVisible());
 }
-#endif
+
 void TestDocks::tst_dragByTabBar_data()
 {
     QTest::addColumn<bool>("documentMode");
@@ -4141,7 +4141,7 @@ void TestDocks::tst_dragByTabBar_data()
     QTest::newRow("false-true") << false << true;
     QTest::newRow("true-true") << true << true;
 }
-#if 0
+
 void TestDocks::tst_dragByTabBar()
 {
     QFETCH(bool, documentMode);
@@ -4155,6 +4155,7 @@ void TestDocks::tst_dragByTabBar()
     Config::self().setFlags(flags);
 
     auto m = createMainWindow();
+    QTest::qWait(10); // the DND state machine needs the event loop to start, otherwise activeState() is nullptr. (for offscreen QPA)
 
     auto dropArea = m->dropArea();
     auto dock1 = createDockWidget("dock1", new MyWidget2(QSize(400, 400)));
@@ -4215,7 +4216,7 @@ void TestDocks::tst_addToHiddenMainWindow()
 
     delete m;
 }
-
+#if 0
 void TestDocks::tst_minSizeChanges()
 {
     EnsureTopLevelsDeleted e;
@@ -4344,7 +4345,7 @@ void TestDocks::tst_complex()
     qDeleteAll(DockRegistry::self()->frames());
     delete m;
 }
-
+#endif
 void TestDocks::tst_titlebar_getter()
 {
     EnsureTopLevelsDeleted e;
@@ -4365,7 +4366,7 @@ void TestDocks::tst_titlebar_getter()
 
     delete m;
 }
-#endif
+
 void TestDocks::tst_0_data()
 {
     QTest::addColumn<int>("thickness");
@@ -4391,7 +4392,7 @@ void TestDocks::tst_0()
 
     delete m;
 }
-#if 0
+
 void TestDocks::tst_honourGeometryOfHiddenWindow()
 {
     EnsureTopLevelsDeleted e;
@@ -4427,7 +4428,7 @@ void TestDocks::tst_registry()
     QCOMPARE(dr->dockWidgetForGuest(guest), dw);
     delete dw;
 }
-
+#if 0
 void TestDocks::tst_dockNotFillingSpace()
 {
      EnsureTopLevelsDeleted e;
@@ -4459,7 +4460,7 @@ void TestDocks::tst_dockNotFillingSpace()
      delete d2;
      delete m;
 }
-
+#endif
 void TestDocks::tst_floatingLastPosAfterDoubleClose()
 {
     EnsureTopLevelsDeleted e;
@@ -4470,7 +4471,7 @@ void TestDocks::tst_floatingLastPosAfterDoubleClose()
     QVERIFY(d1->lastPosition()->lastFloatingGeometry().isNull());
     delete d1;
 }
-
+#if 0
 void TestDocks::tst_rectForDropCrash()
 {
     // Tests a crash I got in MultiSplitterLayout::rectForDrop() (asserts being hit)
@@ -4976,7 +4977,7 @@ void TestDocks::tst_stealFrame()
     layout1->checkSanity();
     layout2->checkSanity();
 }
-#if 0
+
 void TestDocks::tst_addAsPlaceholder()
 {
     EnsureTopLevelsDeleted e;
@@ -5004,7 +5005,6 @@ void TestDocks::tst_addAsPlaceholder()
     dock2->deleteLater();
     Testing::waitForDeleted(dock2);
 }
-#endif
 
 void TestDocks::tst_removeItem()
 {
