@@ -85,7 +85,7 @@ void Item::setFrame(GuestInterface *guest)
     if (oldWidget) {
         oldWidget->removeEventFilter(this);
         disconnect(oldWidget, &QObject::destroyed, this, &Item::onWidgetDestroyed);
-        //disconnect(oldWidget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested()));
+        // disconnect(oldWidget, SIGNAL(layoutInvalidated()), this, SLOT(onWidgetLayoutRequested()));
         disconnect(oldWidget, &QObject::objectNameChanged, this, &Item::updateObjectName);
     }
 
@@ -587,12 +587,24 @@ void Item::onWidgetDestroyed()
 void Item::onWidgetLayoutRequested()
 {
     QWidget *w = frame();
-    if (w && w->size() != size()) {
-        // TODO
-        qDebug() << Q_FUNC_INFO << "TODO: Not implemented yet"
-                   << w->size()
-                   << m_sizingInfo.geometry
-                   << m_sizingInfo.isBeingInserted;
+
+    if (w) {
+        if (w->size() != size()) {
+            qDebug() << Q_FUNC_INFO << "TODO: Not implemented yet"
+                       << w->size()
+                       << size()
+                       << m_sizingInfo.geometry
+                       << m_sizingInfo.isBeingInserted;
+        }
+
+        if (widgetMinSize(w) != minSize()) {
+            qDebug() << Q_FUNC_INFO << "TODO: Not implemented yet"
+                       << w->size()
+                       << widgetMinSize(w)
+                       << minSize()
+                       << m_sizingInfo.geometry
+                       << m_sizingInfo.isBeingInserted;
+        }
     }
 }
 

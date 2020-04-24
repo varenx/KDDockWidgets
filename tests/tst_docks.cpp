@@ -350,7 +350,7 @@ private Q_SLOTS:
     void tst_dragBySingleTab();
 
     void tst_addToHiddenMainWindow();
-//    void tst_minSizeChanges();
+    void tst_minSizeChanges();
 //    void tst_complex();
     void tst_titlebar_getter();
     void tst_0_data();
@@ -4216,7 +4216,7 @@ void TestDocks::tst_addToHiddenMainWindow()
 
     delete m;
 }
-#if 0
+
 void TestDocks::tst_minSizeChanges()
 {
     EnsureTopLevelsDeleted e;
@@ -4241,16 +4241,17 @@ void TestDocks::tst_minSizeChanges()
     Item *item1 = layout->itemForFrame(d1->frame());
     Item *item2 = layout->itemForFrame(d2->frame());
 
-    layout->checkSanity();
+    QVERIFY(layout->checkSanity());
 
     Testing::waitForResize(m);
 
+    qDebug() << item2->width();
     QVERIFY(item2->width() >= 800);
     QVERIFY(item2->height() >= 800);
     QVERIFY(m->height() >= 1200);
 
     // 2. d1 is visible, let's change its min size
-    qDebug() << item1->minimumSize() << item1->size();
+    qDebug() << item1->minSize() << item1->size();
     w1->setMinSize(QSize(800, 800));
 
     Testing::waitForResize(m);
@@ -4265,7 +4266,7 @@ void TestDocks::tst_minSizeChanges()
 
     delete m;
 }
-
+#if 0
 void TestDocks::tst_complex()
 {
     // Tests some anchors out of bounds I got
