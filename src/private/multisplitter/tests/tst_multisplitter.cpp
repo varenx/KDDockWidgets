@@ -43,8 +43,23 @@ public:
         return this;
     }
 
+    QSize minimumSizeHint() const override
+    {
+        return m_minSize;
+    }
+
+    void setMinSize(QSize sz)
+    {
+        if (sz != m_minSize) {
+            m_minSize = sz;
+            Q_EMIT layoutInvalidated();
+        }
+    }
+
 Q_SIGNALS:
     void layoutInvalidated();
+private:
+    QSize m_minSize = QSize(200, 200);
 };
 
 static void fatalWarningsMessageHandler(QtMsgType t, const QMessageLogContext &context, const QString &msg)
@@ -128,6 +143,7 @@ private Q_SLOTS:
     void tst_misc2();
     void tst_misc3();
     void tst_containerGetsHidden();
+    void tst_minSizeChanges();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -876,6 +892,31 @@ void TestMultiSplitter::tst_containerGetsHidden()
     QVERIFY(root->checkSanity());
 
     item3->turnIntoPlaceholder();
+    QVERIFY(root->checkSanity());
+}
+
+void TestMultiSplitter::tst_minSizeChanges()
+{
+    auto root = createRoot();
+    Item *item1 = createItem();
+    root->insertItem(item1, Location_OnLeft);
+
+    root->resize(QSize(200, 200));
+    QVERIFY(root->checkSanity());
+
+    auto w1 = static_cast<GuestWidget*>(item1->frame()); // TODO: Static cast not required ?
+    w1->setMinSize(QSize(300, 300));
+    QVERIFY(root->checkSanity());
+    QCOMPARE(root->size(), QSize(300, 300));
+
+    Item *item2 = createItem();
+    root->insertItem(item2, Location_OnTop);
+    QVERIFY(root->checkSanity());
+
+    root->resize(QSize(1000, 1000));
+    QVERIFY(root->checkSanity());
+
+    w1->setMinSize(QSize(700, 700));
     QVERIFY(root->checkSanity());
 }
 
