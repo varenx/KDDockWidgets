@@ -357,7 +357,7 @@ private Q_SLOTS:
     void tst_0();
     void tst_honourGeometryOfHiddenWindow();
     void tst_registry();
-//    void tst_dockNotFillingSpace();
+    void tst_dockNotFillingSpace();
     void tst_floatingLastPosAfterDoubleClose();
     void tst_addingOptionHiddenTabbed();
     void tst_flagDoubleClick();
@@ -4416,7 +4416,7 @@ void TestDocks::tst_registry()
     QCOMPARE(dr->dockWidgetForGuest(guest), dw);
     delete dw;
 }
-#if 0
+
 void TestDocks::tst_dockNotFillingSpace()
 {
      EnsureTopLevelsDeleted e;
@@ -4440,15 +4440,11 @@ void TestDocks::tst_dockNotFillingSpace()
      auto layout = m->multiSplitterLayout();
      QVERIFY(layout->checkSanity());
 
-     Item *item3 = layout->itemForFrame(d3->frame());
-     AnchorGroup group = item3->anchorGroup();
-     QCOMPARE(group.top->position(), 0);
-
      delete d1;
      delete d2;
      delete m;
 }
-#endif
+
 void TestDocks::tst_floatingLastPosAfterDoubleClose()
 {
     EnsureTopLevelsDeleted e;
