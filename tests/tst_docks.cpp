@@ -340,7 +340,7 @@ private Q_SLOTS:
     void tst_resizeWindow_data();
 //    void tst_resizeWindow();
 //    void tst_resizeWindow2();
-//    void tst_rectForDropCrash();
+    void tst_rectForDropCrash();
 
     void tst_tabBarWithHiddenTitleBar_data();
     void tst_tabBarWithHiddenTitleBar();
@@ -4455,7 +4455,7 @@ void TestDocks::tst_floatingLastPosAfterDoubleClose()
     QVERIFY(d1->lastPosition()->lastFloatingGeometry().isNull());
     delete d1;
 }
-#if 0
+
 void TestDocks::tst_rectForDropCrash()
 {
     // Tests a crash I got in MultiSplitterLayout::rectForDrop() (asserts being hit)
@@ -4479,7 +4479,7 @@ void TestDocks::tst_rectForDropCrash()
 
     delete m->window();
 }
-
+#if 0
 void TestDocks::tst_availableSizeWithPlaceholders()
 {
     // Tests MultiSplitterLayout::available() with and without placeholders. The result should be the same.
