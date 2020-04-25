@@ -351,7 +351,7 @@ private Q_SLOTS:
 
     void tst_addToHiddenMainWindow();
     void tst_minSizeChanges();
-//    void tst_complex();
+    void tst_complex();
     void tst_titlebar_getter();
     void tst_0_data();
     void tst_0();
@@ -2551,10 +2551,6 @@ void TestDocks::tst_crash2()
 
             m->addDockWidget(docks[i], locations[i], nullptr, options[i]);
             layout->checkSanity();
-
-            QCOMPARE(layout->m_leftAnchor->cumulativeMinLength(Anchor::Side2), layout->minimumSize().width());
-            QCOMPARE(layout->m_topAnchor->cumulativeMinLength(Anchor::Side2), layout->minimumSize().height());
-
             docks[i]->setFloating(floatings[i]);
         }
 
@@ -2583,13 +2579,8 @@ void TestDocks::tst_crash2()
         QVector<bool> floatings =  {true, false, false};
 
         for (int i = 0; i < num; ++i) {
-
             m->addDockWidget(docks[i], locations[i], nullptr, options[i]);
             layout->checkSanity();
-
-            QCOMPARE(layout->m_leftAnchor->cumulativeMinLength(Anchor::Side2), layout->minimumSize().width());
-            QCOMPARE(layout->m_topAnchor->cumulativeMinLength(Anchor::Side2), layout->minimumSize().height());
-
             if (i == 2) {
                 // Wait for the resizes. This used to make the app crash.
                 QTest::qWait(1000);
@@ -4266,7 +4257,7 @@ void TestDocks::tst_minSizeChanges()
 
     delete m;
 }
-#if 0
+
 void TestDocks::tst_complex()
 {
     // Tests some anchors out of bounds I got
@@ -4331,10 +4322,6 @@ void TestDocks::tst_complex()
     for (int i = 0; i < num; ++i) {
         m->addDockWidget(docks[i], locations[i], nullptr, options[i]);
         layout->checkSanity();
-
-        QCOMPARE(layout->m_leftAnchor->cumulativeMinLength(Anchor::Side2), layout->minimumSize().width());
-        QCOMPARE(layout->m_topAnchor->cumulativeMinLength(Anchor::Side2), layout->minimumSize().height());
-
         docks[i]->setFloating(floatings[i]);
         layout->checkSanity();
     }
@@ -4346,7 +4333,7 @@ void TestDocks::tst_complex()
     qDeleteAll(DockRegistry::self()->frames());
     delete m;
 }
-#endif
+
 void TestDocks::tst_titlebar_getter()
 {
     EnsureTopLevelsDeleted e;
