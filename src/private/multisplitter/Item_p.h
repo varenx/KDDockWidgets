@@ -480,7 +480,7 @@ public:
     void setIsVisible(bool) override;
     bool isVisible() const override;
     void setLength_recursive(int length, Qt::Orientation) override;
-    void applySizes(const SizingInfo::List &sizes);
+    void applyGeometries(const SizingInfo::List &sizes);
     void applyPositions(const SizingInfo::List &sizes);
     Qt::Orientation orientation() const;
     bool isVertical() const;

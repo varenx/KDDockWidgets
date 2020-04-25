@@ -586,9 +586,7 @@ void Item::onWidgetDestroyed()
 
 void Item::onWidgetLayoutRequested()
 {
-    QWidget *w = frame();
-
-    if (w) {
+    if (QWidget *w = frame()) {
         if (w->size() != size()) {
             qDebug() << Q_FUNC_INFO << "TODO: Not implemented yet"
                        << w->size()
@@ -598,12 +596,7 @@ void Item::onWidgetLayoutRequested()
         }
 
         if (widgetMinSize(w) != minSize()) {
-            qDebug() << Q_FUNC_INFO << "TODO: Not implemented yet"
-                       << w->size()
-                       << widgetMinSize(w)
-                       << minSize()
-                       << m_sizingInfo.geometry
-                       << m_sizingInfo.isBeingInserted;
+            setMinSize(widgetMinSize(w));
         }
     }
 }
@@ -1516,7 +1509,7 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
     }
 
     // #3 Sizes are now correct and honour min/max sizes. So apply them to our Items
-    applySizes(childSizes);
+    applyGeometries(childSizes);
 
     // #4. All sizes are correct. Just layed them out at the correct position. Spaced with 5px in between each other
     positionItems(); // TODO: Just a single applyGeometries ?
@@ -1945,10 +1938,10 @@ void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrate
     SizingInfo::List sizes = this->sizes();
 
     growItem(index, /*by-ref=*/sizes, amount, growthStrategy);
-    applySizes(sizes);
+    applyGeometries(sizes);
 }
 
-void ItemContainer::applySizes(const SizingInfo::List &sizes)
+void ItemContainer::applyGeometries(const SizingInfo::List &sizes)
 {
     const Item::List items = visibleChildren();
     const int count = items.size();
