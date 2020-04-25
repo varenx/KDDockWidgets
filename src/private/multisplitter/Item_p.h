@@ -437,13 +437,15 @@ public:
     ///@brief grows an item by @p amount. It calculates how much to grow on side1 and on side2
     ///Then calls growItem(item, side1Growth, side2Growth) which will effectively grow it,
     ///and shrink the neighbours which are donating the size.
-    void growItem(Item *, int amount, GrowthStrategy);
-    void growItem(int index, SizingInfo::List &sizes, int amount, GrowthStrategy);
+    void growItem(Item *, int amount, GrowthStrategy, bool accountForNewSeparator = false);
+    void growItem(int index, SizingInfo::List &sizes, int missing, GrowthStrategy, bool accountForNewSeparator = false);
 
-    ///@brief Grows an item by @p side1Growth on the left and @p side2Growth on the right
-    ///(or top/bottom if Qt::Vertical). Squeezes the neighbours (not just the immediate ones).
-    ///at the end positions all items.
-    void growItem(int index, SizingInfo::List &sizes, int side1Growth, int side2Growth);
+    ///@brief Shrinks the neighbours of the item at @p index
+    ///
+    /// The neighbours at the left/top of the item, will be shrunk by @p side1Amount, while the items
+    /// at right/bottom will be shrunk by @p side2Amount.
+    /// Squeezes all the neighbours (not just the immediate ones).
+    void shrinkNeighbours(int index, SizingInfo::List &sizes, int side1Amount, int side2Amount);
 
     Item *neighbourFor(const Item *, Side) const;
     Item *visibleNeighbourFor(const Item *item, Side side) const;

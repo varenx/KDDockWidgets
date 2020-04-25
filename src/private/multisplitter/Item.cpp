@@ -1510,9 +1510,6 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
 
     // #3 Sizes are now correct and honour min/max sizes. So apply them to our Items
     applyGeometries(childSizes);
-
-    // #4. All sizes are correct. Just layed them out at the correct position. Spaced with 5px in between each other
-    positionItems(); // TODO: Just a single applyGeometries ?
 }
 
 int ItemContainer::length() const
@@ -1606,7 +1603,7 @@ void ItemContainer::restoreChild(Item *item)
 
     item->setLength_recursive(newLength, m_orientation);
     Q_ASSERT(item->isVisible());
-    growItem(item, newLength + Item::separatorThickness(), GrowthStrategy::BothSidesEqually);
+    growItem(item, newLength, GrowthStrategy::BothSidesEqually, /*accountForNewSeparator=*/ true);
 
     updateChildPercentages();
 }
@@ -1874,10 +1871,14 @@ void ItemContainer::growNeighbours(Item *side1Neighbour, Item *side2Neighbour)
     }
 }
 
-void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, GrowthStrategy growthStrategy)
+void ItemContainer::growItem(int index, SizingInfo::List &sizes, int missing, GrowthStrategy growthStrategy, bool accountForNewSeparator)
 {
+    int toSteal = missing; // The amount that neighbours of @p index will shrink
+    if (accountForNewSeparator)
+        toSteal += Item::separatorThickness();
+
     Q_ASSERT(index != -1);
-    if (amount == 0)
+    if (toSteal == 0)
         return;
 
     SizingInfo &sizingInfo = sizes[index];
@@ -1886,7 +1887,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     const int count = sizes.count();
     if (count == 1) {
         //There's no neighbours to push, we're alone. Occupy the full container
-        sizingInfo.setLength(sizingInfo.length(m_orientation) + amount, m_orientation);
+        sizingInfo.setLength(sizingInfo.length(m_orientation) + missing, m_orientation);
         return;
     }
 
@@ -1898,46 +1899,44 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int amount, Gro
     int side1Growth = 0;
     int side2Growth = 0;
 
-    if (amount > available1 + available2) {
+    if (toSteal > available1 + available2) {
         root()->dumpLayout();
         Q_ASSERT(false);
     }
 
-    int missing = amount;
-    while (missing > 0) {
-
+    while (toSteal > 0) {
         if (available1 == 0) {
-            Q_ASSERT(available2 >= missing);
-            side2Growth += missing;
+            Q_ASSERT(available2 >= toSteal);
+            side2Growth += toSteal;
             break;
         } else if (available2 == 0) {
-            Q_ASSERT(available1 >= missing);
-            side1Growth += missing;
+            Q_ASSERT(available1 >= toSteal);
+            side1Growth += toSteal;
             break;
         }
 
-        const int toTake = qMax(1, missing / 2);
+        const int toTake = qMax(1, toSteal / 2);
         const int took1 = qMin(toTake, available1);
-        missing -= took1;
+        toSteal -= took1;
         side1Growth += took1;
-        if (missing == 0)
+        if (toSteal == 0)
             break;
 
         const int took2 = qMin(toTake, available2);
-        missing -= took2;
+        toSteal -= took2;
         side2Growth += took2;
     }
 
-    growItem(index, sizes, side1Growth, side2Growth);
+    shrinkNeighbours(index, sizes, side1Growth, side2Growth);
 }
 
-void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrategy)
+void ItemContainer::growItem(Item *item, int amount, GrowthStrategy growthStrategy, bool accountForNewSeparator)
 {
     const Item::List items = visibleChildren();
     const int index = items.indexOf(item);
     SizingInfo::List sizes = this->sizes();
 
-    growItem(index, /*by-ref=*/sizes, amount, growthStrategy);
+    growItem(index, /*by-ref=*/sizes, amount, growthStrategy, accountForNewSeparator);
     applyGeometries(sizes);
 }
 
@@ -2036,16 +2035,16 @@ QVector<int> ItemContainer::calculateSqueezes(SizingInfo::List::ConstIterator be
     return squeezes;
 }
 
-void ItemContainer::growItem(int index, SizingInfo::List &sizes, int side1Growth, int side2Growth)
+void ItemContainer::shrinkNeighbours(int index, SizingInfo::List &sizes, int side1Amount, int side2Amount)
 {
-    Q_ASSERT(side1Growth > 0 || side2Growth > 0);
+    Q_ASSERT(side1Amount > 0 || side2Amount > 0);
     //Q_ASSERT(side1Growth >= 0 && side2Growth >= 0); // never negative
 
-    if (side1Growth > 0) {
+    if (side1Amount > 0) {
         auto begin = sizes.cbegin();
         auto end = sizes.cbegin() + index;
 
-        const QVector<int> squeezes = calculateSqueezes(begin, end, side1Growth);
+        const QVector<int> squeezes = calculateSqueezes(begin, end, side1Amount);
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
             SizingInfo &sizing = sizes[i];
@@ -2053,11 +2052,11 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int side1Growth
         }
     }
 
-    if (side2Growth > 0) {
+    if (side2Amount > 0) {
         auto begin = sizes.cbegin() + index + 1;
         auto end = sizes.cend();
 
-        const QVector<int> squeezes = calculateSqueezes(begin, end, side2Growth);
+        const QVector<int> squeezes = calculateSqueezes(begin, end, side2Amount);
         for (int i = 0; i < squeezes.size(); ++i) {
             const int squeeze = squeezes.at(i);
             SizingInfo &sizing = sizes[i + index + 1];
