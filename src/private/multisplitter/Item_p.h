@@ -215,6 +215,14 @@ struct SizingInfo {
         }
     }
 
+    void incrementLength(int byAmount, Qt::Orientation o) {
+        setLength(length(o) + byAmount, o);
+    }
+
+    void setOppositeLength(int l, Qt::Orientation o) {
+        setLength(l, oppositeOrientation(o));
+    }
+
     void setPos(int p, Qt::Orientation o) {
         if (o == Qt::Vertical)
             geometry.moveTop(p);
@@ -234,7 +242,6 @@ struct SizingInfo {
     QRect geometry;
     QSize minSize = QSize(40, 40); // TODO: Hardcoded
     QSize maxSize = QSize(16777215, 16777215); // TODO: Not supported yet
-    QSize proposedSize;
     double percentageWithinParent = 0.0;
     bool isBeingInserted = false;
 };
@@ -426,6 +433,7 @@ public:
     void updateChildPercentages();
     void restoreChild(Item *);
     void updateWidgetGeometries() override;
+    int oppositeLength() const;
 
     ///@brief Grows the side1Neighbour to the right and the side2Neighbour to the left
     ///So they occupy the empty space that's between them (or bottom/top if Qt::Vertical).

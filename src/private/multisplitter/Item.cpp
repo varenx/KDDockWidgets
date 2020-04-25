@@ -413,8 +413,8 @@ void Item::setIsVisible(bool is)
         Q_EMIT visibleChanged(this, is);
 
         if (auto w = frame()) {
-            w->setGeometry(mapToRoot(m_sizingInfo.geometry));
-            w->setVisible(is);
+            w->setGeometry(mapToRoot(m_sizingInfo.geometry)); // TODO
+            w->setVisible(is); // TODO: Only set visible when apply*() ?
         }
     }
 }
@@ -849,7 +849,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
 
 void ItemContainer::insertItem(Item *item, Location loc, AddingOption option)
 {
-    item->setIsVisible(false);
+    item->setIsVisible(false); // TODO: why ?
 
     Q_ASSERT(item != this);
     if (contains(item)) {
@@ -1501,11 +1501,8 @@ void ItemContainer::resize(QSize newSize) // Rename to setSize_recursive
     for (int i = 0; i < count; ++i) {
         SizingInfo &size = childSizes[i];
         const int missing = size.missingLength(m_orientation);
-        if (missing == 0)
-            continue;
-
-        growItem(i, childSizes, missing, GrowthStrategy::BothSidesEqually);
-        size.setLength(size.minLength(m_orientation), m_orientation); // TODO: growItem should do it instead ?
+        if (missing > 0)
+            growItem(i, childSizes, missing, GrowthStrategy::BothSidesEqually);
     }
 
     // #3 Sizes are now correct and honour min/max sizes. So apply them to our Items
@@ -1596,15 +1593,22 @@ void ItemContainer::restoreChild(Item *item)
 
     const int available = availableOnSide(item, Side1) + availableOnSide(item, Side2) - Item::separatorThickness();
 
+    const QSize proposedSize = item->size();
     const int max = available;
     const int min = item->minLength(m_orientation);
-    const int proposed = item->length(m_orientation);
+    const int proposed = Layouting::length(proposedSize, m_orientation);
     const int newLength = qBound(min, proposed, max);
 
-    item->setLength_recursive(newLength, m_orientation);
     Q_ASSERT(item->isVisible());
-    growItem(item, newLength, GrowthStrategy::BothSidesEqually, /*accountForNewSeparator=*/ true);
 
+    // growItem() will make it grow by the same amount it steals from the neighbours, so we can't start the growing without zeroing it
+    if (isVertical()) {
+        item->m_sizingInfo.geometry.setHeight(0);
+    } else {
+        item->m_sizingInfo.geometry.setWidth(0);
+    }
+
+    growItem(item, newLength, GrowthStrategy::BothSidesEqually, /*accountForNewSeparator=*/ true);
     updateChildPercentages();
 }
 
@@ -1612,6 +1616,12 @@ void ItemContainer::updateWidgetGeometries()
 {
     for (Item *item : qAsConst(m_children))
         item->updateWidgetGeometries();
+}
+
+int ItemContainer::oppositeLength() const
+{
+    return isVertical() ? width()
+                        : height();
 }
 
 Item *ItemContainer::visibleNeighbourFor(const Item *item, Side side) const
@@ -1871,7 +1881,8 @@ void ItemContainer::growNeighbours(Item *side1Neighbour, Item *side2Neighbour)
     }
 }
 
-void ItemContainer::growItem(int index, SizingInfo::List &sizes, int missing, GrowthStrategy growthStrategy, bool accountForNewSeparator)
+void ItemContainer::growItem(int index, SizingInfo::List &sizes, int missing,
+                             GrowthStrategy, bool accountForNewSeparator)
 {
     int toSteal = missing; // The amount that neighbours of @p index will shrink
     if (accountForNewSeparator)
@@ -1881,16 +1892,19 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int missing, Gr
     if (toSteal == 0)
         return;
 
+    // #1. Grow our item
     SizingInfo &sizingInfo = sizes[index];
+    sizingInfo.setLength(sizingInfo.length(m_orientation) + missing, m_orientation);
+    sizingInfo.setOppositeLength(oppositeLength(), m_orientation);
 
-    Q_ASSERT(growthStrategy == GrowthStrategy::BothSidesEqually);
     const int count = sizes.count();
     if (count == 1) {
         //There's no neighbours to push, we're alone. Occupy the full container
-        sizingInfo.setLength(sizingInfo.length(m_orientation) + missing, m_orientation);
+        sizingInfo.incrementLength(missing, m_orientation);
         return;
     }
 
+    // #2. Now shrink the neigbours by the same amount. Calculate how much to shrink from each side
     const LengthOnSide side1Length = lengthOnSide(sizes, index - 1, Side1, m_orientation);
     const LengthOnSide side2Length = lengthOnSide(sizes, index + 1, Side2, m_orientation);
 
