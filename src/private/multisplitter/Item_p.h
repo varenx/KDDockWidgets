@@ -330,6 +330,7 @@ public:
     void serialize() {}
     QRect mapToRoot(QRect) const;
     QPoint mapToRoot(QPoint) const;
+    int mapToRoot(int p, Qt::Orientation) const;
     QPoint mapFromRoot(QPoint) const;
     QRect mapFromRoot(QRect) const;
     QPoint mapFromParent(QPoint) const;
@@ -509,6 +510,7 @@ private:
     /// Returns the positions that each separator should have (x position if Qt::Horizontal, y otherwise)
     QVector<int> requiredSeparatorPositions() const;
     void updateSeparators();
+    Anchor* separatorAt(int p) const;
     QVector<double> childPercentages() const;
     mutable bool m_checkSanityScheduled = false;
     QVector<Layouting::Anchor*> m_separators;

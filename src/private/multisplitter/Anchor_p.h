@@ -32,8 +32,6 @@ QT_BEGIN_NAMESPACE
 class QRubberBand;
 QT_END_NAMESPACE
 
-
-
 namespace Layouting {
 class Item;
 }
@@ -51,11 +49,7 @@ class Item;
 /**
  * @brief An anchor is the vertical or horizontal (@ref orientation()) line that has an handle
  * so you can resize widgets with your mouse.
- *
- * A MultiSplitter comes with 4 static anchors (@ref isStatic()), that represent the top, left, right
- * and bottom borders. A static anchor means it can't change position, doesn't display the handle and
- * will have the same lifetime has the MultiSplitter.
- *
+ * *
  * Each anchor has two properties indicating in which anchor it starts and where it ends, @ref from(), to().
  * For example, the top static horizontal anchor starts at the left anchor and ends at the right static anchor.
  * If this anchor is vertical, then from()/to() return horizontal anchors, and vice-versa.
@@ -95,9 +89,7 @@ class Anchor : public QObject // clazy:exclude=ctor-missing-parent-argument
     Q_PROPERTY(QString debug_side1ItemNames READ debug_side1ItemNames NOTIFY debug_itemNamesChanged)
     Q_PROPERTY(QString debug_side2ItemNames READ debug_side2ItemNames NOTIFY debug_itemNamesChanged)
 
-    Q_PROPERTY(Anchor* from READ from WRITE setFrom NOTIFY fromChanged)
-    Q_PROPERTY(Anchor* to READ to WRITE setTo NOTIFY toChanged)
-    Q_PROPERTY(int position READ position WRITE setPosition NOTIFY positionChanged)
+    Q_PROPERTY(QRect geometry READ geometry NOTIFY geometryChanged)
     Q_PROPERTY(Qt::Orientation orientation READ orientation CONSTANT)
 public:
 
@@ -111,46 +103,19 @@ public:
     explicit Anchor(Qt::Orientation orientation, Options options, QWidget *hostWidget);
     ~Anchor() override;
 
-    void setFrom(Anchor *);
-    Anchor *from() const { return m_from; }
-    Anchor *to() const { return m_to; }
-    void setTo(Anchor *);
     Qt::Orientation orientation() const;
     void addItem(Item *, Side);
     void addItems(const QVector<Item*> &list, Side);
     void removeItem(Item *w);
     bool isVertical() const { return m_orientation == Qt::Vertical; }
-    void setPosition(int);
+    void setGeometry(int pos, int length);
     void updatePositionPercentage();
     int position() const;
 
     void setVisible(bool);
 
-    /**
-     * @brief Sets the new layout. Called when we're dropping a source layout into a target one.
-     * The target one will steal the separators of the source one.
-     */
-    void setLayout(KDDockWidgets::MultiSplitterLayout *);
-
     ///@brief returns the separator widget
     KDDockWidgets::Separator* separatorWidget() const;
-
-    /**
-     * @brief The length of this anchor. The distance between @ref from and @ref to.
-     * @return the anchor's length
-     */
-    int length() const;
-
-    /**
-     * @brief Checks if this anchor is valid. It's valid if @ref from and @ref to are non-null, and not the same.
-     * @return true if this anchor is valid.
-     */
-    bool isValid() const;
-
-    /**
-     * @brief The width of a vertical anchor, or height of an horizontal anchor.
-     */
-    int thickness() const;
 
     bool isEmpty() const { return !hasItems(Side1) && !hasItems(Side2); }
     bool hasItems(Side) const;
@@ -177,11 +142,10 @@ public:
 
 private:
     void setLazyPosition(int);
+    void setGeometry(QRect);
 Q_SIGNALS:
-    void positionChanged(int pos);
+    void geometryChanged(QRect);
     void itemsChanged(Side);
-    void fromChanged();
-    void toChanged();
     void debug_itemNamesChanged();
 
 public:
@@ -191,14 +155,11 @@ public:
     void debug_updateItemNames();
     QString debug_side1ItemNames() const;
     QString debug_side2ItemNames() const;
-    void setGeometry(QRect);
     QRect geometry() const { return m_geometry; }
 
     const Qt::Orientation m_orientation;
     QVector<Item*> m_side1Items;
     QVector<Item*> m_side2Items;
-    QPointer<Anchor> m_from;// QPointer just so we can assert. They should never be null.
-    QPointer<Anchor> m_to;
 
     // Only set when anchor is moved through mouse. Side1 if going towards left or top, Side2 otherwise.
     Layouting::Side m_lastMoveDirection = Side1;

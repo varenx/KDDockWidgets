@@ -52,67 +52,19 @@ Anchor::~Anchor()
 {
     m_separatorWidget->setEnabled(false);
     m_separatorWidget->deleteLater();
-    qCDebug(separators) << "~Anchor; this=" << this << "; m_to=" << m_to << "; m_from=" << m_from;
-}
-
-void Anchor::setFrom(Anchor *from)
-{
-    if (from->orientation() == orientation() || from == this) {
-        qWarning() << "Anchor::setFrom: Invalid from" << from->orientation() << m_orientation
-                   << from << this;
-        return;
-    }
-
-    if (m_from)
-        disconnect(m_from, &Anchor::positionChanged, this, &Anchor::updateSize);
-    m_from = from;
-    connect(from, &Anchor::positionChanged, this, &Anchor::updateSize);
-    updateSize();
-
-    Q_EMIT fromChanged();
-}
-
-void Anchor::setTo(Anchor *to)
-{
-    Q_ASSERT(to);
-    if (to->orientation() == orientation() || to == this) {
-        qWarning() << "Anchor::setFrom: Invalid to" << to->orientation() << m_orientation
-                   << to << this;
-        return;
-    }
-
-    if (m_to)
-        disconnect(m_to, &Anchor::positionChanged, this, &Anchor::updateSize);
-    m_to = to;
-    connect(to, &Anchor::positionChanged, this, &Anchor::updateSize);
-    updateSize();
-
-    Q_EMIT toChanged();
-}
-
-void Anchor::updateSize()
-{
-    if (isValid()) {
-        if (isVertical()) {
-            setGeometry(QRect(position(), m_from->geometry().bottom() + 1, thickness(), length()));
-        } else {
-            setGeometry(QRect(m_from->geometry().right() + 1, position(), length(), thickness()));
-        }
-    }
-
-    qCDebug(separators) << "Anchor::updateSize" << this << geometry();
 }
 
 void Anchor::setGeometry(QRect r)
 {
     if (r != m_geometry) {
-
         if (position() < 0) {
             qCDebug(separators) << Q_FUNC_INFO << "Old position was negative" << position() << "; new=" << r;
         }
 
         m_geometry = r;
         m_separatorWidget->setGeometry(r);
+        m_separatorWidget->setVisible(true);
+        Q_EMIT geometryChanged(r);
     }
 }
 
@@ -147,40 +99,26 @@ Qt::Orientation Anchor::orientation() const
     return m_orientation;
 }
 
-void Anchor::setPosition(int)
+void Anchor::setGeometry(int pos, int length)
 {
+    QRect newGeo = m_geometry;
+    if (isVertical()) {
+        // The separator itself is horizontal
+        newGeo.setSize(QSize(Item::separatorThickness(), length));
+        newGeo.moveTo(0, pos);
+    } else {
+        // The separator itself is vertical
+        newGeo.setSize(QSize(length, Item::separatorThickness()));
+        newGeo.moveTo(pos, 0);
+    }
+
+    setGeometry(newGeo);
 }
 
 int Anchor::position() const
 {
     const QPoint topLeft = m_geometry.topLeft();
-    return isVertical() ? topLeft.x() : topLeft.y();
-}
-
-void Anchor::setVisible(bool v)
-{
-    m_separatorWidget->setVisible(v);
-    if (v) {
-        m_separatorWidget->setGeometry(m_geometry);
-    }
-}
-
-int Anchor::length() const
-{
-    Q_ASSERT(m_to);
-    Q_ASSERT(m_from);
-    return m_to->position() - m_from->position();
-}
-
-bool Anchor::isValid() const
-{
-    return m_to && m_from && m_to != m_from && m_to != this && m_from != this;
-}
-
-int Anchor::thickness() const
-{
-    return isVertical() ? m_separatorWidget->width()
-                        : m_separatorWidget->height();
+    return isVertical() ? topLeft.y() : topLeft.x();
 }
 
 bool Anchor::containsItem(const Item *item, Side side) const
@@ -268,7 +206,7 @@ void Anchor::onMouseReleased()
 {
     if (m_lazyResizeRubberBand) {
         m_lazyResizeRubberBand->hide();
-        setPosition(m_lazyPosition);
+        //setPosition(m_lazyPosition); TODO
     }
 
     s_isResizing = false;
@@ -314,13 +252,13 @@ void Anchor::onMouseMoved(QPoint)
         setPosition(positionToGoTo);*/
 }
 
-void Anchor::onWidgetMoved(int p)
+void Anchor::onWidgetMoved(int )
 {
    /* if (m_layout->anchorBeingDragged() != this) // We only care if it's being dragged by mouse
         return;*/ // TODO
 
 
-    setPosition(p);
+  //  setPosition(p); TODO
 }
 
 bool Anchor::isResizing()

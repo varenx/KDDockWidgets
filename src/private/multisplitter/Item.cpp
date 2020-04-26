@@ -50,6 +50,13 @@ QPoint Item::mapToRoot(QPoint p) const
     return p + parentContainer()->mapToRoot(parentContainer()->pos());
 }
 
+int Item::mapToRoot(int p, Qt::Orientation o) const
+{
+    if (o == Qt::Vertical)
+        return mapToRoot(QPoint(0, p)).y();
+    return mapToRoot(QPoint(p, 0)).x();
+}
+
 QPoint Item::mapFromRoot(QPoint p) const
 {
     ItemContainer *c = parentContainer();
@@ -2093,7 +2100,8 @@ QVector<int> ItemContainer::requiredSeparatorPositions() const
 
     for (Item *item : m_children) {
         if (item->isVisible()) {
-            positions << item->m_sizingInfo.edge(m_orientation) + 1;
+            const int localPos = item->m_sizingInfo.edge(m_orientation) + 1;
+            positions << mapToRoot(localPos, m_orientation);
         }
     }
 
@@ -2102,20 +2110,50 @@ QVector<int> ItemContainer::requiredSeparatorPositions() const
 
 void ItemContainer::updateSeparators()
 {
+    const QVector<int> positions = requiredSeparatorPositions();
+    const int numSeparators = positions.size();
     const Item::List items = visibleChildren();
-    const int numSeparators = qMax(0, items.size() - 1);
-    m_separators.reserve(numSeparators);
 
-    for (int i = 0; i < numSeparators; ++i) {
-        m_separators << new Anchor(m_orientation, Anchor::Option::None, hostWidget());
+    // Instead of just creating N missing ones at the end of the list, let's minimize separators
+    // having their position changed, to minimize flicker
+    Anchor::List newSeparators;
+    m_separators.clear();
+    newSeparators.reserve(numSeparators);
+
+    for (int position : positions) {
+        Anchor *separator = separatorAt(position);
+        if (separator) {
+            // Already existing, reuse
+            newSeparators.push_back(separator);
+            m_separators.removeOne(separator);
+        } else {
+            separator = new Anchor(m_orientation, Anchor::Option::None, hostWidget());
+            newSeparators.push_back(separator);
+        }
+        separator->setGeometry(position, oppositeLength());
     }
 
+    // delete what remained, which is unused
+    qDeleteAll(m_separators);
+    m_separators = newSeparators;
+
+    // recurse into the children
     for (Item *item : items) {
         if (auto c = item->asContainer())
             c->updateSeparators();
     }
 
     updateChildPercentages();
+}
+
+Anchor *ItemContainer::separatorAt(int p) const
+{
+    for (Anchor *separator : m_separators) {
+        if (separator->position() == p)
+            return separator;
+    }
+
+    return nullptr;
 }
 
 bool ItemContainer::isVertical() const
