@@ -398,7 +398,7 @@ public:
 
     explicit ItemContainer(QWidget *hostWidget, ItemContainer *parent);
     explicit ItemContainer(QWidget *parent);
-    void insertItem(Item *item, int index, AddingOption);
+    void insertItem(Item *item, int index);
     [[nodiscard]] bool checkSanity() override;
     void scheduleCheckSanity() const;
     bool hasOrientation() const;
