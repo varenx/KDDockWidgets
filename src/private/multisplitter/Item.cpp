@@ -416,6 +416,7 @@ void Item::setIsVisible(bool is)
             w->setGeometry(mapToRoot(m_sizingInfo.geometry)); // TODO
             w->setVisible(is); // TODO: Only set visible when apply*() ?
         }
+        updateObjectName();
     }
 }
 
@@ -439,9 +440,9 @@ int Item::separatorThickness()
 bool Item::checkSanity()
 {
     if (minSize().width() > width() || minSize().height() > height()) {
+        root()->dumpLayout();
         qWarning() << Q_FUNC_INFO << "Size constraints not honoured" << this
                    << "; min=" << minSize() << "; size=" << size();
-        root()->dumpLayout();
         return false;
     }
 
@@ -849,7 +850,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
 
 void ItemContainer::insertItem(Item *item, Location loc, AddingOption option)
 {
-    item->setIsVisible(false); // TODO: why ?
+    // item->setIsVisible(false); // TODO: why ?
 
     Q_ASSERT(item != this);
     if (contains(item)) {
