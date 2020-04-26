@@ -1931,6 +1931,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int missing,
         const int toTake = qMax(1, toSteal / 2);
         const int took1 = qMin(toTake, available1);
         toSteal -= took1;
+        available1 -= took1;
         side1Growth += took1;
         if (toSteal == 0)
             break;
@@ -1938,6 +1939,7 @@ void ItemContainer::growItem(int index, SizingInfo::List &sizes, int missing,
         const int took2 = qMin(toTake, available2);
         toSteal -= took2;
         side2Growth += took2;
+        available2 -= took2;
     }
 
     shrinkNeighbours(index, sizes, side1Growth, side2Growth);
