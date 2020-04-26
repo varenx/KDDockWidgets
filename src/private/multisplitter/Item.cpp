@@ -724,7 +724,7 @@ bool ItemContainer::checkSanity()
             root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Percentages don't add up"
                        << totalPercentage << percentages;
-            const_cast<ItemContainer*>(this)->updateChildPercentages();
+            const_cast<ItemContainer*>(this)->updateSeparators();
             qWarning() << Q_FUNC_INFO << childPercentages();
         }
     }
@@ -811,7 +811,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             growNeighbours(side1Item, side2Item);
             Q_EMIT itemsChanged();
             updateSizeConstraints();
-            updateChildPercentages();
+            updateSeparators();
         }
     } else {
         // Not ours, ask parent
@@ -847,7 +847,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
     container->setGeometry(leaf->geometry());
     container->insertItem(leaf, Location_OnTop);
     Q_EMIT itemsChanged();
-    updateChildPercentages();
+    updateSeparators();
 
     return container;
 }
@@ -887,7 +887,7 @@ void ItemContainer::insertItem(Item *item, Location loc, AddingOption option)
         insertItem(item, loc, option);
     }
 
-    updateChildPercentages();
+    updateSeparators();
     scheduleCheckSanity();
 }
 
@@ -1095,7 +1095,7 @@ void ItemContainer::positionItems()
     positionItems(/*by-ref=*/sizes);
     applyPositions(sizes);
 
-    updateChildPercentages();
+    updateSeparators();
 }
 
 void ItemContainer::applyPositions(const SizingInfo::List &sizes)
@@ -1370,7 +1370,7 @@ void ItemContainer::setOrientation(Qt::Orientation o)
 {
     if (o != m_orientation) {
         m_orientation = o;
-        updateChildPercentages();
+        updateSeparators();
     }
 }
 
@@ -1586,7 +1586,7 @@ void ItemContainer::restoreChild(Item *item)
     if (numVisibleChildren() == 1) {
         // The easy case. Child is alone in the layout, occupies everything.
         item->setGeometry_recursive(rect());
-        updateChildPercentages();
+        updateSeparators();
         return;
     }
 
@@ -1608,7 +1608,7 @@ void ItemContainer::restoreChild(Item *item)
     }
 
     growItem(item, newLength, GrowthStrategy::BothSidesEqually, /*accountForNewSeparator=*/ true);
-    updateChildPercentages();
+    updateSeparators();
 }
 
 void ItemContainer::updateWidgetGeometries()
@@ -2085,16 +2085,37 @@ Anchor::List ItemContainer::separators() const
     return m_separators;
 }
 
-void ItemContainer::createSeparators()
+QVector<int> ItemContainer::requiredSeparatorPositions() const
+{
+    const int numSeparators = qMax(0, numVisibleChildren() - 1);
+    QVector<int> positions;
+    positions.reserve(numSeparators);
+
+    for (Item *item : m_children) {
+        if (item->isVisible()) {
+            positions << item->m_sizingInfo.edge(m_orientation) + 1;
+        }
+    }
+
+    return positions;
+}
+
+void ItemContainer::updateSeparators()
 {
     const Item::List items = visibleChildren();
     const int numSeparators = qMax(0, items.size() - 1);
     m_separators.reserve(numSeparators);
 
-    for (int i = m_separators.size(); i < numSeparators; ++i) {
+    for (int i = 0; i < numSeparators; ++i) {
         m_separators << new Anchor(m_orientation, Anchor::Option::None, hostWidget());
     }
 
+    for (Item *item : items) {
+        if (auto c = item->asContainer())
+            c->updateSeparators();
+    }
+
+    updateChildPercentages();
 }
 
 bool ItemContainer::isVertical() const

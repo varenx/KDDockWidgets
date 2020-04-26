@@ -320,7 +320,7 @@ private:
     /**
      * @brief Like @ref availableLengthForDrop but just returns the total available width or height (depending on @p orientation)
      * So no need to receive any location.
-     * @param orientation If Qt::Vertical then returns the available width. Height otherwise.
+     * @param orientation If Qt::Vertical then returns the available height. Width otherwise.
      */
     int availableLengthForOrientation(Qt::Orientation orientation) const;
 

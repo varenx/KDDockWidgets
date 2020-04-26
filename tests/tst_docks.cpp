@@ -293,25 +293,25 @@ private Q_SLOTS:
     void tst_setAstCurrentTab();
     void tst_closeShowWhenNoCentralFrame();
     void tst_placeholderDisappearsOnReadd();
-//    void tst_placeholdersAreRemovedPropertly();
-//    void tst_embeddedMainWindow();
+    void tst_placeholdersAreRemovedPropertly();
+    void tst_embeddedMainWindow();
     void tst_toggleMiddleDockCrash(); // tests some crash I got
 //    void tst_28NestedWidgets();
     void tst_28NestedWidgets_data();
     void tst_invalidPlaceholderPosition_data();
-//    void tst_invalidPlaceholderPosition();
-//    void tst_invalidAnchorGroup();
+    void tst_invalidPlaceholderPosition();
+    void tst_invalidAnchorGroup();
 //    void tst_resizeViaAnchorsAfterPlaceholderCreation();
-//    void tst_negativeAnchorPosition();
-//    void tst_negativeAnchorPosition2();
-//    void tst_negativeAnchorPosition3();
-//    void tst_negativeAnchorPosition4();
-//    void tst_negativeAnchorPosition5();
-//    void tst_negativeAnchorPosition6();
-//    void tst_negativeAnchorPosition7();
+    void tst_negativeAnchorPosition();
+    void tst_negativeAnchorPosition2();
+    void tst_negativeAnchorPosition3();
+    void tst_negativeAnchorPosition4();
+    void tst_negativeAnchorPosition5();
+    void tst_negativeAnchorPosition6();
+    void tst_negativeAnchorPosition7();
     void tst_negativeAnchorPositionWhenEmbedded_data();
-//    void tst_negativeAnchorPositionWhenEmbedded();
-//    void tst_availableSizeWithPlaceholders();
+    void tst_negativeAnchorPositionWhenEmbedded();
+    void tst_availableSizeWithPlaceholders();
     void tst_stealFrame();
     void tst_addAsPlaceholder();
     void tst_removeItem();
@@ -321,7 +321,7 @@ private Q_SLOTS:
 //    void tst_invalidLayoutAfterRestore();
     void tst_samePositionAfterHideRestore();
 //    void tst_anchorFollowingItselfAssert();
-//    void tst_positionWhenShown();
+    void tst_positionWhenShown();
 //    void tst_restoreEmpty();
 //    void tst_restoreSimple();
 //    void tst_restoreNestedAndTabbed();
@@ -369,7 +369,7 @@ private:
 };
 }
 
-/*static EmbeddedWindow *createEmbeddedMainWindow(QSize sz)
+static EmbeddedWindow *createEmbeddedMainWindow(QSize sz)
 {
     static int count = 0;
     count++;
@@ -383,7 +383,7 @@ private:
     window->show();
     window->resize(sz);
     return window;
-}*/
+}
 
 namespace {
 
@@ -2279,7 +2279,6 @@ void TestDocks::tst_rectForDropMath_data()
 
     const QRect layoutRect(0, 0, 1000, 1000);
     const QSize contentsSize = layoutRect.size();
-    const int 0 = Anchor::thickness(true);
     const int anchorThickness = Item::separatorThickness();
     const QRect relativeToWindowRect = layoutRect.adjusted(0, 0, -0, -0);
 
@@ -3080,10 +3079,10 @@ void TestDocks::tst_availableLengthForOrientation()
     auto dropArea = m->dropArea();
     MultiSplitterLayout *layout = dropArea->multiSplitterLayout();
 
-    int availableWidth = layout->availableLengthForOrientation(Qt::Vertical);
-    int availableHeight = layout->availableLengthForOrientation(Qt::Horizontal);
-    QCOMPARE(availableWidth, layout->width() - 2 * Anchor::thickness(true));
-    QCOMPARE(availableHeight, layout->height() - 2 *Anchor::thickness(true));
+    int availableWidth = layout->availableLengthForOrientation(Qt::Horizontal);
+    int availableHeight = layout->availableLengthForOrientation(Qt::Vertical);
+    QCOMPARE(availableWidth, layout->width());
+    QCOMPARE(availableHeight, layout->height());
 
     //2. Now do the same, but we have some widget docked
 
@@ -3093,10 +3092,10 @@ void TestDocks::tst_availableLengthForOrientation()
     const int dock1MinWidth = layout->itemForFrame(dock1->frame())->minLength(Qt::Vertical);
     const int dock1MinHeight = layout->itemForFrame(dock1->frame())->minLength(Qt::Horizontal);
 
-    availableWidth = layout->availableLengthForOrientation(Qt::Vertical);
-    availableHeight = layout->availableLengthForOrientation(Qt::Horizontal);
-    QCOMPARE(availableWidth, layout->width() - 2 * Anchor::thickness(true) - Item::separatorThickness() - dock1MinWidth);
-    QCOMPARE(availableHeight, layout->height() - 2 *Anchor::thickness(true) - Item::separatorThickness() -  dock1MinHeight);
+    availableWidth = layout->availableLengthForOrientation(Qt::Horizontal);
+    availableHeight = layout->availableLengthForOrientation(Qt::Vertical);
+    QCOMPARE(availableWidth, layout->width() - Item::separatorThickness() - dock1MinWidth);
+    QCOMPARE(availableHeight, layout->height() - Item::separatorThickness() -  dock1MinHeight);
     m->multiSplitterLayout()->checkSanity();
 }
 #endif
@@ -3182,7 +3181,7 @@ void TestDocks::tst_placeholderDisappearsOnReadd()
 
     QVERIFY(Testing::waitForDeleted(fw));
 }
-#if 0
+
 void TestDocks::tst_placeholdersAreRemovedPropertly()
 {
     EnsureTopLevelsDeleted e;
@@ -3226,6 +3225,8 @@ void TestDocks::tst_embeddedMainWindow()
     // Tests a MainWindow which isn't a top-level window, but is embedded in another window
     EmbeddedWindow *window = createEmbeddedMainWindow(QSize(800, 800));
 
+    QTest::qWait(10); // the DND state machine needs the event loop to start, otherwise activeState() is nullptr. (for offscreen QPA)
+
     auto dock1 = createDockWidget("1", new QPushButton("1"));
     window->mainWindow->addDockWidget(dock1, Location_OnTop);
     dock1->setFloating(true);
@@ -3241,7 +3242,7 @@ void TestDocks::tst_embeddedMainWindow()
 
     delete window;
 }
-#endif
+
 void TestDocks::tst_toggleMiddleDockCrash()
 {
     EnsureTopLevelsDeleted e;
@@ -3276,7 +3277,7 @@ void TestDocks::tst_invalidPlaceholderPosition_data()
     QTest::newRow("restore1First") << true;
     QTest::newRow("restore2First") << false;
 }
-#if 0
+
 void TestDocks::tst_invalidPlaceholderPosition()
 {
     QFETCH(bool, restore1First);
@@ -3300,7 +3301,6 @@ void TestDocks::tst_invalidPlaceholderPosition()
     auto frame1 = dock1->frame();
     auto frame2 = dock2->frame();
     auto frame3 = dock3->frame();
-    const int 0 = Anchor::thickness(true);
     QCOMPARE(frame1->y(), 0);
 
     // Close 1
@@ -3345,7 +3345,7 @@ void TestDocks::tst_invalidPlaceholderPosition()
     dock2->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock2));
 }
-#endif
+
 void TestDocks::tst_28NestedWidgets_data()
 {
     QTest::addColumn<QVector<DockDescriptor>>("docksToCreate");
@@ -3628,7 +3628,7 @@ void TestDocks::tst_28NestedWidgets()
         QVERIFY(Testing::waitForDeleted(dock));
     }
 }
-
+#endif
 void TestDocks::tst_invalidAnchorGroup()
 {
     // Tests a bug I got. Should not warn.
@@ -3672,7 +3672,7 @@ void TestDocks::tst_invalidAnchorGroup()
         Testing::waitForDeleted(dock1);
     }
 }
-
+#if 0
 void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
 {
     EnsureTopLevelsDeleted e;
@@ -3720,7 +3720,6 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
         Anchor *anchor = item1->anchorGroup().right;
         int boundToTheRight = layout->boundPositionForAnchor(anchor, Anchor::Side2);
         int expectedBoundToTheRight = layout->size().width() -
-                                      Anchor::thickness(true) -
                                       3*Item::separatorThickness() -
                                       item2->minLength(Qt::Vertical) -
                                       item3->minLength(Qt::Vertical) -
@@ -3743,7 +3742,6 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
 
         boundToTheRight = layout->boundPositionForAnchor(anchor, Anchor::Side2);
         expectedBoundToTheRight = layout->size().width() -
-                                  Anchor::thickness(true) -
                                   2*Item::separatorThickness() -
                                   item2->minLength(Qt::Vertical) -
                                   item4->minLength(Qt::Vertical) ;
@@ -3757,7 +3755,7 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
         Testing::waitForDeleted(dock3);
     }
 }
-
+#endif
 void TestDocks::tst_negativeAnchorPosition()
 {
     // Tests that we don't hit:
@@ -3783,13 +3781,6 @@ void TestDocks::tst_negativeAnchorPosition()
 
     m->addDockWidget(d2, Location_OnTop);
     m->addDockWidget(d3, Location_OnTop);
-
-    const int minHeight = layout->minimumSize().height();
-    const int min1 = KDDockWidgets::widgetMinLength(d1->frame(), Qt::Horizontal);
-    const int min2 = KDDockWidgets::widgetMinLength(d2->frame(), Qt::Horizontal);
-    const int min3 = KDDockWidgets::widgetMinLength(d3->frame(), Qt::Horizontal);
-
-    qDebug() << "MinSizes=" << min1 << min2 << min3 << minHeight;
 
     d2->close();
 
@@ -3912,12 +3903,6 @@ void TestDocks::tst_negativeAnchorPosition5()
 
     dock1->show();
 
-    Item *item1  = layout->itemForFrame(dock1->frame());
-
-    qDebug() << "contents size" << layout->size()
-             << "; available=" << layout->availableLengthForOrientation(Qt::Horizontal)
-             << "; item1.min=" << item1->minimumSize();
-
     dock0->show();
     layout->checkSanity();
 
@@ -3999,7 +3984,7 @@ void TestDocks::tst_negativeAnchorPosition7()
 
     delete m;
 }
-#endif
+
 void TestDocks::tst_negativeAnchorPositionWhenEmbedded_data()
 {
     QTest::addColumn<bool>("embedded");
@@ -4007,7 +3992,7 @@ void TestDocks::tst_negativeAnchorPositionWhenEmbedded_data()
      QTest::newRow("false") << false;
      QTest::newRow("true") << true;
 }
-#if 0
+
 void TestDocks::tst_negativeAnchorPositionWhenEmbedded()
 {
     QFETCH(bool, embedded);
@@ -4039,7 +4024,7 @@ void TestDocks::tst_negativeAnchorPositionWhenEmbedded()
 
     delete m->window();
 }
-#endif
+
 void TestDocks::tst_tabBarWithHiddenTitleBar_data()
 {
     QTest::addColumn<bool>("hiddenTitleBar");
@@ -4479,7 +4464,7 @@ void TestDocks::tst_rectForDropCrash()
 
     delete m->window();
 }
-#if 0
+
 void TestDocks::tst_availableSizeWithPlaceholders()
 {
     // Tests MultiSplitterLayout::available() with and without placeholders. The result should be the same.
@@ -4531,15 +4516,9 @@ void TestDocks::tst_availableSizeWithPlaceholders()
     Item *item10 = layout1->itemForFrame(f10);
     Item *item30 = layout3->itemForFrame(docks2.at(0).createdDock->frame());
 
-    // HACK: The Frame's have different minimum size than the Items as they're geometry change later
-    // and the item isn't updated, so for the purpose of this test (available) we force the items
-    // to have the same properties. TODO: Remove the restoreSizes once the Frame propagates its min size
-    // to the item.
-    item10->restoreSizes(item30->minimumSize(), item30->geometry());
-
     QCOMPARE(item10->geometry(), item30->geometry());
     QCOMPARE(item10->frame()->minimumSizeHint(), item10->frame()->minimumSizeHint());
-    QCOMPARE(item10->minimumSize(), item30->minimumSize());
+    QCOMPARE(item10->minSize(), item30->minSize());
     QCOMPARE(layout1->availableSize(), layout3->availableSize());
 
     layout1->checkSanity();
@@ -4555,7 +4534,7 @@ void TestDocks::tst_availableSizeWithPlaceholders()
     docks2.at(2).createdDock->deleteLater();
     QVERIFY(Testing::waitForDeleted(docks2.at(2).createdDock));
 }
-
+#if 0
 void TestDocks::tst_anchorFollowingItselfAssert()
 {
     // 1. Tests that we don't assert in Anchor::setFollowee()
@@ -4587,7 +4566,7 @@ void TestDocks::tst_anchorFollowingItselfAssert()
     docks.at(4).createdDock->deleteLater();
     Testing::waitForDeleted(docks.at(4).createdDock);
 }
-
+#endif
 void TestDocks::tst_positionWhenShown()
 {
     // Tests that when showing a dockwidget it shows in the same position as before
@@ -4608,7 +4587,7 @@ void TestDocks::tst_positionWhenShown()
     dock1->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock1));
 }
-#endif
+
 void TestDocks::tst_sizeConstraintWarning()
 {
     // Tests that we don't get the warning: MultiSplitterLayout::checkSanity: Widget has height= 122 but minimum is 144 KDDockWidgets::Item
@@ -4812,14 +4791,14 @@ void TestDocks::tst_invalidLayoutAfterRestore()
     Item *item2 = layout->itemForFrame(dock2->frame());
     Item *item3 = layout->itemForFrame(dock3->frame());
     Item *item4 = dropArea->centralFrame();
-    const int oldAvailableWidth = layout->availableLengthForOrientation(Qt::Vertical);
+    const int oldAvailableWidth = layout->availableLengthForOrientation(Qt::Horizontal);
 
-    qDebug() << "; Item3 min=" << item3->minimumSize().width()
-             << "; Item2 min=" << item2->minimumSize().width()
-             << "; Item1 min=" << item1->minimumSize().width()
-             << "; Item4 min=" << item4->minimumSize().width()
+    qDebug() << "; Item3 min=" << item3->minSize().width()
+             << "; Item2 min=" << item2->minSize().width()
+             << "; Item1 min=" << item1->minSize().width()
+             << "; Item4 min=" << item4->minSize().width()
              << "; oldAvailableWidth=" << oldAvailableWidth
-             << "; old window.minWidth=" << layout->minimumSize().width();
+             << "; old window.minWidth=" << layout->minSize().width();
 
     qDebug() << "Item3 width=" << item3->width()
              << "Item2 width=" << item2->width();
@@ -4833,8 +4812,8 @@ void TestDocks::tst_invalidLayoutAfterRestore()
     QVERIFY(!f2.data());
     QTest::qWait(200); // Not sure why. Some event we're waiting for. TODO: Investigate
     auto fw2 = dock2->floatingWindow();
-    const int newAvailableWidth = layout->availableLengthForOrientation(Qt::Vertical);
-    QCOMPARE(layout->minimumSize().width(), 2*Anchor::thickness(true) + 2*Item::separatorThickness() + item1->minimumSize().width() + item3->minimumSize().width() + item4->minimumSize().width());
+    const int newAvailableWidth = layout->availableLengthForOrientation(Qt::Horizontal);
+    QCOMPARE(layout->minimumSize().width(), 2*Item::separatorThickness() + item1->minSize().width() + item3->minSize().width() + item4->minSize().width());
 
     MultiSplitterLayout::Length availableForDock2 = layout->availableLengthForDrop(Location_OnLeft, item3);
 
@@ -4844,7 +4823,7 @@ void TestDocks::tst_invalidLayoutAfterRestore()
              << "; availableforDock2=" << availableForDock2.length()
              << availableForDock2.side1Length << availableForDock2.side2Length;
 
-    const int item3AvailableSqueeze = item3->width() - item3->minimumSize().width();
+    const int item3AvailableSqueeze = item3->width() - item3->minSize().width();
     QVERIFY(availableForDock2.side2Length <= item3AvailableSqueeze);
 
 

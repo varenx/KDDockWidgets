@@ -286,6 +286,19 @@ void MultiSplitterLayout::emitVisibleWidgetCountChanged()
         Q_EMIT visibleWidgetCountChanged(visibleCount());
 }
 
+int MultiSplitterLayout::availableLengthForOrientation(Qt::Orientation orientation) const
+{
+    if (orientation == Qt::Vertical)
+        return availableSize().height();
+    else
+        return availableSize().width();
+}
+
+QSize MultiSplitterLayout::availableSize() const
+{
+    return m_rootItem->availableSize();
+}
+
 Item *MultiSplitterLayout::itemForFrame(const Frame *frame) const
 {
     if (!frame)

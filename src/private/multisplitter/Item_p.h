@@ -506,7 +506,9 @@ public:
     QVector<Layouting::Anchor*> separators() const;
     Qt::Orientation m_orientation = Qt::Vertical;
 private:
-    void createSeparators();
+    /// Returns the positions that each separator should have (x position if Qt::Horizontal, y otherwise)
+    QVector<int> requiredSeparatorPositions() const;
+    void updateSeparators();
     QVector<double> childPercentages() const;
     mutable bool m_checkSanityScheduled = false;
     QVector<Layouting::Anchor*> m_separators;
