@@ -736,6 +736,13 @@ bool ItemContainer::checkSanity()
         }
     }
 
+    const int numVisibleChildren = visibleChildren.size();
+    if (m_separators.size() != qMax(0, numVisibleChildren - 1)) {
+        qWarning() << "Unexpected number of separators" << m_separators.size()
+                   << numVisibleChildren;
+        return false;
+    }
+
     return true;
 }
 
