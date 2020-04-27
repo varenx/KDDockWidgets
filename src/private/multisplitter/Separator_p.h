@@ -33,15 +33,13 @@ class /*DOCKS_EXPORT*/ Separator : public QWidget
 {
     Q_OBJECT
     Q_PROPERTY(bool isVertical READ isVertical CONSTANT)
-    //Q_PROPERTY(int position READ position NOTIFY positionChanged)
 public:
     explicit Separator(Layouting::Anchor *anchor, QWidget *hostWidget);
     bool isVertical() const;
-    int position() const;
     void move(int p);
-    const QPointer<Layouting::Anchor> anchor() const { return m_anchor; }
 
 protected:
+    const QPointer<Layouting::Anchor> anchor() const { return m_anchor; }
     void mousePressEvent(QMouseEvent *) override;
     void mouseMoveEvent(QMouseEvent *) override;
     void mouseReleaseEvent(QMouseEvent *) override;

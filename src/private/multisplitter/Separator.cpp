@@ -36,9 +36,9 @@ Separator::Separator(Layouting::Anchor *anchor, QWidget *hostWidget)
 
     const int thickness = Item::separatorThickness();
     if (isVertical())
-        setFixedHeight(thickness);
-    else
         setFixedWidth(thickness);
+    else
+        setFixedHeight(thickness);
 }
 
 bool Separator::isVertical() const
@@ -46,17 +46,12 @@ bool Separator::isVertical() const
     return m_anchor->isVertical();
 }
 
-int Separator::position() const
-{
-    return isVertical() ? y() : x();
-}
-
 void Separator::move(int p)
 {
     if (isVertical()) {
-        QWidget::move(p, y());
-    } else {
         QWidget::move(x(), p);
+    } else {
+        QWidget::move(p, y());
     }
 }
 
@@ -67,7 +62,7 @@ void Separator::mousePressEvent(QMouseEvent *)
 
 void Separator::mouseMoveEvent(QMouseEvent *ev)
 {
-    m_anchor->onMouseMoved(parentWidget()->mapFromGlobal(ev->globalPos() ));
+    m_anchor->onMouseMoved(parentWidget()->mapFromGlobal(ev->globalPos()));
 }
 
 void Separator::mouseReleaseEvent(QMouseEvent *)

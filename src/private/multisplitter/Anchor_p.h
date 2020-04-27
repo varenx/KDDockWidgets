@@ -61,12 +61,8 @@ public:
     QWidget *hostWidget() const;
 
     Qt::Orientation orientation() const;
-    bool isVertical() const { return m_orientation == Qt::Vertical; }
     void setGeometry(int pos, int pos2, int length);
-    void updatePositionPercentage();
     int position() const;
-
-    void setVisible(bool);
 
     ///@brief returns the separator widget
     Separator* separatorWidget() const;
@@ -81,20 +77,21 @@ public:
     void onMouseMoved(QPoint pt);
     void onWidgetMoved(int p);
 
+    QRect geometry() const;
+    bool isVertical() const;
+
     ///@brief Returns whether we're dragging a separator. Can be useful for the app to stop other work while we're not in the final size
     static bool isResizing();
     static void setSeparatorFactoryFunc(SeparatorFactoryFunc);
 
-private:
-    void setLazyPosition(int);
-    void setGeometry(QRect);
 Q_SIGNALS:
     void geometryChanged(QRect);
 
-public:
+private:
+    void setLazyPosition(int);
+    void setGeometry(QRect);
     int position(QPoint) const;
-    void updateSize();
-    QRect geometry() const { return m_geometry; }
+    void setPosition(int p);
 
     const Qt::Orientation m_orientation;
 
@@ -102,10 +99,8 @@ public:
     Layouting::Side m_lastMoveDirection = Side1;
 
     QWidget *const m_hostWidget;
-    bool m_showingSide1Rubberband = false;
-    bool m_showingSide2Rubberband = false;
-    bool m_initialized = false;
     static bool s_isResizing;
+    static Anchor* s_separatorBeingDragged;
 
     Separator *const m_separatorWidget;
     QRect m_geometry;

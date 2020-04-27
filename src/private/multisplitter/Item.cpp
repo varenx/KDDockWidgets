@@ -776,8 +776,8 @@ bool ItemContainer::checkSanity()
             return false;
         }
 
-        const int separatorPos2 = Layouting::pos(separator->m_geometry.topLeft(), oppositeOrientation(m_orientation));
-        if (Layouting::pos(separator->m_geometry.topLeft(), oppositeOrientation(m_orientation)) != pos2) {
+        const int separatorPos2 = Layouting::pos(separator->geometry().topLeft(), oppositeOrientation(m_orientation));
+        if (Layouting::pos(separator->geometry().topLeft(), oppositeOrientation(m_orientation)) != pos2) {
             root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Unexpected position pos2=" << separatorPos2
                        << "; expected=" << pos2

@@ -33,8 +33,8 @@
 using namespace KDDockWidgets;
 using namespace Layouting;
 
-
 bool Anchor::s_isResizing = false;
+Anchor* Anchor::s_separatorBeingDragged = nullptr;
 
 static SeparatorFactoryFunc s_separatorFactoryFunc = nullptr;
 
@@ -62,6 +62,8 @@ Anchor::Anchor(ItemContainer *parentContainer, Qt::Orientation orientation,
 Anchor::~Anchor()
 {
     delete m_separatorWidget;
+    if (s_separatorBeingDragged == this)
+        s_separatorBeingDragged = nullptr;
 }
 
 QWidget *Anchor::hostWidget() const
@@ -81,6 +83,11 @@ void Anchor::setGeometry(QRect r)
         m_separatorWidget->setVisible(true);
         Q_EMIT geometryChanged(r);
     }
+}
+
+bool Anchor::isVertical() const
+{
+    return m_orientation == Qt::Vertical;
 }
 
 Qt::Orientation Anchor::orientation() const
@@ -112,8 +119,7 @@ int Anchor::position() const
 
 bool Anchor::isBeingDragged() const
 {
-    return false; // TODO
-    //return m_layout->anchorBeingDragged() == this;
+    return s_separatorBeingDragged == this;
 }
 
 bool Anchor::lazyResizeEnabled() const
@@ -147,10 +153,21 @@ int Anchor::position(QPoint p) const
     return isVertical() ? p.y() : p.x();
 }
 
+void Anchor::setPosition(int p)
+{
+    QPoint pt = m_geometry.topLeft();
+    if (isVertical())
+        pt.setY(p);
+    else
+        pt.setX(p);
+
+    m_geometry.moveTopLeft(pt);
+}
+
 void Anchor::onMousePress()
 {
-    s_isResizing = true;
-    //m_layout->setAnchorBeingDragged(this); TODO
+    s_separatorBeingDragged = this;
+
     qCDebug(separators) << "Drag started";
 
     if (lazyResizeEnabled()) {
@@ -163,11 +180,10 @@ void Anchor::onMouseReleased()
 {
     if (m_lazyResizeRubberBand) {
         m_lazyResizeRubberBand->hide();
-        //setPosition(m_lazyPosition); TODO
+        setPosition(m_lazyPosition);
     }
 
-    s_isResizing = false;
-    // m_layout->setAnchorBeingDragged(nullptr); TODO
+    s_separatorBeingDragged = nullptr;
 }
 
 void Anchor::onMouseMoved(QPoint pt)
@@ -205,17 +221,21 @@ void Anchor::onMouseMoved(QPoint pt)
 
     if (/*m_lazyResize*/ false) // TODO
         setLazyPosition(positionToGoTo);
-    //else
-        //setPosition(positionToGoTo);
+    else
+        setPosition(positionToGoTo);
 }
 
-void Anchor::onWidgetMoved(int )
+void Anchor::onWidgetMoved(int p)
 {
-   /* if (m_layout->anchorBeingDragged() != this) // We only care if it's being dragged by mouse
-        return;*/ // TODO
+   if (!isResizing()) // We only care if it's being dragged by mouse
+       return;
 
+   setPosition(p);
+}
 
-  //  setPosition(p); TODO
+QRect Anchor::geometry() const
+{
+    return m_geometry;
 }
 
 bool Anchor::isResizing()
