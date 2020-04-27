@@ -136,9 +136,6 @@ void DropArea::debug_updateItemNamesForGammaray()
                 frame->setObjectName(frame->dockWidgets().at(0)->uniqueName());
         }
     }
-
-    for (Anchor *a : m_layout->anchors())
-        a->debug_updateItemNames();
 }
 
 bool DropArea::checkSanity()

@@ -2203,7 +2203,7 @@ void ItemContainer::updateSeparators()
             newSeparators.push_back(separator);
             m_separators.removeOne(separator);
         } else {
-            separator = new Anchor(m_orientation, Anchor::Option::None, hostWidget());
+            separator = new Anchor(this, m_orientation, Anchor::Option::None, hostWidget());
             newSeparators.push_back(separator);
         }
         separator->setGeometry(position, pos2, oppositeLength());
