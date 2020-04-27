@@ -337,6 +337,7 @@ public:
     QPoint mapFromRoot(QPoint) const;
     QRect mapFromRoot(QRect) const;
     QPoint mapFromParent(QPoint) const;
+    int mapFromRoot(int p, Qt::Orientation) const;
 
     QWidget *frame() const { return m_guest ? m_guest->asWidget() : nullptr; } // TODO: rename
     GuestInterface *guest() const { return m_guest; }
@@ -499,6 +500,13 @@ public:
     Qt::Orientation orientation() const;
     bool isVertical() const;
     bool isHorizontal() const;
+
+    int indexOf(Anchor *) const;
+    int minPosForSeparator(Anchor *) const;
+    int maxPosForSeparator(Anchor *) const;
+    int minPosForSeparator_global(Anchor *) const;
+    int maxPosForSeparator_global(Anchor *) const;
+
 Q_SIGNALS:
     void itemsChanged();
     void numVisibleItemsChanged(int);

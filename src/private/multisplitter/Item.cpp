@@ -83,6 +83,13 @@ QPoint Item::mapFromParent(QPoint p) const
     return p - pos();
 }
 
+int Item::mapFromRoot(int p, Qt::Orientation o) const
+{
+    if (o == Qt::Vertical)
+        return mapFromRoot(QPoint(0, p)).y();
+    return mapFromRoot(QPoint(p, 0)).x();
+}
+
 void Item::setFrame(GuestInterface *guest)
 {   
     Q_ASSERT(!guest || !m_guest);
@@ -2235,6 +2242,49 @@ bool ItemContainer::isVertical() const
 bool ItemContainer::isHorizontal() const
 {
     return m_orientation == Qt::Horizontal;
+}
+
+int ItemContainer::indexOf(Anchor *separator) const
+{
+    return m_separators.indexOf(separator);
+}
+
+int ItemContainer::minPosForSeparator(Anchor *separator) const
+{
+    const int globalMin = minPosForSeparator_global(separator);
+    return mapFromRoot(globalMin, m_orientation);
+}
+
+int ItemContainer::maxPosForSeparator(Anchor *separator) const
+{
+    const int globalMax = maxPosForSeparator_global(separator);
+    return mapFromRoot(globalMax, m_orientation);
+}
+
+int ItemContainer::minPosForSeparator_global(Anchor *separator) const
+{
+    const int separatorIndex = indexOf(separator);
+    Q_ASSERT(separatorIndex != -1);
+
+    const Item::List children = visibleChildren();
+    Q_ASSERT(separatorIndex + 1 < children.size());
+    Item *item = children.at(separatorIndex + 1);
+
+    const int available1 = availableOnSide(item, Side1);
+    return separator->position() - available1;
+}
+
+int ItemContainer::maxPosForSeparator_global(Anchor *separator) const
+{
+    const int separatorIndex = indexOf(separator);
+    Q_ASSERT(separatorIndex != -1);
+
+    const Item::List children = visibleChildren();
+    Q_ASSERT(separatorIndex - 1 >= 0);
+    Item *item = children.at(separatorIndex - 1);
+
+    const int available2 = availableOnSide(item, Side2);
+    return separator->position() + available2;
 }
 
 QVector<Layouting::Anchor*> ItemContainer::separators_recursive() const
