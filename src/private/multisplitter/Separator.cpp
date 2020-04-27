@@ -33,12 +33,6 @@ Separator::Separator(Layouting::Anchor *anchor, QWidget *hostWidget)
 {
     Q_ASSERT(anchor);
     setVisible(true);
-
-    const int thickness = Item::separatorThickness();
-    if (isVertical())
-        setFixedWidth(thickness);
-    else
-        setFixedHeight(thickness);
 }
 
 bool Separator::isVertical() const

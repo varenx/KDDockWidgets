@@ -208,9 +208,10 @@ void Anchor::onMouseMoved(QPoint pt)
 #endif
 
     const int positionToGoTo = position(pt);
+    const int minPos = m_parentContainer->minPosForSeparator_global(this);
+    const int maxPos = m_parentContainer->maxPosForSeparator_global(this);
 
-    const int minPos = m_parentContainer->minPosForSeparator(this);
-    const int maxPos = m_parentContainer->maxPosForSeparator(this);
+    qDebug() << "foo" << minPos << positionToGoTo << maxPos;
 
     if (positionToGoTo < minPos || positionToGoTo > maxPos)
         return;
