@@ -2147,11 +2147,6 @@ void ItemContainer::shrinkNeighbours(int index, SizingInfo::List &sizes, int sid
     }
 }
 
-Anchor::List ItemContainer::separators() const
-{
-    return m_separators;
-}
-
 QVector<int> ItemContainer::requiredSeparatorPositions() const
 {
     const int numSeparators = qMax(0, numVisibleChildren() - 1);
@@ -2240,4 +2235,16 @@ bool ItemContainer::isVertical() const
 bool ItemContainer::isHorizontal() const
 {
     return m_orientation == Qt::Horizontal;
+}
+
+QVector<Layouting::Anchor*> ItemContainer::separators_recursive() const
+{
+    Layouting::Anchor::List separators = m_separators;
+
+    for (Item *item : m_children) {
+        if (auto c = item->asContainer())
+            separators << c->separators_recursive();
+    }
+
+    return separators;
 }

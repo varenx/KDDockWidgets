@@ -507,7 +507,7 @@ public:
     Item::List m_children;
     bool m_isResizing = false;
     bool m_blockUpdatePercentages = false;
-    QVector<Layouting::Anchor*> separators() const;
+    QVector<Layouting::Anchor*> separators_recursive() const;
     Qt::Orientation m_orientation = Qt::Vertical;
 private:
     /// Returns the positions that each separator should have (x position if Qt::Horizontal, y otherwise)

@@ -180,10 +180,7 @@ public:
     bool anchorIsBeingDragged() const { return m_anchorBeingDragged != nullptr; }
 
     ///@brief returns list of separators
-    const Layouting::Anchor::List anchors() const { return m_anchors; }
-
-    ///@brief returns the number of anchors that are following others, just for tests.
-    int numVisibleAnchors() const;
+    Layouting::Anchor::List anchors() const;
 
     /**
      * @brief Updates the min size of this layout.
@@ -341,7 +338,6 @@ private:
     QString affinityName() const;
 
     MultiSplitter *const m_multiSplitter;
-    Layouting::Anchor::List m_anchors;
 
     bool m_inCtor = true;
     bool m_inDestructor = false;

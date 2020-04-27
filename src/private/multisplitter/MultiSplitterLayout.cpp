@@ -71,8 +71,6 @@ MultiSplitterLayout::~MultiSplitterLayout()
 {
     qCDebug(multisplittercreation) << "~MultiSplitter" << this;
     m_inDestructor = true;
-    const auto anchors = m_anchors;
-    qDeleteAll(anchors);
     if (m_rootItem->hostWidget() == multiSplitter())
         delete m_rootItem;
     DockRegistry::self()->unregisterLayout(this);
@@ -260,15 +258,9 @@ void MultiSplitterLayout::setAnchorBeingDragged(Anchor *anchor)
     m_anchorBeingDragged = anchor;
 }
 
-int MultiSplitterLayout::numVisibleAnchors() const
+Anchor::List MultiSplitterLayout::anchors() const
 {
-    int count = 0;
-    for (Anchor *a : m_anchors) {
-        if (a->separatorWidget()->isVisible())
-            count++;
-    }
-
-    return count;
+    return m_rootItem->separators_recursive();
 }
 
 void MultiSplitterLayout::updateSizeConstraints()

@@ -293,7 +293,7 @@ private Q_SLOTS:
     void tst_setAstCurrentTab();
     void tst_closeShowWhenNoCentralFrame();
     void tst_placeholderDisappearsOnReadd();
-    void tst_placeholdersAreRemovedPropertly();
+    void tst_placeholdersAreRemovedProperly();
     void tst_embeddedMainWindow();
     void tst_toggleMiddleDockCrash(); // tests some crash I got
 //    void tst_28NestedWidgets();
@@ -3177,7 +3177,7 @@ void TestDocks::tst_placeholderDisappearsOnReadd()
     QVERIFY(Testing::waitForDeleted(fw));
 }
 
-void TestDocks::tst_placeholdersAreRemovedPropertly()
+void TestDocks::tst_placeholdersAreRemovedProperly()
 {
     EnsureTopLevelsDeleted e;
     auto m = createMainWindow(QSize(800, 500), MainWindowOption_None); // Remove central frame
@@ -3191,12 +3191,11 @@ void TestDocks::tst_placeholdersAreRemovedPropertly()
     dock1->setFloating(true);
     QVERIFY(item->isPlaceholder());
 
-    QCOMPARE(layout->anchors().size(), 5);
+    QCOMPARE(layout->anchors().size(), 0);
     QCOMPARE(layout->count(), 2);
     QCOMPARE(layout->placeholderCount(), 1);
     layout->removeItem(item);
-
-    QCOMPARE(layout->anchors().size(), 4);
+    QCOMPARE(layout->anchors().size(), 0);
     QCOMPARE(layout->count(), 1);
     QCOMPARE(layout->placeholderCount(), 0);
 
@@ -3205,7 +3204,7 @@ void TestDocks::tst_placeholdersAreRemovedPropertly()
     dock1->setFloating(true);
     QPointer<QWidget> window1 = dock1->window();
     delete dock1;
-    QCOMPARE(layout->anchors().size(), 4);
+    QCOMPARE(layout->anchors().size(), 0);
     QCOMPARE(layout->count(), 1);
     QCOMPARE(layout->placeholderCount(), 0);
     layout->checkSanity();
@@ -3686,7 +3685,7 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
         Testing::waitForResize(dock3);
 
         MultiSplitterLayout *layout = m->multiSplitterLayout();
-        QCOMPARE(layout->numVisibleAnchors(), 5);
+        QCOMPARE(layout->anchors().size(), 5);
         layout->checkSanity();
 
         // Cleanup:
