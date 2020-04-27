@@ -30,7 +30,7 @@ QT_END_NAMESPACE
 
 namespace KDDockWidgets {
 
-class DOCKS_EXPORT SeparatorWidget : public Separator
+class DOCKS_EXPORT SeparatorWidget : public Layouting::Separator
 {
     Q_OBJECT
 public:

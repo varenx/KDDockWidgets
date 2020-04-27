@@ -32,14 +32,8 @@ QT_BEGIN_NAMESPACE
 class QRubberBand;
 QT_END_NAMESPACE
 
-namespace Layouting {
-class Item;
-}
-
 namespace KDDockWidgets {
 class MultiSplitterLayout;
-class Separator;
-typedef QVector<Layouting::Item*> ItemList;
 }
 
 namespace Layouting {
@@ -101,21 +95,24 @@ public:
 
     typedef QVector<Anchor *> List;
     explicit Anchor(Qt::Orientation orientation, Options options, QWidget *hostWidget);
+
     ~Anchor() override;
+
+    QWidget *hostWidget() const;
 
     Qt::Orientation orientation() const;
     void addItem(Item *, Side);
     void addItems(const QVector<Item*> &list, Side);
     void removeItem(Item *w);
     bool isVertical() const { return m_orientation == Qt::Vertical; }
-    void setGeometry(int pos, int length);
+    void setGeometry(int pos, int pos2, int length);
     void updatePositionPercentage();
     int position() const;
 
     void setVisible(bool);
 
     ///@brief returns the separator widget
-    KDDockWidgets::Separator* separatorWidget() const;
+    Separator* separatorWidget() const;
 
     bool isEmpty() const { return !hasItems(Side1) && !hasItems(Side2); }
     bool hasItems(Side) const;
@@ -139,6 +136,7 @@ public:
 
     ///@brief Returns whether we're dragging a separator. Can be useful for the app to stop other work while we're not in the final size
     static bool isResizing();
+    static void setSeparatorFactoryFunc(SeparatorFactoryFunc);
 
 private:
     void setLazyPosition(int);
@@ -172,7 +170,7 @@ public:
 
     QString m_debug_side1ItemNames;
     QString m_debug_side2ItemNames;
-    KDDockWidgets::Separator *const m_separatorWidget;
+    Separator *const m_separatorWidget;
     QRect m_geometry;
     int m_lazyPosition = 0;
     const Options m_options;
@@ -180,7 +178,5 @@ public:
 };
 
 }
-
-Q_DECLARE_METATYPE(KDDockWidgets::ItemList)
 
 #endif

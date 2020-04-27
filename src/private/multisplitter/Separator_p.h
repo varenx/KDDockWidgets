@@ -28,9 +28,6 @@
 
 namespace Layouting {
 class Anchor;
-}
-
-namespace KDDockWidgets {
 
 class /*DOCKS_EXPORT*/ Separator : public QWidget
 {

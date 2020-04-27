@@ -462,7 +462,6 @@ void TestDocks::nestDockWidget(DockWidgetBase *dock, DropArea *dropArea, Frame *
 
     dropArea->multiSplitterLayout()->addWidget(frame, location, relativeTo);
     QVERIFY(dropArea->checkSanity());
-    qDebug() << "Size after adding: " << frame->size();
 }
 
 DockWidgetBase *createAndNestDockWidget(DropArea *dropArea, Frame *relativeTo, KDDockWidgets::Location location)
@@ -1143,27 +1142,23 @@ void TestDocks::tst_closeAllDockWidgets()
 
     QPointer<FloatingWindow> fw = dock3->morphIntoFloatingWindow();
 
-    qDebug() << "Nesting1";
-
     nestDockWidget(dock4, dropArea, nullptr, KDDockWidgets::Location_OnRight);
-    qDebug() << "Nesting2";
     nestDockWidget(dock5, dropArea, nullptr, KDDockWidgets::Location_OnTop);
-    qDebug() << "Nesting3 fw size is" << fw->dropArea()->size();
+
     const int oldFWHeight = fw->height();
     nestDockWidget(dock6, fw->dropArea(), nullptr, KDDockWidgets::Location_OnTop);
-    QVERIFY(oldFWHeight <= fw->height());
-    qDebug() << "Nesting done";
 
+    QVERIFY(oldFWHeight <= fw->height());
     QCOMPARE(fw->frames().size(), 2);
 
     QCOMPARE(dock3->window(), fw.data());
     QCOMPARE(dock4->window(), m.get());
     QCOMPARE(dock5->window(), m.get());
     QCOMPARE(dock6->window(), fw.data());
-
-    qDebug() << "closeAllDockWidgets";
+    auto layout = m->multiSplitterLayout();
+    layout->checkSanity();
     DockRegistry::self()->clear();
-    qDebug() << "closeAllDockWidgets done";
+    layout->checkSanity();
 
     Testing::waitForDeleted(fw);
     QVERIFY(!fw);
@@ -4251,6 +4246,7 @@ void TestDocks::tst_complex()
     auto m = new MainWindow("m1", MainWindowOption_None);
     auto layout = m->multiSplitterLayout();
     m->resize(3266, 2239);
+    m->show(); // TODO: Remove and see if it crashes
 
     DockWidget::List docks;
 

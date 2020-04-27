@@ -39,6 +39,9 @@ namespace Layouting {
 class ItemContainer;
 class Item;
 class Anchor;
+class Separator;
+
+typedef Separator* (*SeparatorFactoryFunc)(Layouting::Anchor*, QWidget *parent);
 
 enum Location {
     Location_None,
@@ -510,6 +513,8 @@ private:
     /// Returns the positions that each separator should have (x position if Qt::Horizontal, y otherwise)
     QVector<int> requiredSeparatorPositions() const;
     void updateSeparators();
+    void deleteSeparators();
+    void updateSeparators_recursive();
     Anchor* separatorAt(int p) const;
     QVector<double> childPercentages() const;
     mutable bool m_checkSanityScheduled = false;

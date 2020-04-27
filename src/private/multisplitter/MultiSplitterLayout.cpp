@@ -428,7 +428,7 @@ void MultiSplitterLayout::setMinimumSize(QSize sz)
     qCDebug(sizing) << Q_FUNC_INFO << "minSize = " << m_rootItem->minSize();
 }
 
-const ItemList MultiSplitterLayout::items() const
+const Item::List MultiSplitterLayout::items() const
 {
     return m_rootItem->items_recursive();
 }

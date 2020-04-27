@@ -160,7 +160,7 @@ public:
     /**
      * @brief The list of items in this layout.
      */
-    const ItemList items() const;
+    const Layouting::Item::List items() const;
 
     Layouting::Item* rootItem() const;
 

@@ -62,7 +62,7 @@ int DropArea::numFrames() const
 
 Frame *DropArea::frameContainingPos(QPoint globalPos) const
 {
-    const ItemList &items = m_layout->items();
+    const Item::List &items = m_layout->items();
     for (Item *item : items) {
         auto frame = static_cast<Frame*>(item->frame());
         if (!frame || !frame->isVisible()) {

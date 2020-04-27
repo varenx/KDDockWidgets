@@ -25,7 +25,6 @@
 
 #include <QMouseEvent>
 
-using namespace KDDockWidgets;
 using namespace Layouting;
 
 Separator::Separator(Layouting::Anchor *anchor, QWidget *hostWidget)

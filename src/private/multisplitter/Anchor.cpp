@@ -37,11 +37,21 @@ typedef QWidget QWidgetAdapter ; // TODO
 
 bool Anchor::s_isResizing = false;
 
+static SeparatorFactoryFunc s_separatorFactoryFunc = nullptr;
+
+static Separator* createSeparator(Anchor *a, QWidget *parent)
+{
+    if (s_separatorFactoryFunc)
+        return s_separatorFactoryFunc(a, parent);
+
+    return new Separator(a, parent);
+}
+
 Anchor::Anchor(Qt::Orientation orientation, Options options, QWidget *hostWidget)
     : QObject(hostWidget)
     , m_orientation(orientation)
     , m_hostWidget(hostWidget)
-    , m_separatorWidget(/*Config::self().frameworkWidgetFactory()->createSeparator(this, m_hostWidget)*/ new Separator(this, m_hostWidget)) // TODO
+    , m_separatorWidget(createSeparator(this, m_hostWidget))
     , m_options(options)
     , m_lazyResizeRubberBand((options & Option::LazyResize) ? new QRubberBand(QRubberBand::Line, hostWidget) : nullptr)
 {
@@ -50,8 +60,12 @@ Anchor::Anchor(Qt::Orientation orientation, Options options, QWidget *hostWidget
 
 Anchor::~Anchor()
 {
-    m_separatorWidget->setEnabled(false);
-    m_separatorWidget->deleteLater();
+    delete m_separatorWidget;
+}
+
+QWidget *Anchor::hostWidget() const
+{
+    return m_hostWidget;
 }
 
 void Anchor::setGeometry(QRect r)
@@ -99,17 +113,17 @@ Qt::Orientation Anchor::orientation() const
     return m_orientation;
 }
 
-void Anchor::setGeometry(int pos, int length)
+void Anchor::setGeometry(int pos, int pos2, int length)
 {
     QRect newGeo = m_geometry;
     if (isVertical()) {
         // The separator itself is horizontal
-        newGeo.setSize(QSize(Item::separatorThickness(), length));
-        newGeo.moveTo(0, pos);
+        newGeo.setSize(QSize(length, Item::separatorThickness()));
+        newGeo.moveTo(pos2, pos);
     } else {
         // The separator itself is vertical
-        newGeo.setSize(QSize(length, Item::separatorThickness()));
-        newGeo.moveTo(pos, 0);
+        newGeo.setSize(QSize(Item::separatorThickness(), length));
+        newGeo.moveTo(pos, pos2);
     }
 
     setGeometry(newGeo);
@@ -264,4 +278,9 @@ void Anchor::onWidgetMoved(int )
 bool Anchor::isResizing()
 {
     return s_isResizing;
+}
+
+void Anchor::setSeparatorFactoryFunc(SeparatorFactoryFunc func)
+{
+    s_separatorFactoryFunc = func;
 }

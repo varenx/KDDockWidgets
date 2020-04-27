@@ -731,16 +731,58 @@ bool ItemContainer::checkSanity()
             root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Percentages don't add up"
                        << totalPercentage << percentages;
-            const_cast<ItemContainer*>(this)->updateSeparators();
+            const_cast<ItemContainer*>(this)->updateSeparators_recursive();
             qWarning() << Q_FUNC_INFO << childPercentages();
         }
     }
 
     const int numVisibleChildren = visibleChildren.size();
     if (m_separators.size() != qMax(0, numVisibleChildren - 1)) {
-        qWarning() << "Unexpected number of separators" << m_separators.size()
+        root()->dumpLayout();
+        qWarning() << Q_FUNC_INFO << "Unexpected number of separators" << m_separators.size()
                    << numVisibleChildren;
         return false;
+    }
+
+    const QSize expectedSeparatorSize = isVertical() ? QSize(width(), Item::separatorThickness())
+                                                     : QSize(Item::separatorThickness(), height());
+
+    const int pos2 = Layouting::pos(mapToRoot(QPoint(0, 0)), oppositeOrientation(m_orientation));
+
+    for (int i = 0; i < m_separators.size(); ++i) {
+        Anchor *separator = m_separators.at(i);
+        Item *item = visibleChildren.at(i);
+        const int expectedSeparatorPos = mapToRoot(item->m_sizingInfo.edge(m_orientation) + 1, m_orientation);
+
+        if (separator->position() != expectedSeparatorPos) {
+            root()->dumpLayout();
+            qWarning() << Q_FUNC_INFO << "Unexpected separator position" << separator->position()
+                       << "; expected=" << expectedSeparatorPos
+                       << separator << "; this=" << this;
+            return false;
+        }
+
+        if (separator->geometry().size() != expectedSeparatorSize) {
+            qWarning() << Q_FUNC_INFO << "Unexpected separator size" << separator->geometry().size()
+                       << "; expected=" << expectedSeparatorSize
+                       << separator << "; this=" << this;
+            return false;
+        }
+
+        const int separatorPos2 = Layouting::pos(separator->m_geometry.topLeft(), oppositeOrientation(m_orientation));
+        if (Layouting::pos(separator->m_geometry.topLeft(), oppositeOrientation(m_orientation)) != pos2) {
+            root()->dumpLayout();
+            qWarning() << Q_FUNC_INFO << "Unexpected position pos2=" << separatorPos2
+                       << "; expected=" << pos2
+                          << separator << "; this=" << this;
+            return false;
+        }
+
+        if (separator->hostWidget() != hostWidget()) {
+            qWarning() << Q_FUNC_INFO << "Unexpected host widget in separator"
+                       << separator->hostWidget() << "; expected=" << hostWidget();
+            return false;
+        }
     }
 
     return true;
@@ -825,7 +867,7 @@ void ItemContainer::removeItem(Item *item, bool hardRemove)
             growNeighbours(side1Item, side2Item);
             Q_EMIT itemsChanged();
             updateSizeConstraints();
-            updateSeparators();
+            updateSeparators_recursive();
         }
     } else {
         // Not ours, ask parent
@@ -861,7 +903,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
     container->setGeometry(leaf->geometry());
     container->insertItem(leaf, Location_OnTop);
     Q_EMIT itemsChanged();
-    updateSeparators();
+    updateSeparators_recursive();
 
     return container;
 }
@@ -901,7 +943,7 @@ void ItemContainer::insertItem(Item *item, Location loc, AddingOption option)
         insertItem(item, loc, option);
     }
 
-    updateSeparators();
+    updateSeparators_recursive();
     scheduleCheckSanity();
 }
 
@@ -1109,7 +1151,7 @@ void ItemContainer::positionItems()
     positionItems(/*by-ref=*/sizes);
     applyPositions(sizes);
 
-    updateSeparators();
+    updateSeparators_recursive();
 }
 
 void ItemContainer::applyPositions(const SizingInfo::List &sizes)
@@ -1167,6 +1209,7 @@ void ItemContainer::clear()
         delete item;
     }
     m_children.clear();
+    deleteSeparators();
 }
 
 Item *ItemContainer::itemForFrame(const QWidget *w) const
@@ -1251,6 +1294,8 @@ void ItemContainer::setHostWidget(QWidget *host)
     for (Item *item : qAsConst(m_children)) {
         item->setHostWidget(host);
     }
+
+    updateSeparators();
 }
 
 void ItemContainer::setIsVisible(bool)
@@ -1384,7 +1429,7 @@ void ItemContainer::setOrientation(Qt::Orientation o)
 {
     if (o != m_orientation) {
         m_orientation = o;
-        updateSeparators();
+        updateSeparators_recursive();
     }
 }
 
@@ -1554,8 +1599,16 @@ void ItemContainer::dumpLayout(int level)
                        << "; min=" << minSize()
                        << "; this=" << this << beingInserted << visible
                        << "; %=" << childPercentages();
+    int i = 0;
     for (Item *item : qAsConst(m_children)) {
         item->dumpLayout(level + 1);
+        if (item->isVisible()) {
+            if (i < m_separators.size()) {
+                qDebug().noquote() << indent << " - Separator: " << "local.geo=" << mapFromRoot(m_separators.at(i)->geometry())
+                                   << "global.geo=" << m_separators.at(i)->geometry();
+            }
+            ++i;
+        }
     }
 }
 
@@ -1600,7 +1653,7 @@ void ItemContainer::restoreChild(Item *item)
     if (numVisibleChildren() == 1) {
         // The easy case. Child is alone in the layout, occupies everything.
         item->setGeometry_recursive(rect());
-        updateSeparators();
+        updateSeparators_recursive();
         return;
     }
 
@@ -1622,7 +1675,7 @@ void ItemContainer::restoreChild(Item *item)
     }
 
     growItem(item, newLength, GrowthStrategy::BothSidesEqually, /*accountForNewSeparator=*/ true);
-    updateSeparators();
+    updateSeparators_recursive();
 }
 
 void ItemContainer::updateWidgetGeometries()
@@ -2106,6 +2159,9 @@ QVector<int> ItemContainer::requiredSeparatorPositions() const
     positions.reserve(numSeparators);
 
     for (Item *item : m_children) {
+        if (positions.size() == numSeparators)
+            break;
+
         if (item->isVisible()) {
             const int localPos = item->m_sizingInfo.edge(m_orientation) + 1;
             positions << mapToRoot(localPos, m_orientation);
@@ -2119,13 +2175,14 @@ void ItemContainer::updateSeparators()
 {
     const QVector<int> positions = requiredSeparatorPositions();
     const int numSeparators = positions.size();
-    const Item::List items = visibleChildren();
 
     // Instead of just creating N missing ones at the end of the list, let's minimize separators
     // having their position changed, to minimize flicker
     Anchor::List newSeparators;
-    m_separators.clear();
     newSeparators.reserve(numSeparators);
+
+    const int pos2 = isVertical() ? mapToRoot(QPoint(0, 0)).x()
+                                  : mapToRoot(QPoint(0, 0)).y();
 
     for (int position : positions) {
         Anchor *separator = separatorAt(position);
@@ -2137,20 +2194,32 @@ void ItemContainer::updateSeparators()
             separator = new Anchor(m_orientation, Anchor::Option::None, hostWidget());
             newSeparators.push_back(separator);
         }
-        separator->setGeometry(position, oppositeLength());
+        separator->setGeometry(position, pos2, oppositeLength());
     }
 
     // delete what remained, which is unused
-    qDeleteAll(m_separators);
-    m_separators = newSeparators;
+    deleteSeparators();
 
-    // recurse into the children
+    m_separators = newSeparators;
+    updateChildPercentages();
+}
+
+void ItemContainer::deleteSeparators()
+{
+    qDeleteAll(m_separators);
+    m_separators.clear();
+}
+
+void ItemContainer::updateSeparators_recursive()
+{
+    updateSeparators();
+
+    // recurse into the children:
+    const Item::List items = visibleChildren();
     for (Item *item : items) {
         if (auto c = item->asContainer())
-            c->updateSeparators();
+            c->updateSeparators_recursive();
     }
-
-    updateChildPercentages();
 }
 
 Anchor *ItemContainer::separatorAt(int p) const

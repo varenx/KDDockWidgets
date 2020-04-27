@@ -155,7 +155,7 @@ void LastPosition::deserialize(const LayoutSaver::LastPosition &lp)
             layout = mainWindow->multiSplitterLayout();
         }
 
-        const ItemList &items = layout->items();
+        const Item::List &items = layout->items();
         if (itemIndex < items.size()) {
             Item *item = items.at(itemIndex);
             addPlaceholderItem(item);
