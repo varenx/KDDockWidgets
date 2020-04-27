@@ -33,7 +33,6 @@
 using namespace KDDockWidgets;
 using namespace Layouting;
 
-typedef QWidget QWidgetAdapter ; // TODO
 
 bool Anchor::s_isResizing = false;
 
@@ -47,13 +46,15 @@ static Separator* createSeparator(Anchor *a, QWidget *parent)
     return new Separator(a, parent);
 }
 
-Anchor::Anchor(Qt::Orientation orientation, Options options, QWidget *hostWidget)
+Anchor::Anchor(ItemContainer *parentContainer, Qt::Orientation orientation,
+               Options options, QWidget *hostWidget)
     : QObject(hostWidget)
     , m_orientation(orientation)
     , m_hostWidget(hostWidget)
     , m_separatorWidget(createSeparator(this, m_hostWidget))
     , m_options(options)
     , m_lazyResizeRubberBand((options & Option::LazyResize) ? new QRubberBand(QRubberBand::Line, hostWidget) : nullptr)
+    , m_parentContainer(parentContainer)
 {
     connect(this, &QObject::objectNameChanged, m_separatorWidget, &QObject::setObjectName);
 }
@@ -80,32 +81,6 @@ void Anchor::setGeometry(QRect r)
         m_separatorWidget->setVisible(true);
         Q_EMIT geometryChanged(r);
     }
-}
-
-void Anchor::debug_updateItemNames()
-{
-    // I call this in the unit-tests, when running them on gammaray
-
-    m_debug_side1ItemNames.clear();
-    m_debug_side2ItemNames.clear();
-
-    for (Item *item : qAsConst(m_side1Items))
-        m_debug_side1ItemNames += item->objectName() + QStringLiteral("; ");
-
-    for (Item *item : qAsConst(m_side2Items))
-        m_debug_side2ItemNames += item->objectName() + QStringLiteral("; ");
-
-    Q_EMIT debug_itemNamesChanged();
-}
-
-QString Anchor::debug_side1ItemNames() const
-{
-    return m_debug_side1ItemNames;
-}
-
-QString Anchor::debug_side2ItemNames() const
-{
-    return m_debug_side2ItemNames;
 }
 
 Qt::Orientation Anchor::orientation() const
@@ -135,42 +110,10 @@ int Anchor::position() const
     return isVertical() ? topLeft.y() : topLeft.x();
 }
 
-bool Anchor::containsItem(const Item *item, Side side) const
-{
-    switch (side) {
-    case Side1:
-        return m_side1Items.contains(const_cast<Item *>(item));
-    case Side2:
-        return m_side2Items.contains(const_cast<Item *>(item));
-    default:
-        Q_ASSERT(false);
-        return false;
-    }
-}
-
-const QVector<Item *> Anchor::items(Side side) const
-{
-    switch (side) {
-    case Side1:
-        return m_side1Items;
-    case Side2:
-        return m_side2Items;
-    default:
-        Q_ASSERT(false);
-        return {};
-    }
-}
-
 bool Anchor::isBeingDragged() const
 {
     return false; // TODO
     //return m_layout->anchorBeingDragged() == this;
-}
-
-void Anchor::clear()
-{
-    m_side1Items.clear();
-    m_side2Items.clear();
 }
 
 bool Anchor::lazyResizeEnabled() const
@@ -201,7 +144,7 @@ void Anchor::setLazyPosition(int pos)
 
 int Anchor::position(QPoint p) const
 {
-    return isVertical() ? p.x() : p.y();
+    return isVertical() ? p.y() : p.x();
 }
 
 void Anchor::onMousePress()
@@ -227,7 +170,7 @@ void Anchor::onMouseReleased()
     // m_layout->setAnchorBeingDragged(nullptr); TODO
 }
 
-void Anchor::onMouseMoved(QPoint)
+void Anchor::onMouseMoved(QPoint pt)
 {
     if (!isBeingDragged())
         return;
@@ -248,22 +191,22 @@ void Anchor::onMouseMoved(QPoint)
     }
 #endif
 
-  //  const int positionToGoTo = position(pt);
-    /*auto bounds = m_layout->boundPositionsForAnchor(this);
+    const int positionToGoTo = position(pt);
 
-    if (positionToGoTo < bounds.first || positionToGoTo > bounds.second) {
-        // qDebug() << "Out of bounds" << bounds.first << bounds.second << positionToGoTo << "; currentPos" << position() << "; window size" << window()->size();
+    const int minPos = m_parentContainer->minPosForSeparator(this);
+    const int maxPos = m_parentContainer->maxPosForSeparator(this);
+
+    if (positionToGoTo < minPos || positionToGoTo > maxPos)
         return;
-    }
 
     m_lastMoveDirection = positionToGoTo < position() ? Side1
                                                       : (positionToGoTo > position() ? Side2
-                                                                                     : Side_None); // Side_None shouldn't happen though.
+                                                                                     : Side2); // Last case shouldn't happen though.
 
-    if (m_lazyResize)
+    if (/*m_lazyResize*/ false) // TODO
         setLazyPosition(positionToGoTo);
-    else
-        setPosition(positionToGoTo);*/
+    //else
+        //setPosition(positionToGoTo);
 }
 
 void Anchor::onWidgetMoved(int )
