@@ -145,6 +145,7 @@ private Q_SLOTS:
     void tst_containerGetsHidden();
     void tst_minSizeChanges();
     void tst_numSeparators();
+    void tst_separatorMinMax();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -955,6 +956,24 @@ void TestMultiSplitter::tst_numSeparators()
     QCOMPARE(root->separators_recursive().size(), 0);
     root->insertItem(item6, Location_OnLeft, AddingOption_StartHidden);
     QCOMPARE(root->separators_recursive().size(), 0);
+}
+
+void TestMultiSplitter::tst_separatorMinMax()
+{
+    auto root = createRoot();
+    Item *item1 = createItem();
+    Item *item2 = createItem();
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnLeft);
+    item1->setMinSize(QSize(200, 200));
+    item2->setMinSize(QSize(200, 200));
+
+    auto separator = root->separators_recursive().at(0);
+    QCOMPARE(root->minPosForSeparator(separator), 200);
+    QCOMPARE(root->minPosForSeparator_global(separator), 200); // same, since there's no nesting
+
+    QCOMPARE(root->maxPosForSeparator(separator), root->width() - Item::separatorThickness() - 200);
+    QCOMPARE(root->maxPosForSeparator(separator), root->width() - Item::separatorThickness() - 200);
 }
 
 QTEST_MAIN(TestMultiSplitter)

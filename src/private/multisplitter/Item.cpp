@@ -790,6 +790,16 @@ bool ItemContainer::checkSanity()
                        << separator->hostWidget() << "; expected=" << hostWidget();
             return false;
         }
+
+        const int separatorMinPos = minPosForSeparator_global(separator);
+        const int separatorMaxPos = maxPosForSeparator_global(separator);
+        const int separatorPos = separator->position();
+        if (separatorPos < separatorMinPos || separatorPos > separatorMaxPos) {
+            qWarning() << Q_FUNC_INFO << "Invalid bounds for separator, pos="
+                       << separatorPos << "; min=" << separatorMinPos
+                       << "; max=" << separatorMaxPos;
+            return false;
+        }
     }
 
     return true;
@@ -2280,8 +2290,7 @@ int ItemContainer::maxPosForSeparator_global(Anchor *separator) const
     Q_ASSERT(separatorIndex != -1);
 
     const Item::List children = visibleChildren();
-    Q_ASSERT(separatorIndex - 1 >= 0);
-    Item *item = children.at(separatorIndex - 1);
+    Item *item = children.at(separatorIndex);
 
     const int available2 = availableOnSide(item, Side2);
     return separator->position() + available2;
