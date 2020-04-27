@@ -144,6 +144,7 @@ private Q_SLOTS:
     void tst_misc3();
     void tst_containerGetsHidden();
     void tst_minSizeChanges();
+    void tst_numSeparators();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -918,6 +919,42 @@ void TestMultiSplitter::tst_minSizeChanges()
 
     w1->setMinSize(QSize(700, 700));
     QVERIFY(root->checkSanity());
+}
+
+void TestMultiSplitter::tst_numSeparators()
+{
+    auto root = createRoot();
+    Item *item1 = createItem();
+    Item *item2 = createItem();
+    Item *item3 = createItem();
+    Item *item4 = createItem();
+
+    QCOMPARE(root->separators_recursive().size(), 0);
+
+    root->insertItem(item1, Location_OnLeft);
+    QCOMPARE(root->separators_recursive().size(), 0);
+
+    root->insertItem(item2, Location_OnLeft);
+    QCOMPARE(root->separators_recursive().size(), 1);
+
+    root->insertItem(item3, Location_OnTop);
+    QCOMPARE(root->separators_recursive().size(), 2);
+    item3->insertItem(item4, Location_OnRight);
+    QCOMPARE(root->separators_recursive().size(), 3);
+
+    root->removeItem(item3);
+    QCOMPARE(root->separators_recursive().size(), 2);
+
+    root->clear();
+    QCOMPARE(root->separators_recursive().size(), 0);
+
+    Item *item5 = createItem();
+    Item *item6 = createItem();
+
+    root->insertItem(item5, Location_OnLeft);
+    QCOMPARE(root->separators_recursive().size(), 0);
+    root->insertItem(item6, Location_OnLeft, AddingOption_StartHidden);
+    QCOMPARE(root->separators_recursive().size(), 0);
 }
 
 QTEST_MAIN(TestMultiSplitter)
