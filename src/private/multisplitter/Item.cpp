@@ -135,10 +135,24 @@ QVariantMap Item::toVariantMap() const
 {
     QVariantMap result;
 
-    result["sizingInfo"] = m_sizingInfo.toVariantMap();
-    result["isVisible"] = m_isVisible;
+    result[QStringLiteral("sizingInfo")] = m_sizingInfo.toVariantMap();
+    result[QStringLiteral("isVisible")] = m_isVisible;
+    result[QStringLiteral("isContainer")] = isContainer();
 
     return result;
+}
+
+void Item::fillFromVariantMap(const QVariantMap &map)
+{
+    m_sizingInfo.fromVariantMap(map);
+    m_isVisible = map[QStringLiteral("isVisible")].toBool();
+}
+
+Item *Item::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map)
+{
+    auto item = new Item(hostWidget, parent);
+    item->fillFromVariantMap(map);
+    return item;
 }
 
 void Item::ref()
@@ -2308,6 +2322,26 @@ QVariantMap ItemContainer::toVariantMap() const
     return result;
 }
 
+void ItemContainer::fillFromVariantMap(const QVariantMap &map)
+{
+    Item::fillFromVariantMap(map);
+    const QVariantList childrenV = map[QStringLiteral("children")].toList();
+    for (const QVariant &childV : childrenV) {
+        const QVariantMap childMap = childV.toMap();
+        const bool isContainer = childMap[QStringLiteral("isContainer")].toBool();
+        Item *child = isContainer ? new ItemContainer(hostWidget(), this)
+                                  : new Item(hostWidget(), this);
+        child->fillFromVariantMap(childMap);
+    }
+}
+
+ItemContainer *ItemContainer::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map)
+{
+    auto container = new ItemContainer(hostWidget, parent);
+    container->fillFromVariantMap(map);
+    return container;
+}
+
 QVector<Layouting::Anchor*> ItemContainer::separators_recursive() const
 {
     Layouting::Anchor::List separators = m_separators;
@@ -2327,4 +2361,12 @@ QVariantMap SizingInfo::toVariantMap() const
     result[QStringLiteral("minSize")] = sizeToMap(minSize);
     result[QStringLiteral("maxSize")] = sizeToMap(maxSize);
     return result;
+}
+
+void SizingInfo::fromVariantMap(const QVariantMap &map)
+{
+    *this = SizingInfo(); // reset any non-important fields to their default
+    geometry = mapToRect(map[QStringLiteral("geometry")].toMap());
+    minSize = mapToSize(map[QStringLiteral("minSize")].toMap());
+    maxSize = mapToSize(map[QStringLiteral("maxSize")].toMap());
 }

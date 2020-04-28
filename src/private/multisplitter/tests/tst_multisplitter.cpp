@@ -77,6 +77,19 @@ static void fatalWarningsMessageHandler(QtMsgType t, const QMessageLogContext &c
     }
 }
 
+static bool serializeDeserializeTest(const std::unique_ptr<ItemContainer> &root)
+{
+    // Serializes and deserializes a layout
+    if (!root->checkSanity())
+        return false;
+
+    const QVariantMap serialized = root->toVariantMap();
+    ItemContainer root2(root->hostWidget());
+    root2.fillFromVariantMap(serialized);
+
+    return root2.checkSanity();
+}
+
 static std::unique_ptr<ItemContainer> createRoot()
 {
     auto root = new ItemContainer(new QWidget()); // todo WIDGET
@@ -157,6 +170,7 @@ void TestMultiSplitter::tst_createRoot()
     QVERIFY(root->hasOrientation());
     QCOMPARE(root->size(), QSize(1000, 1000));
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertOne()
@@ -173,6 +187,7 @@ void TestMultiSplitter::tst_insertOne()
     QCOMPARE(item->pos(), root->pos());
     QVERIFY(root->hasChildren());
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertThreeSideBySide()
@@ -190,6 +205,7 @@ void TestMultiSplitter::tst_insertThreeSideBySide()
 
     QVERIFY(root->checkSanity());
     QCOMPARE(root->numChildren(), 3);
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertTwoHorizontal()
@@ -200,6 +216,7 @@ void TestMultiSplitter::tst_insertTwoHorizontal()
     root->insertItem(item1, Location_OnLeft);
     item1->insertItem(item2, Location_OnRight);
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertTwoVertical()
@@ -210,6 +227,7 @@ void TestMultiSplitter::tst_insertTwoVertical()
     root->insertItem(item1, Location_OnTop);
     item1->insertItem(item2, Location_OnBottom);
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertOnWidgetItem1()
@@ -230,6 +248,7 @@ void TestMultiSplitter::tst_insertOnWidgetItem1()
 
     QVERIFY(root->checkSanity());
     QCOMPARE(root->numChildren(), 3);
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertOnWidgetItem2()
@@ -250,6 +269,7 @@ void TestMultiSplitter::tst_insertOnWidgetItem2()
 
     QVERIFY(root->checkSanity());
     QCOMPARE(root->numChildren(), 3);
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertOnWidgetItem1DifferentOrientation()
@@ -298,6 +318,7 @@ void TestMultiSplitter::tst_insertOnWidgetItem1DifferentOrientation()
     QCOMPARE(container3->height(), item3->height() + st + item31->height());
 
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertOnWidgetItem2DifferentOrientation()
@@ -349,6 +370,7 @@ void TestMultiSplitter::tst_insertOnWidgetItem2DifferentOrientation()
     QCOMPARE(container3Parent->height(), item3->height() + st + item4->height());
 
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertOnRootDifferentOrientation()
@@ -376,6 +398,7 @@ void TestMultiSplitter::tst_insertOnRootDifferentOrientation()
     QCOMPARE(item4->width(), root->width());
 
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_removeItem1()
@@ -424,6 +447,7 @@ void TestMultiSplitter::tst_removeItem1()
     QPointer<Item> c3 = item3->parentContainer();
     root->removeItem(c3);
     QVERIFY(c3.isNull());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_removeItem2()
@@ -460,6 +484,7 @@ void TestMultiSplitter::tst_minSize()
     QCOMPARE(item2->parentContainer()->minSize(), QSize(200, 300+100+st));
 
     QCOMPARE(root->minSize(), QSize(101+200+st, 300 + 100 + st));
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_resize()
@@ -496,6 +521,7 @@ void TestMultiSplitter::tst_resize()
     QVERIFY(root->checkSanity());
     root->resize({2500, 505});
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_resizeWithConstraints()
@@ -514,6 +540,7 @@ void TestMultiSplitter::tst_resizeWithConstraints()
         root->resize(item1->minSize()); // Still fits
         root->resize(item1->minSize() - QSize(1, 0)); // wouldn't fit
         QCOMPARE(root->size(), item1->size()); // still has the old size
+        QVERIFY(serializeDeserializeTest(root));
     }
 
     {
@@ -534,7 +561,6 @@ void TestMultiSplitter::tst_resizeWithConstraints()
 
         // TODO: Resize further
     }
-
     s_expectedWarning.clear();
 }
 
@@ -620,7 +646,7 @@ void TestMultiSplitter::tst_availableSize()
     QCOMPARE(container4->neighbourSeparatorWaste(item5, Side2, Qt::Vertical), 0);
     QCOMPARE(container4->neighbourSeparatorWaste(item5, Side1, Qt::Horizontal), 0);
     QCOMPARE(container4->neighbourSeparatorWaste(item5, Side2, Qt::Horizontal), 0);
-
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_missingSize()
@@ -647,6 +673,7 @@ void TestMultiSplitter::tst_missingSize()
     root->insertItem(item1, Location_OnTop);
     QCOMPARE(root->missingSizeFor(item2, Qt::Vertical), item1->minSize() + QSize(0, st));
     QCOMPARE(root->missingSizeFor(item3, Qt::Vertical), item1->minSize() + QSize(0, st) + QSize(100, 200));
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_ensureEnoughSize()
@@ -671,6 +698,7 @@ void TestMultiSplitter::tst_ensureEnoughSize()
     root->insertItem(item2, Location_OnRight);
     QVERIFY(root->checkSanity());
     QCOMPARE(root->size(), QSize(item1->minSize().width() + item2->minSize().width() + st, item2->minSize().height()));
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_turnIntoPlaceholder()
@@ -696,6 +724,7 @@ void TestMultiSplitter::tst_turnIntoPlaceholder()
     item2->turnIntoPlaceholder();
     QVERIFY(root->checkSanity());
     QCOMPARE(item3->width(), root->width());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_suggestedRect()
@@ -761,6 +790,7 @@ void TestMultiSplitter::tst_suggestedRect()
     QCOMPARE(topRect.topRight(), item2->geometry().topRight());
     QCOMPARE(bottomRect.bottomLeft(), item2->geometry().bottomLeft());
     QCOMPARE(bottomRect.bottomRight(), item2->geometry().bottomRight());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_insertAnotherRoot()
@@ -784,6 +814,7 @@ void TestMultiSplitter::tst_insertAnotherRoot()
             QVERIFY(item->isVisible());
         }
         QVERIFY(root1->checkSanity());
+        QVERIFY(serializeDeserializeTest(root1));
     }
 
     {
@@ -807,6 +838,7 @@ void TestMultiSplitter::tst_insertAnotherRoot()
             QVERIFY(item->isVisible());
         }
         QVERIFY(root1->checkSanity());
+        QVERIFY(serializeDeserializeTest(root1));
     }
 }
 
@@ -828,6 +860,7 @@ void TestMultiSplitter::tst_misc1()
     root->insertItem(item5, Location_OnLeft);
 
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_misc2()
@@ -857,6 +890,7 @@ void TestMultiSplitter::tst_misc2()
 
     item5->parentContainer()->removeItem(item5);
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_misc3()
@@ -873,6 +907,7 @@ void TestMultiSplitter::tst_misc3()
     root->insertItem(item1, Location_OnLeft);
     root->insertItem(item2, Location_OnRight);
     root->insertItem(root2, Location_OnRight);
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_containerGetsHidden()
@@ -895,6 +930,7 @@ void TestMultiSplitter::tst_containerGetsHidden()
 
     item3->turnIntoPlaceholder();
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_minSizeChanges()
@@ -920,6 +956,7 @@ void TestMultiSplitter::tst_minSizeChanges()
 
     w1->setMinSize(QSize(700, 700));
     QVERIFY(root->checkSanity());
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_numSeparators()
@@ -956,6 +993,7 @@ void TestMultiSplitter::tst_numSeparators()
     QCOMPARE(root->separators_recursive().size(), 0);
     root->insertItem(item6, Location_OnLeft, AddingOption_StartHidden);
     QCOMPARE(root->separators_recursive().size(), 0);
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 void TestMultiSplitter::tst_separatorMinMax()
@@ -974,6 +1012,7 @@ void TestMultiSplitter::tst_separatorMinMax()
 
     QCOMPARE(root->maxPosForSeparator(separator), root->width() - Item::separatorThickness() - 200);
     QCOMPARE(root->maxPosForSeparator(separator), root->width() - Item::separatorThickness() - 200);
+    QVERIFY(serializeDeserializeTest(root));
 }
 
 QTEST_MAIN(TestMultiSplitter)

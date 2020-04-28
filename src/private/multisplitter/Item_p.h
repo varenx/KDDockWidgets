@@ -277,6 +277,7 @@ struct SizingInfo {
     }
 
     QVariantMap toVariantMap() const;
+    void fromVariantMap(const QVariantMap &);
 
     typedef QVector<SizingInfo> List;
     QRect geometry;
@@ -364,8 +365,6 @@ public:
     bool isBeingInserted() const;
     void setBeingInserted(bool);
     ItemContainer *root() const;
-    void deserialize() {}
-    void serialize() {}
     QRect mapToRoot(QRect) const;
     QPoint mapToRoot(QPoint) const;
     int mapToRoot(int p, Qt::Orientation) const;
@@ -390,6 +389,8 @@ public:
     virtual void setHostWidget(QWidget *);
     virtual void updateWidgetGeometries();
     virtual QVariantMap toVariantMap() const;
+    virtual void fillFromVariantMap(const QVariantMap &map);
+    static Item* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map);
 
 Q_SIGNALS:
     void geometryChanged();
@@ -540,7 +541,10 @@ public:
     int maxPosForSeparator(Anchor *) const;
     int minPosForSeparator_global(Anchor *) const;
     int maxPosForSeparator_global(Anchor *) const;
+
     QVariantMap toVariantMap() const override;
+    void fillFromVariantMap(const QVariantMap &map) override;
+    static ItemContainer* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map);
 
 Q_SIGNALS:
     void itemsChanged();
