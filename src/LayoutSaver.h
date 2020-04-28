@@ -109,7 +109,6 @@ public:
     struct LastPosition;
     struct MultiSplitterLayout;
     struct Item;
-    struct Anchor;
     struct Frame;
     struct Placeholder;
     struct ScalingInfo;

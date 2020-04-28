@@ -34,7 +34,6 @@
 #include "Logging_p.h"
 #include "Frame_p.h"
 #include "LastPosition_p.h"
-#include "multisplitter/Anchor_p.h"
 #include "multisplitter/Item_p.h"
 #include "FrameworkWidgetFactory.h"
 
@@ -47,43 +46,10 @@
 #include <memory>
 
 using namespace KDDockWidgets;
+using namespace Layouting;
 
 QHash<QString, LayoutSaver::DockWidget::Ptr> LayoutSaver::DockWidget::s_dockWidgets;
 LayoutSaver::Layout* LayoutSaver::Layout::s_currentLayoutBeingRestored = nullptr;
-
-static QVariantMap sizeToMap(QSize sz)
-{
-    QVariantMap map;
-    map.insert(QStringLiteral("width"), sz.width());
-    map.insert(QStringLiteral("height"), sz.height());
-
-    return map;
-}
-
-static QVariantMap rectToMap(QRect rect)
-{
-    QVariantMap map;
-    map.insert(QStringLiteral("x"), rect.x());
-    map.insert(QStringLiteral("y"), rect.y());
-    map.insert(QStringLiteral("width"), rect.width());
-    map.insert(QStringLiteral("height"), rect.height());
-
-    return map;
-}
-
-static QSize mapToSize(const QVariantMap &map)
-{
-    return { map.value(QStringLiteral("width")).toInt(),
-             map.value(QStringLiteral("height")).toInt() };
-}
-
-static QRect mapToRect(const QVariantMap &map)
-{
-    return QRect(map.value(QStringLiteral("x")).toInt(),
-                 map.value(QStringLiteral("y")).toInt(),
-                 map.value(QStringLiteral("width")).toInt(),
-                 map.value(QStringLiteral("height")).toInt());
-}
 
 class KDDockWidgets::LayoutSaver::Private
 {
@@ -514,10 +480,6 @@ QVariantMap LayoutSaver::Item::toVariantMap() const
     map.insert(QStringLiteral("isPlaceholder"), isPlaceholder);
     map.insert(QStringLiteral("geometry"), rectToMap(geometry));
     map.insert(QStringLiteral("minSize"), sizeToMap(minSize));
-    map.insert(QStringLiteral("indexOfLeftAnchor"), indexOfLeftAnchor);
-    map.insert(QStringLiteral("indexOfTopAnchor"), indexOfTopAnchor);
-    map.insert(QStringLiteral("indexOfRightAnchor"), indexOfRightAnchor);
-    map.insert(QStringLiteral("indexOfBottomAnchor"), indexOfBottomAnchor);
     if (!frame.isNull)
         map.insert(QStringLiteral("frame"), frame.toVariantMap());
 
@@ -530,10 +492,6 @@ void LayoutSaver::Item::fromVariantMap(const QVariantMap &map)
     isPlaceholder = map.value(QStringLiteral("isPlaceholder")).toBool();
     geometry = mapToRect(map.value(QStringLiteral("geometry")).toMap());
     minSize = mapToSize(map.value(QStringLiteral("minSize")).toMap());
-    indexOfLeftAnchor = map.value(QStringLiteral("indexOfLeftAnchor")).toInt();
-    indexOfTopAnchor = map.value(QStringLiteral("indexOfTopAnchor")).toInt();
-    indexOfRightAnchor = map.value(QStringLiteral("indexOfRightAnchor")).toInt();
-    indexOfBottomAnchor = map.value(QStringLiteral("indexOfBottomAnchor")).toInt();
     frame.fromVariantMap(map.value(QStringLiteral("frame"), QVariantMap()).toMap());
 }
 

@@ -39,8 +39,9 @@
   * Bump whenever the format changes, so we can still load old layouts.
   * version 1: Initial version
   * version 2: Introduced MainWindow::screenSize and FloatingWindow::screenSize
+  * version 3: New layouting engine
   */
-#define KDDOCKWIDGETS_SERIALIZATION_VERSION 2
+#define KDDOCKWIDGETS_SERIALIZATION_VERSION 3
 
 
 namespace KDDockWidgets {
@@ -212,10 +213,6 @@ struct LayoutSaver::Item
     bool isPlaceholder;
     QRect geometry;
     QSize minSize;
-    int indexOfLeftAnchor; // TODO: Search and replace. Remove anchors
-    int indexOfTopAnchor;
-    int indexOfRightAnchor;
-    int indexOfBottomAnchor;
     LayoutSaver::Frame frame;
 };
 
@@ -397,11 +394,6 @@ inline QDataStream &operator>>(QDataStream &ds, LayoutSaver::Item *item)
     ds >> item->isPlaceholder;
     ds >> item->geometry;
     ds >> item->minSize;
-
-    ds >> item->indexOfLeftAnchor;
-    ds >> item->indexOfTopAnchor;
-    ds >> item->indexOfRightAnchor;
-    ds >> item->indexOfBottomAnchor;
 
     bool hasFrame;
     ds >> hasFrame;

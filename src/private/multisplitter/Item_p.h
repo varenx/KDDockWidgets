@@ -26,6 +26,7 @@
 #include <QVariant>
 #include <QWidget> // TODO: remove
 #include <QDebug>
+#include <QVariant>
 
 #include <memory>
 
@@ -147,6 +148,40 @@ inline QRect adjustedRect(QRect r, Qt::Orientation o, int p1, int p2)
     return r;
 }
 
+inline QVariantMap sizeToMap(QSize sz)
+{
+    QVariantMap map;
+    map.insert(QStringLiteral("width"), sz.width());
+    map.insert(QStringLiteral("height"), sz.height());
+
+    return map;
+}
+
+inline QVariantMap rectToMap(QRect rect)
+{
+    QVariantMap map;
+    map.insert(QStringLiteral("x"), rect.x());
+    map.insert(QStringLiteral("y"), rect.y());
+    map.insert(QStringLiteral("width"), rect.width());
+    map.insert(QStringLiteral("height"), rect.height());
+
+    return map;
+}
+
+inline QSize mapToSize(const QVariantMap &map)
+{
+    return { map.value(QStringLiteral("width")).toInt(),
+             map.value(QStringLiteral("height")).toInt() };
+}
+
+inline QRect mapToRect(const QVariantMap &map)
+{
+    return QRect(map.value(QStringLiteral("x")).toInt(),
+                 map.value(QStringLiteral("y")).toInt(),
+                 map.value(QStringLiteral("width")).toInt(),
+                 map.value(QStringLiteral("height")).toInt());
+}
+
 inline Qt::Orientation orientationForLocation(Location loc)
 {
     switch (loc) {
@@ -240,6 +275,8 @@ struct SizingInfo {
     void setGeometry(QRect geo) {
         geometry = geo;
     }
+
+    QVariantMap toVariantMap() const;
 
     typedef QVector<SizingInfo> List;
     QRect geometry;
@@ -352,6 +389,7 @@ public:
     void restore(GuestInterface *guest);
     virtual void setHostWidget(QWidget *);
     virtual void updateWidgetGeometries();
+    virtual QVariantMap toVariantMap() const;
 
 Q_SIGNALS:
     void geometryChanged();
@@ -502,6 +540,7 @@ public:
     int maxPosForSeparator(Anchor *) const;
     int minPosForSeparator_global(Anchor *) const;
     int maxPosForSeparator_global(Anchor *) const;
+    QVariantMap toVariantMap() const override;
 
 Q_SIGNALS:
     void itemsChanged();

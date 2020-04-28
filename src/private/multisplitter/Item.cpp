@@ -131,6 +131,16 @@ void Item::updateWidgetGeometries()
         w->setGeometry(mapToRoot(m_sizingInfo.geometry));
 }
 
+QVariantMap Item::toVariantMap() const
+{
+    QVariantMap result;
+
+    result["sizingInfo"] = m_sizingInfo.toVariantMap();
+    result["isVisible"] = m_isVisible;
+
+    return result;
+}
+
 void Item::ref()
 {
     m_refCount++;
@@ -2284,6 +2294,20 @@ int ItemContainer::maxPosForSeparator_global(Anchor *separator) const
     return separator->position() + available2;
 }
 
+QVariantMap ItemContainer::toVariantMap() const
+{
+    QVariantMap result = Item::toVariantMap();
+
+    QVariantList childrenV;
+    childrenV.reserve(m_children.size());
+    for (Item *child : m_children) {
+        childrenV.push_back(child->toVariantMap());
+    }
+
+    result[QStringLiteral("children")] = childrenV;
+    return result;
+}
+
 QVector<Layouting::Anchor*> ItemContainer::separators_recursive() const
 {
     Layouting::Anchor::List separators = m_separators;
@@ -2294,4 +2318,13 @@ QVector<Layouting::Anchor*> ItemContainer::separators_recursive() const
     }
 
     return separators;
+}
+
+QVariantMap SizingInfo::toVariantMap() const
+{
+    QVariantMap result;
+    result[QStringLiteral("geometry")] = rectToMap(geometry);
+    result[QStringLiteral("minSize")] = sizeToMap(minSize);
+    result[QStringLiteral("maxSize")] = sizeToMap(maxSize);
+    return result;
 }
