@@ -319,8 +319,6 @@ public:
     virtual bool isVisible() const;
     virtual void setIsVisible(bool);
     virtual void setGeometry_recursive(QRect rect);
-    Item* neighbour(Side) const;
-
     virtual void dumpLayout(int level = 0);
     void setGeometry(QRect rect);
     SizingInfo m_sizingInfo;
@@ -411,7 +409,6 @@ public:
     int numVisibleChildren() const;
     bool hasChildren() const;
     bool hasVisibleChildren() const;
-    int indexOfChild(const Item *) const;
     int indexOfVisibleChild(const Item *) const;
     void removeItem(Item *, bool hardRemove = true);
     bool isEmpty() const;
@@ -460,7 +457,6 @@ public:
     /// Squeezes all the neighbours (not just the immediate ones).
     void shrinkNeighbours(int index, SizingInfo::List &sizes, int side1Amount, int side2Amount);
 
-    Item *neighbourFor(const Item *, Side) const;
     Item *visibleNeighbourFor(const Item *item, Side side) const;
     QSize availableSize() const;
     int availableLength() const;

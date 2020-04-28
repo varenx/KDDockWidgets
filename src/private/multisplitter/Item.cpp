@@ -444,11 +444,6 @@ void Item::setGeometry_recursive(QRect rect)
     setGeometry(rect);
 }
 
-Item *Item::neighbour(Side side) const
-{
-    return m_parent ? m_parent->neighbourFor(this, side)
-                    : nullptr;
-}
 
 int Item::separatorThickness()
 {
@@ -794,10 +789,13 @@ bool ItemContainer::checkSanity()
         const int separatorMinPos = minPosForSeparator_global(separator);
         const int separatorMaxPos = maxPosForSeparator_global(separator);
         const int separatorPos = separator->position();
-        if (separatorPos < separatorMinPos || separatorPos > separatorMaxPos) {
+        if (separatorPos < separatorMinPos || separatorPos > separatorMaxPos ||
+                separatorMinPos <= 0 || separatorMaxPos <= 0) {
+            root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Invalid bounds for separator, pos="
                        << separatorPos << "; min=" << separatorMinPos
-                       << "; max=" << separatorMaxPos;
+                       << "; max=" << separatorMaxPos
+                       << separator;
             return false;
         }
     }
@@ -831,11 +829,6 @@ int ItemContainer::numVisibleChildren() const
             num++;
     }
     return num;
-}
-
-int ItemContainer::indexOfChild(const Item *item) const
-{
-    return m_children.indexOf(const_cast<Item *>(item));
 }
 
 int ItemContainer::indexOfVisibleChild(const Item *item) const
@@ -909,7 +902,7 @@ ItemContainer *ItemContainer::convertChildToContainer(Item *leaf)
 {
     QScopedValueRollback<bool> converting(m_convertingItemToContainer, true);
 
-    const int index = indexOfChild(leaf);
+    const int index = m_children.indexOf(leaf);
     Q_ASSERT(index != -1);
     auto container = new ItemContainer(hostWidget(), this);
     container->setParentContainer(nullptr);
@@ -1621,8 +1614,10 @@ void ItemContainer::dumpLayout(int level)
         item->dumpLayout(level + 1);
         if (item->isVisible()) {
             if (i < m_separators.size()) {
+                auto separator = m_separators.at(i);
                 qDebug().noquote() << indent << " - Separator: " << "local.geo=" << mapFromRoot(m_separators.at(i)->geometry())
-                                   << "global.geo=" << m_separators.at(i)->geometry();
+                                   << "global.geo=" << separator->geometry()
+                                   << separator;
             }
             ++i;
         }
@@ -1729,16 +1724,6 @@ Item *ItemContainer::visibleNeighbourFor(const Item *item, Side side) const
     return nullptr;
 }
 
-Item *ItemContainer::neighbourFor(const Item *item, Side side) const
-{
-    const int index = indexOfChild(item);
-    const int neighbourIndex = side == Side1 ? index - 1
-                                             : index + 1;
-
-    return (neighbourIndex >= 0 && neighbourIndex < m_children.size()) ? m_children.at(neighbourIndex)
-                                                                       : nullptr;
-}
-
 QSize ItemContainer::availableSize() const
 {
     return size() - this->minSize();
@@ -1783,7 +1768,8 @@ ItemContainer::LengthOnSide ItemContainer::lengthOnSide(const SizingInfo::List &
 
 int ItemContainer::neighboursLengthFor(const Item *item, Side side, Qt::Orientation o) const
 {
-    const int index = indexOfChild(item);
+    const Item::List children = visibleChildren();
+    const int index = children.indexOf(const_cast<Item*>(item));
     if (index == -1) {
         qWarning() << Q_FUNC_INFO << "Couldn't find item" << item;
         return 0;
@@ -1798,11 +1784,11 @@ int ItemContainer::neighboursLengthFor(const Item *item, Side side, Qt::Orientat
             end = index - 1;
         } else {
             start = index + 1;
-            end = m_children.size() - 1;
+            end = children.size() - 1;
         }
 
         for (int i = start; i <= end; ++i)
-            neighbourLength += m_children.at(i)->length(m_orientation);
+            neighbourLength += children.at(i)->length(m_orientation);
 
         return neighbourLength;
     } else {
@@ -1820,7 +1806,8 @@ int ItemContainer::neighboursLengthFor_recursive(const Item *item, Side side, Qt
 
 int ItemContainer::neighboursMinLengthFor(const Item *item, Side side, Qt::Orientation o) const
 {
-    const int index = indexOfChild(item);
+    const Item::List children = visibleChildren();
+    const int index = children.indexOf(const_cast<Item*>(item));
     if (index == -1) {
         qWarning() << Q_FUNC_INFO << "Couldn't find item" << item;
         return 0;
@@ -1835,11 +1822,11 @@ int ItemContainer::neighboursMinLengthFor(const Item *item, Side side, Qt::Orien
             end = index - 1;
         } else {
             start = index + 1;
-            end = m_children.size() - 1;
+            end = children.size() - 1;
         }
 
         for (int i = start; i <= end; ++i)
-            neighbourMinLength += m_children.at(i)->minLength(m_orientation);
+            neighbourMinLength += children.at(i)->minLength(m_orientation);
 
         return neighbourMinLength;
     } else {
@@ -1856,7 +1843,8 @@ int ItemContainer::neighboursMinLengthFor_recursive(const Item *item, Side side,
 
 int ItemContainer::neighbourSeparatorWaste(const Item *item, Side side, Qt::Orientation o) const
 {
-    const int index = indexOfChild(item);
+    const Item::List children = visibleChildren();
+    const int index = children.indexOf(const_cast<Item*>(item));
     if (index == -1) {
         qWarning() << Q_FUNC_INFO << "Couldn't find item" << item;
         return 0;
@@ -1866,7 +1854,7 @@ int ItemContainer::neighbourSeparatorWaste(const Item *item, Side side, Qt::Orie
         if (side == Side1) {
             return index * Item::separatorThickness();
         } else {
-            return (m_children.size() - 1 - index) * Item::separatorThickness();
+            return (children.size() - 1 - index) * Item::separatorThickness();
         }
     } else {
         return 0;

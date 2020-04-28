@@ -155,13 +155,15 @@ int Anchor::position(QPoint p) const
 
 void Anchor::setPosition(int p)
 {
-    QPoint pt = m_geometry.topLeft();
+    QRect geo = m_geometry;
+    QPoint pt = geo.topLeft();
     if (isVertical())
         pt.setY(p);
     else
         pt.setX(p);
 
-    m_geometry.moveTopLeft(pt);
+    geo.moveTopLeft(pt);
+    setGeometry(geo);
 }
 
 void Anchor::onMousePress()
