@@ -288,7 +288,7 @@ private Q_SLOTS:
     void tst_refUnrefItem();
     void tst_addAndReadd();
     void tst_placeholderCount();
-//    void tst_availableLengthForOrientation();
+    void tst_availableLengthForOrientation();
     void tst_setAstCurrentTab();
     void tst_closeShowWhenNoCentralFrame();
     void tst_placeholderDisappearsOnReadd();
@@ -2948,7 +2948,7 @@ void TestDocks::tst_placeholderCount()
 
     Testing::waitForDeleted(fw);
 }
-#if 0
+
 void TestDocks::tst_availableLengthForOrientation()
 {
     EnsureTopLevelsDeleted e;
@@ -2968,16 +2968,16 @@ void TestDocks::tst_availableLengthForOrientation()
     auto dock1 = createDockWidget("dock1", new QPushButton("1"));
     m->addDockWidget(dock1, Location_OnLeft);
 
-    const int dock1MinWidth = layout->itemForFrame(dock1->frame())->minLength(Qt::Vertical);
-    const int dock1MinHeight = layout->itemForFrame(dock1->frame())->minLength(Qt::Horizontal);
+    const int dock1MinWidth = layout->itemForFrame(dock1->frame())->minLength(Qt::Horizontal);
+    const int dock1MinHeight = layout->itemForFrame(dock1->frame())->minLength(Qt::Vertical);
 
     availableWidth = layout->availableLengthForOrientation(Qt::Horizontal);
     availableHeight = layout->availableLengthForOrientation(Qt::Vertical);
-    QCOMPARE(availableWidth, layout->width() - Item::separatorThickness() - dock1MinWidth);
-    QCOMPARE(availableHeight, layout->height() - Item::separatorThickness() -  dock1MinHeight);
+    QCOMPARE(availableWidth, layout->width() - dock1MinWidth);
+    QCOMPARE(availableHeight, layout->height() - dock1MinHeight);
     m->multiSplitterLayout()->checkSanity();
 }
-#endif
+
 void TestDocks::tst_setAstCurrentTab()
 {
     EnsureTopLevelsDeleted e;
