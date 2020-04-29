@@ -279,8 +279,8 @@ private Q_SLOTS:
 //    void tst_rectForDropMath();
     void tst_crash(); // tests some crash I got
     void tst_crash2_data();
-//    void tst_crash2();
-//    void tst_setFloatingWhenWasTabbed();
+    void tst_crash2();
+    void tst_setFloatingWhenWasTabbed();
 //    void tst_setFloatingWhenSideBySide();
 //    void tst_setFloatingAfterDraggedFromTabToSideBySide();
     void tst_setFloatingAFrameWithTabs();
@@ -317,9 +317,8 @@ private Q_SLOTS:
     void tst_startHidden();
     void tst_startClosed();
     void tst_sizeConstraintWarning();
-//    void tst_invalidLayoutAfterRestore();
     void tst_samePositionAfterHideRestore();
-//    void tst_anchorFollowingItselfAssert();
+    void tst_anchorFollowingItselfAssert();
     void tst_positionWhenShown();
 //    void tst_restoreEmpty();
 //    void tst_restoreSimple();
@@ -335,10 +334,11 @@ private Q_SLOTS:
 //    void tst_marginsAfterRestore();
 //    void tst_restoreEmbeddedMainWindow();
 //    void tst_restoreWithDockFactory();
+//    void tst_invalidLayoutAfterRestore();
 
     void tst_resizeWindow_data();
 //    void tst_resizeWindow();
-//    void tst_resizeWindow2();
+    void tst_resizeWindow2();
     void tst_rectForDropCrash();
 
     void tst_tabBarWithHiddenTitleBar_data();
@@ -2401,7 +2401,7 @@ void TestDocks::tst_crash2_data()
     QTest::newRow("true") << true;
     QTest::newRow("false") << false;
 }
-#if 0
+
 void TestDocks::tst_crash2()
 {
     QFETCH(bool, show);
@@ -2581,7 +2581,7 @@ void TestDocks::tst_setFloatingWhenWasTabbed()
     auto window = m.release();
     Testing::waitForDeleted(window);
 }
-
+#if 0
 void TestDocks::tst_setFloatingWhenSideBySide()
 {
     // Tests DockWidget::setFloating(false|true) when side-by-side (it should put it where it was)
@@ -2691,7 +2691,7 @@ void TestDocks::tst_setFloatingAfterDraggedFromTabToSideBySide()
         QCOMPARE(dock2->lastPosition()->layoutItem(), oldItem2);
         Item *item2 = fw2->dropArea()->multiSplitterLayout()->itemForFrame(dock2->frame());
         QVERIFY(item2);
-        QCOMPARE(item2->parentWidget(), fw2->dropArea());
+        QCOMPARE(item2->hostWidget(), fw2->dropArea());
         QVERIFY(!layout->itemForFrame(dock2->frame()));
 
         // Move from tab to bottom
@@ -4413,7 +4413,7 @@ void TestDocks::tst_availableSizeWithPlaceholders()
     docks2.at(2).createdDock->deleteLater();
     QVERIFY(Testing::waitForDeleted(docks2.at(2).createdDock));
 }
-#if 0
+
 void TestDocks::tst_anchorFollowingItselfAssert()
 {
     // 1. Tests that we don't assert in Anchor::setFollowee()
@@ -4445,7 +4445,7 @@ void TestDocks::tst_anchorFollowingItselfAssert()
     docks.at(4).createdDock->deleteLater();
     Testing::waitForDeleted(docks.at(4).createdDock);
 }
-#endif
+
 void TestDocks::tst_positionWhenShown()
 {
     // Tests that when showing a dockwidget it shows in the same position as before
@@ -5218,7 +5218,7 @@ void TestDocks::tst_resizeWindow()
     QCOMPARE(oldWidth2, newWidth2);
     layout->checkSanity();
 }
-
+#endif
 void TestDocks::tst_resizeWindow2()
 {
     // Tests that resizing the width of the main window will never move horizontal anchors
@@ -5231,19 +5231,13 @@ void TestDocks::tst_resizeWindow2()
     m->addDockWidget(dock2, Location_OnBottom);
 
     auto layout = m->multiSplitterLayout();
-    Item *item1 = layout->itemForFrame(dock1->frame());
-    Anchor *anchor = item1->anchorGroup().bottom;
-
+    Anchor *anchor = layout->anchors().at(0);
+    const int oldPosY = anchor->position();
     m->resize(m->width() + 10, m->height());
-
-    const int maxPos = layout->boundPositionForAnchor(anchor, Anchor::Side2);
-    anchor->setPosition(maxPos);
-    m->resize(m->width() + 10, m->height());
-
-    QCOMPARE(anchor->position(), maxPos);
+    QCOMPARE(anchor->position(), oldPosY);
     layout->checkSanity();
 }
-#endif
+
 void TestDocks::tst_addingOptionHiddenTabbed()
 {
     EnsureTopLevelsDeleted e;

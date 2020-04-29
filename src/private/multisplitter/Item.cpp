@@ -604,6 +604,9 @@ void Item::turnIntoPlaceholder()
 
 void Item::updateObjectName()
 {
+    if (isContainer())
+        return;
+
     if (auto w = frame()) {
         setObjectName(w->objectName().isEmpty() ? QStringLiteral("widget") : w->objectName());
     } else if (!isVisible()) {
