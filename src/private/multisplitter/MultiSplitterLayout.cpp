@@ -425,7 +425,7 @@ const Item::List MultiSplitterLayout::items() const
     return m_rootItem->items_recursive();
 }
 
-Item *MultiSplitterLayout::rootItem() const
+ItemContainer *MultiSplitterLayout::rootItem() const
 {
     return m_rootItem;
 }

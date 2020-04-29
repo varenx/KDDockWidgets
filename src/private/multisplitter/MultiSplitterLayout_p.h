@@ -162,7 +162,7 @@ public:
      */
     const Layouting::Item::List items() const;
 
-    Layouting::Item* rootItem() const;
+    Layouting::ItemContainer *rootItem() const;
 
     /**
      * Called by the indicators, so they draw the drop rubber band at the correct place.

@@ -300,7 +300,7 @@ private Q_SLOTS:
     void tst_invalidPlaceholderPosition_data();
     void tst_invalidPlaceholderPosition();
     void tst_invalidAnchorGroup();
-//    void tst_resizeViaAnchorsAfterPlaceholderCreation();
+    void tst_resizeViaAnchorsAfterPlaceholderCreation();
     void tst_negativeAnchorPosition();
     void tst_negativeAnchorPosition2();
     void tst_negativeAnchorPosition3();
@@ -3550,7 +3550,7 @@ void TestDocks::tst_invalidAnchorGroup()
         Testing::waitForDeleted(dock1);
     }
 }
-#if 0
+
 void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
 {
     EnsureTopLevelsDeleted e;
@@ -3558,18 +3558,17 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
     // Stack 1, 2, 3, close 2, close 2
     {
         auto m = createMainWindow(QSize(800, 500), MainWindowOption_None);
+        MultiSplitterLayout *layout = m->multiSplitterLayout();
         auto dock1 = createDockWidget("dock1", new QPushButton("one"));
         auto dock2 = createDockWidget("dock2", new QPushButton("two"));
         auto dock3 = createDockWidget("dock3", new QPushButton("three"));
         m->addDockWidget(dock3, Location_OnTop);
         m->addDockWidget(dock2, Location_OnTop);
         m->addDockWidget(dock1, Location_OnTop);
-
+        QCOMPARE(layout->anchors().size(), 2);
         dock2->close();
         Testing::waitForResize(dock3);
-
-        MultiSplitterLayout *layout = m->multiSplitterLayout();
-        QCOMPARE(layout->anchors().size(), 5);
+        QCOMPARE(layout->anchors().size(), 1);
         layout->checkSanity();
 
         // Cleanup:
@@ -3595,16 +3594,18 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
         Item *item3 = layout->itemForFrame(dock3->frame());
         Item *item4 = layout->itemForFrame(dock4->frame());
 
-        Anchor *anchor = item1->anchorGroup().right;
-        int boundToTheRight = layout->boundPositionForAnchor(anchor, Anchor::Side2);
+        const auto separators = layout->anchors();
+        QCOMPARE(separators.size(), 3);
+
+        Anchor *anchor1 = separators[0];
+        int boundToTheRight = layout->rootItem()->maxPosForSeparator(anchor1);
         int expectedBoundToTheRight = layout->size().width() -
                                       3*Item::separatorThickness() -
-                                      item2->minLength(Qt::Vertical) -
-                                      item3->minLength(Qt::Vertical) -
-                                      item4->minLength(Qt::Vertical);
+                                      item2->minLength(Qt::Horizontal) -
+                                      item3->minLength(Qt::Horizontal) -
+                                      item4->minLength(Qt::Horizontal);
 
         QCOMPARE(boundToTheRight, expectedBoundToTheRight);
-        qDebug() << "boundToRight="<< boundToTheRight;
 
         dock3->close();
         Testing::waitForResize(dock2);
@@ -3614,26 +3615,18 @@ void TestDocks::tst_resizeViaAnchorsAfterPlaceholderCreation()
         QVERIFY(item3->isPlaceholder());
         QVERIFY(!item4->isPlaceholder());
 
-        QCOMPARE(item1->anchorGroup().right, item2->anchorGroup().left);
-        QCOMPARE(item2->anchorGroup().right, item3->anchorGroup().left);
-        QCOMPARE(item3->anchorGroup().right, item4->anchorGroup().left);
-
-        boundToTheRight = layout->boundPositionForAnchor(anchor, Anchor::Side2);
+        boundToTheRight = layout->rootItem()->maxPosForSeparator(anchor1);
         expectedBoundToTheRight = layout->size().width() -
                                   2*Item::separatorThickness() -
-                                  item2->minLength(Qt::Vertical) -
-                                  item4->minLength(Qt::Vertical) ;
+                                  item2->minLength(Qt::Horizontal) -
+                                  item4->minLength(Qt::Horizontal) ;
 
-        qDebug() << "after close boundToRight="<< boundToTheRight << "; anchor=" << anchor;
         QCOMPARE(boundToTheRight, expectedBoundToTheRight);
-        anchor->setPosition(boundToTheRight);
-        layout->checkSanity();
-
         dock3->deleteLater();
         Testing::waitForDeleted(dock3);
     }
 }
-#endif
+
 void TestDocks::tst_negativeAnchorPosition()
 {
     // Tests that we don't hit:
