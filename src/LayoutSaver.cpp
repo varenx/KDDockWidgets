@@ -666,12 +666,29 @@ void LayoutSaver::MultiSplitterLayout::scaleSizes(const ScalingInfo &)
 
 QVariantMap LayoutSaver::MultiSplitterLayout::toVariantMap() const
 {
-    return layout;
+    QVariantMap result;
+    result.insert(QStringLiteral("layout"), layout);
+
+    QVariantList framesV;
+    framesV.reserve(frames.size());
+    for (auto &frame : frames)
+        framesV.push_back(frame.toVariantMap());
+
+    result.insert(QStringLiteral("frames"), framesV);
+    return result;
 }
 
 void LayoutSaver::MultiSplitterLayout::fromVariantMap(const QVariantMap &map)
 {
     layout = map.value(QStringLiteral("layout")).toMap();
+    const QVariantList framesV = map.value(QStringLiteral("frames")).toList();
+    frames.clear();
+    frames.reserve(framesV.size());
+    for (const QVariant &frameV : framesV) {
+        LayoutSaver::Frame frame;
+        frame.fromVariantMap(frameV.toMap());
+        frames.push_back(frame);
+    }
 }
 
 void LayoutSaver::LastPosition::scaleSizes(const ScalingInfo &scalingInfo)

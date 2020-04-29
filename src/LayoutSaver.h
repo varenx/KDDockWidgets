@@ -108,7 +108,6 @@ public:
     struct DockWidget;
     struct LastPosition;
     struct MultiSplitterLayout;
-    struct Item;
     struct Frame;
     struct Placeholder;
     struct ScalingInfo;

@@ -451,6 +451,15 @@ bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &)
 LayoutSaver::MultiSplitterLayout MultiSplitterLayout::serialize() const
 {
     LayoutSaver::MultiSplitterLayout l;
+    l.layout = m_rootItem->toVariantMap();
+    const Item::List items = m_rootItem->items_recursive();
+    l.frames.reserve(items.size());
+    for (Item *item : items) {
+        if (!item->isContainer()) {
+            if (auto frame = qobject_cast<Frame*>(item->frame()))
+                l.frames.push_back(frame->serialize());
+        }
+    }
 
     return l;
 }

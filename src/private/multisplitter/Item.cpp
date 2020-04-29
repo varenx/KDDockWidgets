@@ -139,6 +139,7 @@ QVariantMap Item::toVariantMap() const
     result[QStringLiteral("isVisible")] = m_isVisible;
     result[QStringLiteral("isContainer")] = isContainer();
     result[QStringLiteral("objectName")] = objectName();
+    result[QStringLiteral("hasFrame")] = m_guest != nullptr;
 
     return result;
 }
