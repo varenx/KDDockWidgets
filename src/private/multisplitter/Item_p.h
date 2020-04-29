@@ -542,6 +542,9 @@ public:
     int minPosForSeparator_global(Anchor *) const;
     int maxPosForSeparator_global(Anchor *) const;
 
+    void deleteSeparators_recursive();
+    void updateSeparators_recursive();
+
     QVariantMap toVariantMap() const override;
     void fillFromVariantMap(const QVariantMap &map) override;
     static ItemContainer* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map);
@@ -561,7 +564,6 @@ private:
     QVector<int> requiredSeparatorPositions() const;
     void updateSeparators();
     void deleteSeparators();
-    void updateSeparators_recursive();
     Anchor* separatorAt(int p) const;
     QVector<double> childPercentages() const;
     mutable bool m_checkSanityScheduled = false;

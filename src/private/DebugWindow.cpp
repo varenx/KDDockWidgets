@@ -253,33 +253,6 @@ DebugWindow::DebugWindow(QWidget *parent)
         });
     });
 
-    button = new QPushButton(this);
-    button->setText(QStringLiteral("Convert old layout to JSON"));
-    layout->addWidget(button);
-    connect(button, &QPushButton::clicked, this, [this] {
-        const QString filename = QFileDialog::getOpenFileName(this);
-        if (filename.isEmpty())
-            return;
-
-        QFile f(filename);
-        if (!f.open(QIODevice::ReadOnly)) {
-            qWarning() << "Failed to open file" << filename;
-            return;
-        }
-
-        const QByteArray oldData = f.readAll();
-        LayoutSaver::Layout savedLayout;
-        savedLayout.fillFrom(oldData);
-        const QByteArray jsonData = savedLayout.toJson();
-        QFile f2(QStringLiteral("%1.json").arg(filename));
-        if (!f2.open(QIODevice::WriteOnly)) {
-            qWarning() << "Failed to open file for writing" << filename;
-            return;
-        }
-
-        f2.write(jsonData);
-    });
-
 #ifdef Q_OS_WIN
     button = new QPushButton(this);
     button->setText(QStringLiteral("Dump native windows"));

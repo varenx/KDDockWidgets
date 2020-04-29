@@ -138,6 +138,7 @@ QVariantMap Item::toVariantMap() const
     result[QStringLiteral("sizingInfo")] = m_sizingInfo.toVariantMap();
     result[QStringLiteral("isVisible")] = m_isVisible;
     result[QStringLiteral("isContainer")] = isContainer();
+    result[QStringLiteral("objectName")] = objectName();
 
     return result;
 }
@@ -146,6 +147,7 @@ void Item::fillFromVariantMap(const QVariantMap &map)
 {
     m_sizingInfo.fromVariantMap(map);
     m_isVisible = map[QStringLiteral("isVisible")].toBool();
+    setObjectName(map[QStringLiteral("objectName")].toString());
 }
 
 Item *Item::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map)
@@ -248,6 +250,7 @@ void Item::setParentContainer(ItemContainer *parent)
         if (parent) {
             connect(this, &Item::minSizeChanged, parent, &ItemContainer::onChildMinSizeChanged);
             connect(this, &Item::visibleChanged, m_parent, &ItemContainer::onChildVisibleChanged);
+
             setHostWidget(parent->hostWidget());
             updateWidgetGeometries();
 
@@ -1325,11 +1328,12 @@ Item::List ItemContainer::items_recursive() const
 void ItemContainer::setHostWidget(QWidget *host)
 {
     Item::setHostWidget(host);
+    deleteSeparators_recursive();
     for (Item *item : qAsConst(m_children)) {
         item->setHostWidget(host);
     }
 
-    updateSeparators();
+    updateSeparators_recursive();
 }
 
 void ItemContainer::setIsVisible(bool)
@@ -2232,6 +2236,17 @@ void ItemContainer::deleteSeparators()
 {
     qDeleteAll(m_separators);
     m_separators.clear();
+}
+
+void ItemContainer::deleteSeparators_recursive()
+{
+    deleteSeparators();
+
+    // recurse into the children:
+    for (Item *item : m_children) {
+        if (auto c = item->asContainer())
+            c->deleteSeparators_recursive();
+    }
 }
 
 void ItemContainer::updateSeparators_recursive()

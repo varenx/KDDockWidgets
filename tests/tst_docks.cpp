@@ -246,10 +246,9 @@ private Q_SLOTS:
     void tst_closeAllDockWidgets();
     void tst_dockDockWidgetNested();
     void tst_dockFloatingWindowNested();
-//    void tst_anchorsFromTo();
     void tst_dockWindowWithTwoSideBySideFramesIntoCenter();
-//    void tst_dockWindowWithTwoSideBySideFramesIntoLeft();
-//    void tst_dockWindowWithTwoSideBySideFramesIntoRight();
+    void tst_dockWindowWithTwoSideBySideFramesIntoLeft();
+    void tst_dockWindowWithTwoSideBySideFramesIntoRight();
     void tst_posAfterLeftDetach();
     void tst_propagateMinSize();
     void tst_dockInternal();
@@ -811,98 +810,6 @@ void TestDocks::tst_dockFloatingWindowNested()
     // TODO
 }
 
-#if 0
-
-void TestDocks::tst_anchorsFromTo()
-{
-    EnsureTopLevelsDeleted e;
-
-    DockWidgetBase *centralDock;
-    DockWidgetBase *leftDock;
-    DockWidgetBase *rightDock;
-    auto mainwindow = createSimpleNestedMainWindow(&centralDock, &leftDock, &rightDock);
-    auto dropArea = mainwindow->dropArea();
-    QVERIFY(dropArea->checkSanity());
-
-    auto nonStaticAnchors = dropArea->nonStaticAnchors();
-    AnchorGroup staticAnchors = dropArea->multiSplitterLayout()->staticAnchorGroup();
-
-    QVERIFY(staticAnchors.isValid());
-    QCOMPARE(nonStaticAnchors.size(), 2);
-
-    for (Anchor *anchor : nonStaticAnchors) {
-        QCOMPARE(anchor->orientation(), Qt::Vertical);
-        QCOMPARE(anchor->from(), staticAnchors.top);
-        QCOMPARE(anchor->to(), staticAnchors.bottom);
-    }
-
-    qDebug() << "Adding the bottom one";
-    QVERIFY(dropArea->checkSanity());
-    DockWidgetBase *bottom = createAndNestDockWidget(dropArea, nullptr, KDDockWidgets::Location_OnBottom);
-    QVERIFY(dropArea->checkSanity());
-    nonStaticAnchors = dropArea->nonStaticAnchors();
-    auto horizAnchors = dropArea->multiSplitterLayout()->anchors(Qt::Horizontal);
-    auto vertAnchors = dropArea->multiSplitterLayout()->anchors(Qt::Vertical);
-    QCOMPARE(nonStaticAnchors.size(), 3);
-    QCOMPARE(horizAnchors.size(), 1);
-    QCOMPARE(vertAnchors.size(), 2);
-
-    for (Anchor *anchor : horizAnchors) {
-        QCOMPARE(anchor->orientation(), Qt::Horizontal);
-        QCOMPARE(anchor->from(), staticAnchors.left);
-        QCOMPARE(anchor->to(), staticAnchors.right);
-    }
-
-    for (Anchor *anchor : vertAnchors) {
-        QCOMPARE(anchor->orientation(), Qt::Vertical);
-        QCOMPARE(anchor->from(), staticAnchors.top);
-        QCOMPARE(anchor->to(), horizAnchors.at(0));
-    }
-
-    // Float bottom, check if horizontal anchor is deleted, and from/to updated
-    Anchor *follower = horizAnchors.at(0);
-    auto window = bottom->frame()->titleBar()->makeWindow();
-    QVERIFY(dropArea->checkSanity());
-    QVERIFY(qobject_cast<FloatingWindow *>(window->floatingWindow()));
-    QVERIFY(follower->isFollowing());
-
-    nonStaticAnchors = dropArea->nonStaticAnchors();
-    horizAnchors = dropArea->multiSplitterLayout()->anchors(Qt::Horizontal, false, false);
-    vertAnchors = dropArea->multiSplitterLayout()->anchors(Qt::Vertical, false, false);
-    QCOMPARE(nonStaticAnchors.size(), 2);
-    QCOMPARE(horizAnchors.size(), 0);
-    QCOMPARE(vertAnchors.size(), 2);
-    for (Anchor *anchor : qAsConst(vertAnchors)) {
-        QCOMPARE(anchor->orientation(), Qt::Vertical);
-        if (!anchor->isValid()) {
-            qDebug() << "anchors:" << anchor->to() << anchor->from();
-            QVERIFY(false);
-        }
-
-        QCOMPARE(anchor->from(), staticAnchors.top);
-        QCOMPARE(anchor->to(), follower);
-    }
-
-    mainwindow.reset();
-    delete window->floatingWindow();
-
-    {
-        // Test a case where the to wasn't correct
-        auto m = createMainWindow({400, 400});
-        DropArea *dropArea = m->dropArea();
-
-        auto dock = createAndNestDockWidget(dropArea, nullptr, KDDockWidgets::Location_OnRight);
-        createAndNestDockWidget(dropArea, dock->frame(), KDDockWidgets::Location_OnBottom);
-
-        const auto anchors = dropArea->nonStaticAnchors();
-        QCOMPARE(anchors.size(), 2);
-        QCOMPARE(anchors[1]->orientation(), Qt::Horizontal);
-        QCOMPARE(anchors[1]->to()->objectName(), QString("right"));
-        QCOMPARE(anchors[1]->from(), anchors[0]);
-    }
-}
-#endif
-
 void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoCenter()
 {
     EnsureTopLevelsDeleted e;
@@ -926,13 +833,14 @@ void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoCenter()
     QVERIFY(Testing::waitForDeleted(fw));
     delete fw2;
 }
-#if 0
+
 void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoLeft()
 {
     EnsureTopLevelsDeleted e;
 
     auto fw = createFloatingWindow();
     fw->setObjectName("fw1");
+
     auto dock2 = createDockWidget("doc2", Qt::red);
     nestDockWidget(dock2, fw->dropArea(), nullptr, KDDockWidgets::Location_OnLeft);
     QCOMPARE(fw->frames().size(), 2);
@@ -945,17 +853,6 @@ void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoLeft()
     dragFloatingWindowTo(fw, fw2->dropArea(), DropIndicatorOverlayInterface::DropLocation_Left);
     QCOMPARE(fw2->frames().size(), 3);
 
-    auto anchors = fw2->dropArea()->nonStaticAnchors();
-    QCOMPARE(anchors.size(), 2);
-    QCOMPARE(anchors[0]->orientation(), Qt::Vertical);
-    QCOMPARE(anchors[1]->orientation(), Qt::Vertical);
-
-    QCOMPARE(anchors[0]->from()->objectName(), QString("top"));
-    QCOMPARE(anchors[0]->to()->objectName(), QString("bottom"));
-    QCOMPARE(anchors[1]->from()->objectName(), QString("top"));
-    QCOMPARE(anchors[1]->to()->objectName(), QString("bottom"));
-
-    QVERIFY(anchors[1]->position() < anchors[0]->position());
     fw2->dropArea()->debug_updateItemNamesForGammaray();
     QVERIFY(fw2->dropArea()->checkSanity());
 
@@ -978,25 +875,12 @@ void TestDocks::tst_dockWindowWithTwoSideBySideFramesIntoRight()
 
     dragFloatingWindowTo(fw, fw2->dropArea(), DropIndicatorOverlayInterface::DropLocation_Right); // Outter right instead of Left
     QCOMPARE(fw2->frames().size(), 3);
-
-    auto anchors = fw2->dropArea()->nonStaticAnchors();
-    QCOMPARE(anchors.size(), 2);
-    QCOMPARE(anchors[0]->orientation(), Qt::Vertical);
-    QCOMPARE(anchors[1]->orientation(), Qt::Horizontal);
-
-    QCOMPARE(anchors[0]->from()->objectName(), QString("top"));
-    QCOMPARE(anchors[0]->to()->objectName(), QString("bottom"));
-    QCOMPARE(anchors[1]->from(), anchors[0]);
-    QCOMPARE(anchors[1]->to()->objectName(), QString("right"));
-
-    QVERIFY(anchors[1]->position() > 0);
-    QVERIFY(anchors[1]->position() < fw2->height());
     QVERIFY(fw2->dropArea()->checkSanity());
 
     fw2->deleteLater();
     Testing::waitForDeleted(fw2);
 }
-#endif
+
 void TestDocks::tst_posAfterLeftDetach()
 {
     {

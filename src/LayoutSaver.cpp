@@ -354,20 +354,6 @@ bool LayoutSaver::Layout::isValid() const
     return true;
 }
 
-bool LayoutSaver::Layout::fillFrom(const QByteArray &serialized)
-{
-    QDataStream ds(serialized);
-    ds >> this;
-
-    if (serializationVersion > KDDOCKWIDGETS_SERIALIZATION_VERSION) {
-        qWarning() << "Unsupported serialization version. Got=" << serializationVersion
-                   << "; expected equal or less than" << KDDOCKWIDGETS_SERIALIZATION_VERSION;
-        return false;
-    }
-
-    return true;
-}
-
 QByteArray LayoutSaver::Layout::toJson() const
 {
     QJsonDocument doc = QJsonDocument::fromVariant(toVariantMap());
@@ -454,45 +440,6 @@ LayoutSaver::MainWindow LayoutSaver::Layout::mainWindowForIndex(int index) const
         return {};
 
     return mainWindows.at(index);
-}
-
-bool LayoutSaver::Item::isValid(const LayoutSaver::MultiSplitterLayout &) const
-{
-    if (!frame.isValid())
-        return false;
-
-    // TODO
-
-    return true;
-}
-
-void LayoutSaver::Item::scaleSizes(const ScalingInfo &scalingInfo)
-{
-    scalingInfo.applyFactorsTo(geometry);
-    if (!frame.isNull)
-        frame.scaleSizes(scalingInfo);
-}
-
-QVariantMap LayoutSaver::Item::toVariantMap() const
-{
-    QVariantMap map;
-    map.insert(QStringLiteral("objectName"), objectName);
-    map.insert(QStringLiteral("isPlaceholder"), isPlaceholder);
-    map.insert(QStringLiteral("geometry"), rectToMap(geometry));
-    map.insert(QStringLiteral("minSize"), sizeToMap(minSize));
-    if (!frame.isNull)
-        map.insert(QStringLiteral("frame"), frame.toVariantMap());
-
-    return map;
-}
-
-void LayoutSaver::Item::fromVariantMap(const QVariantMap &map)
-{
-    objectName = map.value(QStringLiteral("objectName")).toString();
-    isPlaceholder = map.value(QStringLiteral("isPlaceholder")).toBool();
-    geometry = mapToRect(map.value(QStringLiteral("geometry")).toMap());
-    minSize = mapToSize(map.value(QStringLiteral("minSize")).toMap());
-    frame.fromVariantMap(map.value(QStringLiteral("frame"), QVariantMap()).toMap());
 }
 
 bool LayoutSaver::Frame::isValid() const
@@ -699,42 +646,32 @@ void LayoutSaver::MainWindow::fromVariantMap(const QVariantMap &map)
 
 bool LayoutSaver::MultiSplitterLayout::isValid() const
 {
-    for (auto &item : items) {
-        if (!item.isValid(*this))
-            return false;
-    }
+    if (layout.isEmpty())
+        return false;
 
-    if (!size.isValid()) {
+    /*if (!size.isValid()) {
         qWarning() << Q_FUNC_INFO << "Invalid size";
         return false;
-    }
+    }*/
 
     return true;
 }
 
-void LayoutSaver::MultiSplitterLayout::scaleSizes(const ScalingInfo &scalingInfo)
+void LayoutSaver::MultiSplitterLayout::scaleSizes(const ScalingInfo &)
 {
-    scalingInfo.applyFactorsTo(/*by-ref*/size);
-    for (LayoutSaver::Item &item : items)
-        item.scaleSizes(scalingInfo);
+    // scalingInfo.applyFactorsTo(/*by-ref*/size);
+    //for (LayoutSaver::Item &item : items) TODO
+    //    item.scaleSizes(scalingInfo);
 }
 
 QVariantMap LayoutSaver::MultiSplitterLayout::toVariantMap() const
 {
-    QVariantMap map;
-
-    map.insert(QStringLiteral("items"), toVariantList<LayoutSaver::Item>(items));
-    map.insert(QStringLiteral("minSize"), sizeToMap(minSize));
-    map.insert(QStringLiteral("size"), sizeToMap(size));
-
-    return map;
+    return layout;
 }
 
 void LayoutSaver::MultiSplitterLayout::fromVariantMap(const QVariantMap &map)
 {
-    items = fromVariantList<LayoutSaver::Item>(map.value(QStringLiteral("items")).toList());
-    minSize = mapToSize(map.value(QStringLiteral("minSize")).toMap());
-    size = mapToSize(map.value(QStringLiteral("size")).toMap());
+    layout = map.value(QStringLiteral("layout")).toMap();
 }
 
 void LayoutSaver::LastPosition::scaleSizes(const ScalingInfo &scalingInfo)

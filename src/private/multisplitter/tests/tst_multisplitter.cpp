@@ -159,6 +159,7 @@ private Q_SLOTS:
     void tst_minSizeChanges();
     void tst_numSeparators();
     void tst_separatorMinMax();
+    void tst_separatorRecreatedOnParentChange();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -1013,6 +1014,24 @@ void TestMultiSplitter::tst_separatorMinMax()
     QCOMPARE(root->maxPosForSeparator(separator), root->width() - Item::separatorThickness() - 200);
     QCOMPARE(root->maxPosForSeparator(separator), root->width() - Item::separatorThickness() - 200);
     QVERIFY(serializeDeserializeTest(root));
+}
+
+void TestMultiSplitter::tst_separatorRecreatedOnParentChange()
+{
+    auto root1 = createRoot();
+    Item *item1 = createItem();
+    Item *item2 = createItem();
+    root1->insertItem(item1, Location_OnLeft);
+    root1->insertItem(item2, Location_OnLeft);
+
+    auto root2 = createRoot();
+    Item *item21 = createItem();
+    Item *item22= createItem();
+    root2->insertItem(item21, Location_OnLeft);
+    root2->insertItem(item22, Location_OnLeft);
+
+    root1->insertItem(root2.get(), Location_OnTop);
+    QVERIFY(root1->checkSanity());
 }
 
 QTEST_MAIN(TestMultiSplitter)

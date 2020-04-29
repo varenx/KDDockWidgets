@@ -432,13 +432,7 @@ Item *MultiSplitterLayout::rootItem() const
 
 QRect MultiSplitterLayout::rectForDrop(const QWidgetOrQuick *widget, Location location, const Item *relativeTo) const
 {
-    // TODO
-    Q_UNUSED(widget);
-    Q_UNUSED(location);
-    Q_UNUSED(relativeTo);
-
     const QSize min = Layouting::widgetMinSize(widget);
-
 
     if (relativeTo) {
         ItemContainer *container = relativeTo->parentContainer();
@@ -457,5 +451,6 @@ bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &)
 LayoutSaver::MultiSplitterLayout MultiSplitterLayout::serialize() const
 {
     LayoutSaver::MultiSplitterLayout l;
+
     return l;
 }
