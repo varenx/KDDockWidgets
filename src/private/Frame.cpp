@@ -499,6 +499,9 @@ bool Frame::event(QEvent *e)
 
 Frame *Frame::deserialize(const LayoutSaver::Frame &f)
 {
+    if (!f.isValid())
+        return nullptr;
+
     auto frame = Config::self().frameworkWidgetFactory()->createFrame(/*parent=*/nullptr, FrameOptions(f.options));
     frame->setObjectName(f.objectName);
 

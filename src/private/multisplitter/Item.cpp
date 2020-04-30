@@ -1683,6 +1683,15 @@ void ItemContainer::updateChildPercentages()
     }
 }
 
+void ItemContainer::updateChildPercentages_recursive()
+{
+    updateChildPercentages();
+    for (Item *item : m_children) {
+        if (auto c = item->asContainer())
+            c->updateChildPercentages_recursive();
+    }
+}
+
 QVector<double> ItemContainer::childPercentages() const
 {
     QVector<double> percentages;
@@ -2363,7 +2372,12 @@ void ItemContainer::fillFromVariantMap(const QVariantMap &map,
         Item *child = isContainer ? new ItemContainer(hostWidget(), this)
                                   : new Item(hostWidget(), this);
         child->fillFromVariantMap(childMap, widgets);
+        m_children.push_back(child);
+    }
 
+    if (isRoot()) {
+        updateChildPercentages_recursive();
+        updateSeparators_recursive();
     }
 }
 

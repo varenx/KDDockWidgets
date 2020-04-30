@@ -473,6 +473,7 @@ public:
     QVariantList items() const;
     void dumpLayout(int level = 0) override;
     void updateChildPercentages();
+     void updateChildPercentages_recursive();
     void restoreChild(Item *);
     void updateWidgetGeometries() override;
     int oppositeLength() const;

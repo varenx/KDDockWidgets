@@ -321,6 +321,7 @@ private Q_SLOTS:
     void tst_anchorFollowingItselfAssert();
     void tst_positionWhenShown();
     void tst_restoreEmpty();
+    void tst_restoreSimplest();
     void tst_restoreSimple();
 //    void tst_restoreNestedAndTabbed();
 //    void tst_restoreCentralFrame();
@@ -1136,6 +1137,22 @@ void TestDocks::tst_restoreEmpty()
     QCOMPARE(layout->count(), 0);
     QCOMPARE(m->size(), oldSize);
     QVERIFY(layout->checkSanity());
+}
+
+void TestDocks::tst_restoreSimplest()
+{
+   EnsureTopLevelsDeleted e;
+    // Tests restoring a very simple layout, composed of just 1 docked widget
+   auto m = createMainWindow(QSize(800, 500), MainWindowOption_None);
+   //auto layout = m->multiSplitterLayout();
+   auto dock1 = createDockWidget("one", new QTextEdit());
+   m->addDockWidget(dock1, Location_OnTop);
+
+   LayoutSaver saver;
+   QVERIFY(saver.saveToFile(QStringLiteral("layout.json")));
+   QTest::qWait(200);
+   qDebug() << "About to restore";
+   QVERIFY(saver.restoreFromFile(QStringLiteral("layout.json")));
 }
 
 void TestDocks::tst_restoreSimple()

@@ -444,11 +444,16 @@ LayoutSaver::MainWindow LayoutSaver::Layout::mainWindowForIndex(int index) const
 
 bool LayoutSaver::Frame::isValid() const
 {
-    if (!isNull)
+    if (isNull)
         return true;
 
     if (!geometry.isValid()) {
         qWarning() << Q_FUNC_INFO << "Invalid geometry";
+        return false;
+    }
+
+    if (id.isEmpty()) {
+        qWarning() << Q_FUNC_INFO << "Invalid id";
         return false;
     }
 
@@ -478,6 +483,7 @@ void LayoutSaver::Frame::scaleSizes(const ScalingInfo &scalingInfo)
 QVariantMap LayoutSaver::Frame::toVariantMap() const
 {
     QVariantMap map;
+    map.insert(QStringLiteral("id"), id);
     map.insert(QStringLiteral("isNull"), isNull);
     map.insert(QStringLiteral("objectName"), objectName);
     map.insert(QStringLiteral("geometry"), rectToMap(geometry));
@@ -497,6 +503,7 @@ void LayoutSaver::Frame::fromVariantMap(const QVariantMap &map)
         return;
     }
 
+    id = map.value(QStringLiteral("id")).toString();
     isNull = map.value(QStringLiteral("isNull")).toBool();
     objectName = map.value(QStringLiteral("objectName")).toString();
     geometry = mapToRect(map.value(QStringLiteral("geometry")).toMap());

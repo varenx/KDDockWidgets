@@ -451,6 +451,7 @@ bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &l)
     QHash<QString, GuestInterface*> frames;
     for (const LayoutSaver::Frame &frame : qAsConst(l.frames)) {
         Frame *f = Frame::deserialize(frame);
+        Q_ASSERT(!frame.id.isEmpty());
         frames.insert(frame.id, f);
     }
 
