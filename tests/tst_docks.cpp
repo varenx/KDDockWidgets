@@ -320,8 +320,8 @@ private Q_SLOTS:
     void tst_samePositionAfterHideRestore();
     void tst_anchorFollowingItselfAssert();
     void tst_positionWhenShown();
-//    void tst_restoreEmpty();
-//    void tst_restoreSimple();
+    void tst_restoreEmpty();
+    void tst_restoreSimple();
 //    void tst_restoreNestedAndTabbed();
 //    void tst_restoreCentralFrame();
 //    void tst_restoreCrash();
@@ -1119,24 +1119,23 @@ void TestDocks::tst_propagateSizeHonoursMinSize()
     min1 = widgetMinLength(dock1, Qt::Vertical);
     QVERIFY(dock1->height() >= min1);
 }
-#if 0
+
 void TestDocks::tst_restoreEmpty()
 {
     EnsureTopLevelsDeleted e;
 
-    // Create a main window, with a left dock, save it to disk.
+    // Create an empty main window, save it to disk.
     auto m = createMainWindow(QSize(800, 500), MainWindowOption_None);
     auto layout = m->multiSplitterLayout();
-    auto oldRight = layout->m_rightAnchor;
-    const int oldRightPos = oldRight->position();
     LayoutSaver saver;
+    const QSize oldSize = m->size();
     QVERIFY(saver.saveToFile(QStringLiteral("layout.json")));
     saver.restoreFromFile(QStringLiteral("layout.json"));
     QVERIFY(m->multiSplitterLayout()->checkSanity());
-    QVERIFY(oldRight != layout->m_rightAnchor); // It got new static-anchors
-    QVERIFY(oldRightPos == layout->m_rightAnchor->position());
-    QCOMPARE(layout->anchors().size(), 4);
+    QCOMPARE(layout->anchors().size(), 0);
     QCOMPARE(layout->count(), 0);
+    QCOMPARE(m->size(), oldSize);
+    QVERIFY(layout->checkSanity());
 }
 
 void TestDocks::tst_restoreSimple()
@@ -1205,7 +1204,7 @@ void TestDocks::tst_restoreSimple()
     dock3->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock3));
 }
-
+#if 0
 void TestDocks::tst_restoreNestedAndTabbed()
 {
     // Just a more involved test

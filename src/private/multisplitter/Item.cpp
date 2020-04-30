@@ -139,22 +139,33 @@ QVariantMap Item::toVariantMap() const
     result[QStringLiteral("isVisible")] = m_isVisible;
     result[QStringLiteral("isContainer")] = isContainer();
     result[QStringLiteral("objectName")] = objectName();
-    result[QStringLiteral("hasFrame")] = m_guest != nullptr;
+    if (m_guest)
+        result[QStringLiteral("guestId")] = QString::number(qint64(m_guest->asWidget())); // just for coorelation purposes when restoring
 
     return result;
 }
 
-void Item::fillFromVariantMap(const QVariantMap &map)
+void Item::fillFromVariantMap(const QVariantMap &map, const QHash<QString, GuestInterface *> &widgets)
 {
     m_sizingInfo.fromVariantMap(map);
     m_isVisible = map[QStringLiteral("isVisible")].toBool();
     setObjectName(map[QStringLiteral("objectName")].toString());
+
+    const QString guestId = map.value(QStringLiteral("guestId")).toString();
+    if (!guestId.isEmpty()) {
+        if (GuestInterface *guest = widgets.value(guestId)) {
+            m_guest = guest;
+        } else {
+            qWarning() << Q_FUNC_INFO << "Couldn't find frame to restore for" << this;
+        }
+    }
 }
 
-Item *Item::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map)
+Item *Item::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent,
+                                 const QVariantMap &map, const QHash<QString, GuestInterface *> &widgets)
 {
     auto item = new Item(hostWidget, parent);
-    item->fillFromVariantMap(map);
+    item->fillFromVariantMap(map, widgets);
     return item;
 }
 
@@ -2341,23 +2352,26 @@ QVariantMap ItemContainer::toVariantMap() const
     return result;
 }
 
-void ItemContainer::fillFromVariantMap(const QVariantMap &map)
+void ItemContainer::fillFromVariantMap(const QVariantMap &map,
+                                       const QHash<QString, GuestInterface*> &widgets)
 {
-    Item::fillFromVariantMap(map);
+    Item::fillFromVariantMap(map, widgets);
     const QVariantList childrenV = map[QStringLiteral("children")].toList();
     for (const QVariant &childV : childrenV) {
         const QVariantMap childMap = childV.toMap();
         const bool isContainer = childMap[QStringLiteral("isContainer")].toBool();
         Item *child = isContainer ? new ItemContainer(hostWidget(), this)
                                   : new Item(hostWidget(), this);
-        child->fillFromVariantMap(childMap);
+        child->fillFromVariantMap(childMap, widgets);
+
     }
 }
 
-ItemContainer *ItemContainer::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map)
+ItemContainer *ItemContainer::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent,
+                                                   const QVariantMap &map, const QHash<QString, GuestInterface*> &widgets)
 {
     auto container = new ItemContainer(hostWidget, parent);
-    container->fillFromVariantMap(map);
+    container->fillFromVariantMap(map, widgets);
     return container;
 }
 

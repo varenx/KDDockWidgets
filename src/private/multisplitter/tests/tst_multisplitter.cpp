@@ -85,7 +85,14 @@ static bool serializeDeserializeTest(const std::unique_ptr<ItemContainer> &root)
 
     const QVariantMap serialized = root->toVariantMap();
     ItemContainer root2(root->hostWidget());
-    root2.fillFromVariantMap(serialized);
+
+    QHash<QString, GuestInterface*> widgets;
+    const Item::List originalItems = root->items_recursive();
+    for (Item *item : originalItems)
+        if (auto w = static_cast<GuestWidget*>(item->frame()))
+            widgets.insert(QString::number(qint64(w)), w);
+
+    root2.fillFromVariantMap(serialized, widgets);
 
     return root2.checkSanity();
 }

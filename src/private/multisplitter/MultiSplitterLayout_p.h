@@ -346,7 +346,7 @@ private:
     bool m_resizing = false;
 
     QPointer<Layouting::Anchor> m_anchorBeingDragged;
-    Layouting::ItemContainer *const m_rootItem;
+    Layouting::ItemContainer *m_rootItem = nullptr;
 };
 
 }

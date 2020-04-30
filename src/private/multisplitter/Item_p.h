@@ -389,8 +389,9 @@ public:
     virtual void setHostWidget(QWidget *);
     virtual void updateWidgetGeometries();
     virtual QVariantMap toVariantMap() const;
-    virtual void fillFromVariantMap(const QVariantMap &map);
-    static Item* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map);
+    virtual void fillFromVariantMap(const QVariantMap &map, const QHash<QString, GuestInterface*> &widgets);
+    static Item* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent,
+                                      const QVariantMap &map, const QHash<QString, GuestInterface *> &widgets);
 
 Q_SIGNALS:
     void geometryChanged();
@@ -546,8 +547,9 @@ public:
     void updateSeparators_recursive();
 
     QVariantMap toVariantMap() const override;
-    void fillFromVariantMap(const QVariantMap &map) override;
-    static ItemContainer* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent, const QVariantMap &map);
+    void fillFromVariantMap(const QVariantMap &map, const QHash<QString, GuestInterface *> &widgets) override;
+    static ItemContainer* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent,
+                                               const QVariantMap &map, const QHash<QString, GuestInterface*> &widgets);
 
 Q_SIGNALS:
     void itemsChanged();

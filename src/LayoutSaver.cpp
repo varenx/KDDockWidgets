@@ -669,10 +669,9 @@ QVariantMap LayoutSaver::MultiSplitterLayout::toVariantMap() const
     QVariantMap result;
     result.insert(QStringLiteral("layout"), layout);
 
-    QVariantList framesV;
-    framesV.reserve(frames.size());
+    QVariantMap framesV;
     for (auto &frame : frames)
-        framesV.push_back(frame.toVariantMap());
+        framesV.insert(frame.id, frame.toVariantMap());
 
     result.insert(QStringLiteral("frames"), framesV);
     return result;
@@ -681,13 +680,12 @@ QVariantMap LayoutSaver::MultiSplitterLayout::toVariantMap() const
 void LayoutSaver::MultiSplitterLayout::fromVariantMap(const QVariantMap &map)
 {
     layout = map.value(QStringLiteral("layout")).toMap();
-    const QVariantList framesV = map.value(QStringLiteral("frames")).toList();
+    const QVariantMap framesV = map.value(QStringLiteral("frames")).toMap();
     frames.clear();
-    frames.reserve(framesV.size());
     for (const QVariant &frameV : framesV) {
         LayoutSaver::Frame frame;
         frame.fromVariantMap(frameV.toMap());
-        frames.push_back(frame);
+        frames.insert(frame.id, frame);
     }
 }
 

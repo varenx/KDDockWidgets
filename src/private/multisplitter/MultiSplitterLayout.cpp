@@ -443,8 +443,19 @@ QRect MultiSplitterLayout::rectForDrop(const QWidgetOrQuick *widget, Location lo
     }
 }
 
-bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &)
+bool MultiSplitterLayout::deserialize(const LayoutSaver::MultiSplitterLayout &l)
 {
+    delete m_rootItem;
+    m_rootItem = new ItemContainer(m_multiSplitter);
+
+    QHash<QString, GuestInterface*> frames;
+    for (const LayoutSaver::Frame &frame : qAsConst(l.frames)) {
+        Frame *f = Frame::deserialize(frame);
+        frames.insert(frame.id, f);
+    }
+
+    m_rootItem->fillFromVariantMap(l.layout, frames);
+
     return true;
 }
 
@@ -457,7 +468,7 @@ LayoutSaver::MultiSplitterLayout MultiSplitterLayout::serialize() const
     for (Item *item : items) {
         if (!item->isContainer()) {
             if (auto frame = qobject_cast<Frame*>(item->frame()))
-                l.frames.push_back(frame->serialize());
+                l.frames.insert(QString::number(qint64(frame)), frame->serialize());
         }
     }
 

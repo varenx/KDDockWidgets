@@ -181,8 +181,6 @@ inline QVariantList dockWidgetNames(const LayoutSaver::DockWidget::List &list)
 
 struct LayoutSaver::Frame
 {
-    typedef QVector<LayoutSaver::Frame> List;
-
     bool isValid() const;
 
     /// Iterates throught the layout and patches all absolute sizes. See RestoreOption_RelativeToMainWindow.
@@ -196,6 +194,7 @@ struct LayoutSaver::Frame
     QRect geometry;
     unsigned int options;
     int currentTabIndex;
+    QString id; // for coorelation purposes
 
     LayoutSaver::DockWidget::List dockWidgets;
 };
@@ -210,7 +209,7 @@ struct LayoutSaver::MultiSplitterLayout
     void fromVariantMap(const QVariantMap &map);
 
     QVariantMap layout;
-    LayoutSaver::Frame::List frames;
+    QHash<QString, LayoutSaver::Frame> frames;
 };
 
 struct LayoutSaver::FloatingWindow
