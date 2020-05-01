@@ -710,6 +710,11 @@ bool ItemContainer::checkSanity()
         return false;
     }
 
+    if (m_orientation != Qt::Vertical && m_orientation != Qt::Horizontal) {
+        qWarning() << Q_FUNC_INFO << "Invalid orientation" << m_orientation << this;
+        return false;
+    }
+
     // Check that the geometries don't overlap
     int expectedPos = 0;
     for (Item *item : m_children) {
@@ -1684,7 +1689,10 @@ void ItemContainer::updateChildPercentages()
     for (Item *item : m_children) {
         if (item->isVisible() && !item->isBeingInserted()) {
             item->m_sizingInfo.percentageWithinParent = (1.0 * item->length(m_orientation)) / usable;
-            Q_ASSERT(!qFuzzyIsNull(item->m_sizingInfo.percentageWithinParent));
+            auto p = item->m_sizingInfo.percentageWithinParent;
+            if (qFuzzyIsNull(p) || p > 1.0) {
+                qWarning() << Q_FUNC_INFO << "Invalid percentage" << p << this;
+            }
         } else {
             item->m_sizingInfo.percentageWithinParent = 0.0;
         }
@@ -2366,6 +2374,8 @@ QVariantMap ItemContainer::toVariantMap() const
     }
 
     result[QStringLiteral("children")] = childrenV;
+    result[QStringLiteral("orientation")] = m_orientation;
+
     return result;
 }
 
@@ -2374,6 +2384,8 @@ void ItemContainer::fillFromVariantMap(const QVariantMap &map,
 {
     Item::fillFromVariantMap(map, widgets);
     const QVariantList childrenV = map[QStringLiteral("children")].toList();
+    m_orientation = Qt::Orientation(map[QStringLiteral("orientation")].toInt());
+
     for (const QVariant &childV : childrenV) {
         const QVariantMap childMap = childV.toMap();
         const bool isContainer = childMap[QStringLiteral("isContainer")].toBool();
