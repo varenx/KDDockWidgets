@@ -99,7 +99,10 @@ static bool serializeDeserializeTest(const std::unique_ptr<ItemContainer> &root)
 
 static std::unique_ptr<ItemContainer> createRoot()
 {
-    auto root = new ItemContainer(new QWidget()); // todo WIDGET
+    auto hostWidget = new QWidget();
+    hostWidget->setObjectName("HostWidget");
+    hostWidget->show();
+    auto root = new ItemContainer(hostWidget); // todo WIDGET
     root->setSize({ 1000, 1000 });
     return std::unique_ptr<ItemContainer>(root);
 }
@@ -108,7 +111,10 @@ static Item* createItem()
 {
     static int count = 0;
     count++;
-    auto item = new Item(new QWidget());
+    auto hostWidget = new QWidget();
+    hostWidget->setObjectName("HostWidget");
+    hostWidget->show();
+    auto item = new Item(hostWidget);
     item->setGeometry(QRect(0, 0, 200, 200));
     item->setObjectName(QStringLiteral("%1").arg(count));
     auto guest = new GuestWidget();

@@ -147,7 +147,7 @@ QVariantMap Item::toVariantMap() const
 
 void Item::fillFromVariantMap(const QVariantMap &map, const QHash<QString, GuestInterface *> &widgets)
 {
-    m_sizingInfo.fromVariantMap(map);
+    m_sizingInfo.fromVariantMap(map[QStringLiteral("sizingInfo")].toMap());
     m_isVisible = map[QStringLiteral("isVisible")].toBool();
     setObjectName(map[QStringLiteral("objectName")].toString());
 
@@ -468,13 +468,16 @@ void Item::setIsVisible(bool is)
     if (is != m_isVisible) {
         m_isVisible = is;
         Q_EMIT visibleChanged(this, is);
+    }
 
+    if (is) {
         if (auto w = frame()) {
             w->setGeometry(mapToRoot(m_sizingInfo.geometry)); // TODO
-            w->setVisible(is); // TODO: Only set visible when apply*() ?
+            w->setVisible(true); // TODO: Only set visible when apply*() ?
         }
-        updateObjectName();
     }
+
+    updateObjectName();
 }
 
 void Item::setGeometry_recursive(QRect rect)
@@ -499,6 +502,11 @@ bool Item::checkSanity()
     }
 
     if (auto w = frame()) {
+        if (!w->isVisible() && (!w->parentWidget() || !w->parentWidget()->isVisible())) {
+            qWarning() << Q_FUNC_INFO << "Guest widget isn't visible" << this;
+            return false;
+        }
+
         return true; // TODO Uncomment only after honouring layoutInvalidated()
         if (mapFromRoot(w->geometry()) != geometry()) {
             qWarning() << Q_FUNC_INFO << "Guest widget doesn't have correct geometry. has="
@@ -2379,14 +2387,6 @@ void ItemContainer::fillFromVariantMap(const QVariantMap &map,
         updateChildPercentages_recursive();
         updateSeparators_recursive();
     }
-}
-
-ItemContainer *ItemContainer::createFromVariantMap(QWidget *hostWidget, ItemContainer *parent,
-                                                   const QVariantMap &map, const QHash<QString, GuestInterface*> &widgets)
-{
-    auto container = new ItemContainer(hostWidget, parent);
-    container->fillFromVariantMap(map, widgets);
-    return container;
 }
 
 QVector<Layouting::Anchor*> ItemContainer::separators_recursive() const

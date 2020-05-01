@@ -1144,7 +1144,7 @@ void TestDocks::tst_restoreSimplest()
    EnsureTopLevelsDeleted e;
     // Tests restoring a very simple layout, composed of just 1 docked widget
    auto m = createMainWindow(QSize(800, 500), MainWindowOption_None);
-   //auto layout = m->multiSplitterLayout();
+   auto layout = m->multiSplitterLayout();
    auto dock1 = createDockWidget("one", new QTextEdit());
    m->addDockWidget(dock1, Location_OnTop);
 

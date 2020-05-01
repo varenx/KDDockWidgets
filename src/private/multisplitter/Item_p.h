@@ -549,8 +549,6 @@ public:
 
     QVariantMap toVariantMap() const override;
     void fillFromVariantMap(const QVariantMap &map, const QHash<QString, GuestInterface *> &widgets) override;
-    static ItemContainer* createFromVariantMap(QWidget *hostWidget, ItemContainer *parent,
-                                               const QVariantMap &map, const QHash<QString, GuestInterface*> &widgets);
 
 Q_SIGNALS:
     void itemsChanged();
