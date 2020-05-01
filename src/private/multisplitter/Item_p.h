@@ -561,6 +561,7 @@ public:
     QVector<Layouting::Anchor*> separators_recursive() const;
     Qt::Orientation m_orientation = Qt::Vertical;
 private:
+    void updateWidgets_recursive();
     /// Returns the positions that each separator should have (x position if Qt::Horizontal, y otherwise)
     QVector<int> requiredSeparatorPositions() const;
     void updateSeparators();

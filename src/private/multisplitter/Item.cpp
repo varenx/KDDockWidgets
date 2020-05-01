@@ -155,6 +155,7 @@ void Item::fillFromVariantMap(const QVariantMap &map, const QHash<QString, Guest
     if (!guestId.isEmpty()) {
         if (GuestInterface *guest = widgets.value(guestId)) {
             m_guest = guest;
+            m_guest->asWidget()->setParent(hostWidget());
         } else {
             qWarning() << Q_FUNC_INFO << "Couldn't find frame to restore for" << this;
         }
@@ -502,8 +503,10 @@ bool Item::checkSanity()
     }
 
     if (auto w = frame()) {
-        if (!w->isVisible() && (!w->parentWidget() || !w->parentWidget()->isVisible())) {
-            qWarning() << Q_FUNC_INFO << "Guest widget isn't visible" << this;
+        if (false && !w->isVisible() && (!w->parentWidget() || w->parentWidget()->isVisible())) {
+            // TODO: if guest is explicitly hidden we're not hidding the item yet
+            qWarning() << Q_FUNC_INFO << "Guest widget isn't visible" << this
+                       << w;
             return false;
         }
 
@@ -516,6 +519,15 @@ bool Item::checkSanity()
                        << this
                        << w;
             return false;
+        }
+    }
+
+    if (!isVisible()) {
+        if (auto w = frame()) {
+            if (w->isVisible()) {
+                qWarning() << Q_FUNC_INFO << "Item is not visible but guest is visible";
+                return false;
+            }
         }
     }
 
@@ -572,7 +584,8 @@ void Item::dumpLayout(int level)
     qDebug().noquote() << indent << "- Widget: " << objectName()
                        << m_sizingInfo.geometry// << "r=" << m_geometry.right() << "b=" << m_geometry.bottom()
                        << "; min=" << minSize()
-                       << visible << beingInserted << this;
+                       << visible << beingInserted << this
+                       << "; guest=" << frame();
 }
 
 Item::Item(QWidget *hostWidget, ItemContainer *parent)
@@ -2398,6 +2411,7 @@ void ItemContainer::fillFromVariantMap(const QVariantMap &map,
     if (isRoot()) {
         updateChildPercentages_recursive();
         updateSeparators_recursive();
+        updateWidgets_recursive();
     }
 }
 
@@ -2411,6 +2425,26 @@ QVector<Layouting::Anchor*> ItemContainer::separators_recursive() const
     }
 
     return separators;
+}
+
+void ItemContainer::updateWidgets_recursive()
+{
+    for (Item *item : m_children) {
+
+        if (auto c = item->asContainer()) {
+            c->updateWidgets_recursive();
+        } else {
+            if (item->isVisible()) {
+                if (QWidget *widget = item->frame()) {
+                    widget->setGeometry(item->geometry());
+                    widget->setVisible(true);
+                } else {
+                    qWarning() << Q_FUNC_INFO << "visible item doesn't have a guest"
+                               << item;
+                }
+            }
+        }
+    }
 }
 
 QVariantMap SizingInfo::toVariantMap() const

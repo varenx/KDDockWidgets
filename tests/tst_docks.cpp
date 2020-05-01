@@ -280,6 +280,7 @@ private Q_SLOTS:
     void tst_crash(); // tests some crash I got
     void tst_crash2_data();
     void tst_crash2();
+    void tst_setFloatingSimple();
     void tst_setFloatingWhenWasTabbed();
 //    void tst_setFloatingWhenSideBySide();
 //    void tst_setFloatingAfterDraggedFromTabToSideBySide();
@@ -1151,8 +1152,9 @@ void TestDocks::tst_restoreSimplest()
    LayoutSaver saver;
    QVERIFY(saver.saveToFile(QStringLiteral("layout.json")));
    QTest::qWait(200);
-   qDebug() << "About to restore";
+   QVERIFY(layout->checkSanity());
    QVERIFY(saver.restoreFromFile(QStringLiteral("layout.json")));
+   QVERIFY(layout->checkSanity());
 }
 
 void TestDocks::tst_restoreSimple()
@@ -2489,6 +2491,23 @@ void TestDocks::tst_crash2()
         delete m;
     }
 
+}
+
+void TestDocks::tst_setFloatingSimple()
+{
+    EnsureTopLevelsDeleted e;
+    auto m = createMainWindow();
+    auto dock1 = createDockWidget("dock1", new QPushButton("one"));
+    m->addDockWidget(dock1, Location_OnTop);
+    auto l = m->multiSplitterLayout();
+    dock1->setFloating(true);
+    QVERIFY(l->checkSanity());
+    dock1->setFloating(false);
+    QVERIFY(l->checkSanity());
+    dock1->setFloating(true);
+    QVERIFY(l->checkSanity());
+    dock1->setFloating(false);
+    QVERIFY(l->checkSanity());
 }
 
 void TestDocks::tst_setFloatingWhenWasTabbed()
