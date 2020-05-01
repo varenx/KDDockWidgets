@@ -1192,14 +1192,15 @@ void TestDocks::tst_restoreSimple()
 
     QCOMPARE(DockRegistry::self()->nestedwindows().size(), 0);
     QVERIFY(saver.restoreFromFile(QStringLiteral("layout.json")));
+    QVERIFY(layout->checkSanity());
     QCOMPARE(layout->count(), 1);
     QCOMPARE(layout->placeholderCount(), 0);
     QVERIFY(dock1->isVisible());
-    layout->checkSanity();
     QCOMPARE(saver.restoredDockWidgets().size(), 3);
 
     // Test a crash I got:
     dock1->setFloating(true);
+    QVERIFY(layout->checkSanity());
     dock1->setFloating(false);
 
     auto fw2 = dock2->floatingWindow();

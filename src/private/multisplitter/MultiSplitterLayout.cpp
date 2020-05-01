@@ -343,7 +343,7 @@ void MultiSplitterLayout::restorePlaceholder(DockWidgetBase *dw, Item *item, int
         item->restore(newFrame);
     }
 
-    Frame *frame = qobject_cast<Frame*>(item->frame());
+    auto frame = qobject_cast<Frame*>(item->frame());
     Q_ASSERT(frame);
 
     if (tabIndex != -1 && frame->dockWidgetCount() >= tabIndex) {

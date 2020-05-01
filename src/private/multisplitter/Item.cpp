@@ -154,7 +154,7 @@ void Item::fillFromVariantMap(const QVariantMap &map, const QHash<QString, Guest
     const QString guestId = map.value(QStringLiteral("guestId")).toString();
     if (!guestId.isEmpty()) {
         if (GuestInterface *guest = widgets.value(guestId)) {
-            m_guest = guest;
+            setFrame(guest);
             m_guest->asWidget()->setParent(hostWidget());
         } else {
             qWarning() << Q_FUNC_INFO << "Couldn't find frame to restore for" << this;
@@ -503,6 +503,14 @@ bool Item::checkSanity()
     }
 
     if (auto w = frame()) {
+
+        if (w->parentWidget() != hostWidget()) {
+            qWarning() << Q_FUNC_INFO << "Unexpected parent for our guest"
+                       << w->parentWidget() << "; host=" << hostWidget()
+                       << w << this;
+            return false;
+        }
+
         if (false && !w->isVisible() && (!w->parentWidget() || w->parentWidget()->isVisible())) {
             // TODO: if guest is explicitly hidden we're not hidding the item yet
             qWarning() << Q_FUNC_INFO << "Guest widget isn't visible" << this
