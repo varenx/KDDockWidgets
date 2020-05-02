@@ -268,22 +268,15 @@ private Q_SLOTS:
     void tst_maximizeAndRestore();
     void tst_propagateResize2();
 
-    void tst_availableLengthForDrop_data();
-//    void tst_availableLengthForDrop();
-
     void tst_clear();
     void tst_constraintsAfterPlaceholder();
-    void tst_rectForDrop_data();
-//    void tst_rectForDrop();
-//    void tst_rectForDropMath_data();
-//    void tst_rectForDropMath();
     void tst_crash(); // tests some crash I got
     void tst_crash2_data();
     void tst_crash2();
     void tst_setFloatingSimple();
     void tst_setFloatingWhenWasTabbed();
-//    void tst_setFloatingWhenSideBySide();
-//    void tst_setFloatingAfterDraggedFromTabToSideBySide();
+    void tst_setFloatingWhenSideBySide();
+    void tst_setFloatingAfterDraggedFromTabToSideBySide();
     void tst_setFloatingAFrameWithTabs();
     void tst_setVisibleFalseWhenSideBySide();
     void tst_refUnrefItem();
@@ -1984,149 +1977,6 @@ void TestDocks::tst_propagateResize2()
     auto dropArea = m->dropArea();
     dropArea->checkSanity();
 }
-#if 0
-std::unique_ptr<MultiSplitter> TestDocks::createMultiSplitterFromSetup(MultiSplitterSetup setup, QHash<QWidget*, Frame*> &frameMap) const
-{
-    auto widget = std::unique_ptr<MultiSplitter>(new MultiSplitter());
-    auto layout = widget->multiSplitterLayout();
-    widget->show();
-    layout->setSize(setup.size);
-
-    const int count = setup.widgets.size();
-    for (int i = 0; i < count; ++i) {
-        auto frame = Config::self().frameworkWidgetFactory()->createFrame(widget.get());
-        auto dock = new DockWidget(QString("foo_createMultiSplitterFromSetup%1").arg(i));
-        dock->setWidget(setup.widgets[i]);
-        frame->addWidget(dock);
-        frameMap.insert(setup.widgets[i], frame);
-        qDebug() << "Min size=" << Layouting::widgetMinLength(frame, Qt::Horizontal)
-                 << Layouting::widgetMinLength(dock, Qt::Horizontal);
-        layout->addWidget(frame, setup.locations[i], frameMap.value(setup.relativeTos[i]));
-    }
-
-    for (WidgetResize wr : setup.widgetResizes) {
-        qDebug() << "Resizing widget";
-        Frame *frame = frameMap.value(wr.w);
-        layout->resizeItem(frame, wr.length, wr.orientation);
-
-        if (Layouting::length(frame->size(), wr.orientation) != wr.length) {
-            qDebug() << Layouting::length(wr.w->size(), wr.orientation) << wr.length << Layouting::length(frame->size(), wr.orientation);
-            Q_ASSERT(false);
-        }
-    }
-
-    return widget;
-}
-#endif
-void TestDocks::tst_availableLengthForDrop_data()
-{
-    QTest::addColumn<MultiSplitterSetup>("multisplitterSetup");
-    QTest::addColumn<ExpectedAvailableSizes>("expectedAvailableSizes");
-
-    const int anchorThickness = Item::separatorThickness();
-    const int multispitterlength = 500;
-
-    QSize minFrameSize;
-    {
-        // Frame has a bit bigger min size than the widget it hosts, since it has space for a tab bar and titlebar
-
-        auto frame = Config::self().frameworkWidgetFactory()->createFrame();
-        const int w1MinLength = 100;
-        QWidget *w1 = createWidget(w1MinLength);
-        auto dock = new DockWidget("foo");
-        dock->setWidget(w1);
-        frame->addWidget(dock);
-        minFrameSize = frame->minimumSizeHint();
-        delete frame;
-    }
-
-    {
-        ExpectedAvailableSizes availableSizes;
-        MultiSplitterSetup setup;
-        setup.size = QSize(multispitterlength, multispitterlength);
-        int totalAvailable = multispitterlength;
-        int expected2 = totalAvailable;
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnTop, nullptr, 0, expected2, totalAvailable };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnLeft, nullptr, 0, expected2, totalAvailable };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnRight, nullptr, expected2, 0, totalAvailable };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnBottom, nullptr, expected2, 0, totalAvailable };
-
-        QTest::newRow("empty") << setup << availableSizes;
-    }
-
-    {
-        ExpectedAvailableSizes availableSizes;
-        MultiSplitterSetup setup;
-        setup.size = QSize(multispitterlength, multispitterlength);
-
-        const int w1MinLength = 100;
-        QWidget *w1 = createWidget(w1MinLength);
-        setup.widgets << w1;
-        setup.relativeTos << nullptr;
-        setup.locations << KDDockWidgets::Location_OnLeft;
-        const int totalAvailable_vert = multispitterlength - anchorThickness - minFrameSize.height();
-        const int expected2_vert = totalAvailable_vert;
-        const int totalAvailable_horiz = multispitterlength  - anchorThickness - minFrameSize.width();
-        const int expected2_horiz = totalAvailable_horiz;
-
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnTop, nullptr, 0, expected2_vert, totalAvailable_vert };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnLeft, nullptr, 0, expected2_horiz, totalAvailable_horiz };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnRight, nullptr, expected2_horiz, 0, totalAvailable_horiz };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnBottom, nullptr, expected2_vert, 0, totalAvailable_vert };
-
-        QTest::newRow("one_existing-outter") << setup << availableSizes;
-    }
-
-    {
-        ExpectedAvailableSizes availableSizes;
-        MultiSplitterSetup setup;
-        setup.size = QSize(multispitterlength, multispitterlength);
-
-        const int w1MinLength = 100;
-        QWidget *w1 = createWidget(w1MinLength);
-        setup.widgets << w1;
-        setup.relativeTos << nullptr;
-        setup.locations << KDDockWidgets::Location_OnLeft;
-        const int totalAvailable_vert = multispitterlength - anchorThickness - minFrameSize.height();
-        const int expected2_vert = totalAvailable_vert;
-        const int totalAvailable_horiz = multispitterlength - anchorThickness - minFrameSize.width();
-        const int expected2_horiz = totalAvailable_horiz;
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnTop, w1, 0, expected2_vert, totalAvailable_vert };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnLeft, w1, 0, expected2_horiz, totalAvailable_horiz };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnRight, w1, expected2_horiz, 0, totalAvailable_horiz };
-        availableSizes << ExpectedAvailableSize{ KDDockWidgets::Location_OnBottom, w1, expected2_vert, 0, totalAvailable_vert };
-
-        QTest::newRow("one_existing-inner") << setup << availableSizes;
-    }
-    //----------------------------------------------------------------------------------------------
-}
-#if 0
-void TestDocks::tst_availableLengthForDrop()
-{
-    QFETCH(MultiSplitterSetup, multisplitterSetup);
-    QFETCH(ExpectedAvailableSizes, expectedAvailableSizes);
-    QHash<QWidget*, Frame*> frameMap;
-    auto multisplitterWidget = createMultiSplitterFromSetup(multisplitterSetup, frameMap);
-    auto layout = multisplitterWidget->multiSplitterLayout();
-
-    int i = 0;
-    for (ExpectedAvailableSize expectedSize : expectedAvailableSizes) {
-        expectedSize.relativeTo = expectedSize.relativeTo == nullptr ? multisplitterWidget->parentWidget() : expectedSize.relativeTo;
-        auto available = layout->availableLengthForDrop(expectedSize.location, layout->itemForFrame(frameMap.value(expectedSize.relativeTo)));
-        // qDebug() << available.length() << "; i=" << i;
-
-        QCOMPARE(available.length(), expectedSize.totalAvailable);
-        if (available.side1Length != expectedSize.side1ExpectedSize) {
-            layout->dumpDebug();
-            qDebug() << "loc=" << expectedSize.location << "; relativeTo=" << expectedSize.relativeTo;
-            QCOMPARE(available.side1Length, expectedSize.side1ExpectedSize);
-        }
-
-        QCOMPARE(available.side2Length, expectedSize.side2ExpectedSize);
-        ++i;
-    }
-}
-#endif
 
 void TestDocks::tst_constraintsAfterPlaceholder()
 {
@@ -2168,221 +2018,7 @@ void TestDocks::tst_constraintsAfterPlaceholder()
     dock1->deleteLater();
     Testing::waitForDeleted(dock1);
 }
-#if 0
-void TestDocks::tst_rectForDropMath_data()
-{
-    QTest::addColumn<QSize>("layoutContentsSize");
-    QTest::addColumn<MultiSplitterLayout::Length>("length");
-    QTest::addColumn<Location>("location");
-    QTest::addColumn<QRect>("relativeToRect");
-    QTest::addColumn<QRect>("expectedRect");
 
-    const QRect layoutRect(0, 0, 1000, 1000);
-    const QSize contentsSize = layoutRect.size();
-    const int anchorThickness = Item::separatorThickness();
-    const QRect relativeToWindowRect = layoutRect.adjusted(0, 0, -0, -0);
-
-    MultiSplitterLayout::Length length = { 0, 100 };
-    QRect expectedRect(0, 0, 100, 1000 - 0*2);
-
-    // 1. Relative to the whole window
-    QTest::newRow("left-of-window") << contentsSize
-                                    << length
-                                    << Location_OnLeft
-                                    << relativeToWindowRect
-                                    << expectedRect;
-
-    expectedRect = QRect(0, 0, 1000 - 0*2, 100);
-    QTest::newRow("top-of-window") << contentsSize
-                                   << length
-                                   << Location_OnTop
-                                   << relativeToWindowRect
-                                   << expectedRect;
-
-
-    expectedRect = QRect(1000 - 100 - 0, 0, 100, 1000 - 0*2);
-    QTest::newRow("right-of-window") << contentsSize
-                                     << length
-                                     << Location_OnRight
-                                     << relativeToWindowRect
-                                     << expectedRect;
-
-    expectedRect = QRect(0, 1000 - 100 - 0, 1000 - 0*2, 100);
-    QTest::newRow("bottom-of-window") << contentsSize
-                                      << length
-                                      << Location_OnBottom
-                                      << relativeToWindowRect
-                                      << expectedRect;
-
-    // 2. Relative to the item, left of leftmost, right of rightmost, etc.
-    QRect item1Geometry = QRect(0, 0, 1000 - 2*0, 1000 - 2*0);
-    length = { 0, 100 };
-    expectedRect = QRect(0, 0, 100, 1000 - 0*2);
-    QTest::newRow("left-of-leftmost-item") << contentsSize
-                                           << length
-                                           << Location_OnLeft
-                                           << item1Geometry
-                                           << expectedRect;
-
-    expectedRect = QRect(0, 0, 1000 - 0*2, 100);
-    QTest::newRow("top-of-topmost-item") << contentsSize
-                                         << length
-                                         << Location_OnTop
-                                         << item1Geometry
-                                         << expectedRect;
-
-    expectedRect = QRect(1000 - 100 - 0, 0, 100, 1000 - 0*2);
-    QTest::newRow("right-of-rightmost-item") << contentsSize
-                                             << length
-                                             << Location_OnRight
-                                             << item1Geometry
-                                             << expectedRect;
-
-    expectedRect = QRect(0, 1000 - 100 - 0, 1000 - 0*2, 100);
-    QTest::newRow("bottom-of-bottommost-item") << contentsSize
-                                               << length
-                                               << Location_OnBottom
-                                               << item1Geometry
-                                               << expectedRect;
-    // 3. Now we have two items already in the layout, side-by side, item1 on the left, item2 on the right
-
-    const int availableWidth = 1000 - 2*0 - anchorThickness;
-    const int width1 = availableWidth / 2;
-    const int width2 = availableWidth - width1;
-    const int height1 = width1;
-    const int height2 = width2;
-    const int h = 1000 - 2*0;
-    const int w = 1000 - 2*0;
-    const QRect item1GeometryH = QRect(0, 0, width1, h);
-    const QRect item2GeometryH = QRect(item1GeometryH.right() + anchorThickness + 1, 0, width2, h);
-
-    const QRect item1GeometryV = QRect(0, 0, w, height1);
-    const QRect item2GeometryV = QRect(0, item1GeometryV.bottom() + anchorThickness + 1, w, height2);
-
-    qDebug() <<"item1H=" << item1GeometryH << "; item2H=" << item2GeometryH;
-    qDebug() <<"item1V=" << item1GeometryV << "; item2V=" << item2GeometryV;
-
-    const int spaceBetweenItems = item2GeometryH.left() - item1GeometryH.right() - 1;
-    Q_ASSERT(spaceBetweenItems == anchorThickness);
-
-    length = { 100, 0 };
-    int x = 1000 - 0 - item2GeometryH.width() - 100;
-    expectedRect = QRect(x, 0, 100, h);
-    qDebug() << "expected=" << expectedRect;
-    QTest::newRow("left-of-right-item") << contentsSize
-                                        << length
-                                        << Location_OnLeft
-                                        << item2GeometryH
-                                        << expectedRect;
-
-    length = { 0, 100 };
-    x = item1GeometryH.width() + anchorThickness + 0;
-    expectedRect = QRect(x, 0, 100, h);
-    qDebug() << "expected=" << expectedRect;
-    QTest::newRow("left-of-right-item2") << contentsSize
-                                         << length
-                                         << Location_OnLeft
-                                         << item2GeometryH
-                                         << expectedRect;
-
-    int side1 = 2;
-    length = { side1, 98 };
-    x = item1GeometryH.width() + anchorThickness - side1 + 0;
-    expectedRect = QRect(x, 0, 100, h);
-    qDebug() << "expected=" << expectedRect;
-    QTest::newRow("left-of-right-item3") << contentsSize
-                                         << length
-                                         << Location_OnLeft
-                                         << item2GeometryH
-                                         << expectedRect;
-
-
-    length = { 100, 0 };
-    int y = 1000 - 0 - item2GeometryV.height() - 100;
-    expectedRect = QRect(0, y, w, 100);
-    qDebug() << "expected=" << expectedRect;
-    QTest::newRow("top-of-bottom-item") << contentsSize
-                                        << length
-                                        << Location_OnTop
-                                        << item2GeometryV
-                                        << expectedRect;
-
-    length = { 0, 100 };
-    x = item1GeometryH.right() + 1;
-    expectedRect = QRect(x, 0, 100, h);
-    QTest::newRow("right-of-left-item") << contentsSize
-                                        << length
-                                        << Location_OnRight
-                                        << item1GeometryH
-                                        << expectedRect;
-
-
-}
-
-void TestDocks::tst_rectForDropMath()
-{
-    EnsureTopLevelsDeleted e;
-    QFETCH(QSize, layoutContentsSize);
-    QFETCH(MultiSplitterLayout::Length, length);
-    QFETCH(Location, location);
-    QFETCH(QRect, relativeToRect);
-    QFETCH(QRect, expectedRect);
-
-    MultiSplitter widget;
-    MultiSplitterLayout layout(&widget);
-    layout.setSize(layoutContentsSize);
-
-    const QRect result = layout.rectForDrop(length, location, relativeToRect);
-    qDebug() << "Result=" << result;
-    QCOMPARE(result, expectedRect);
-}
-#endif
-void TestDocks::tst_rectForDrop_data()
-{
-    QTest::addColumn<MultiSplitterSetup>("multisplitterSetup");
-    QTest::addColumn<ExpectedRectsForDrop>("expectedRects");
-
-    const int multispitterlength = 500;
-
-    {
-        MultiSplitterSetup setup;
-        ExpectedRectsForDrop rects;
-
-        auto widgetToDrop = [] {
-            QWidget * widgetToDrop = createWidget(100, "w1");
-            widgetToDrop->resize(200, 200);
-            return widgetToDrop;
-        };
-
-        const int expectedLength = 200; // this 200 will change when the initial length algoritm changes; Maybe just call MultiSplitterLayout::LengthForDrop() directly here
-        rects << ExpectedRectForDrop {widgetToDrop(), KDDockWidgets::Location_OnLeft, nullptr, QRect(0, 0, expectedLength,  multispitterlength) };
-        rects << ExpectedRectForDrop {widgetToDrop(), KDDockWidgets::Location_OnTop, nullptr, QRect(0, 0, multispitterlength, expectedLength) };
-        rects << ExpectedRectForDrop {widgetToDrop(), KDDockWidgets::Location_OnRight, nullptr, QRect(300 - 0, 0, expectedLength, multispitterlength) };
-        rects << ExpectedRectForDrop {widgetToDrop(), KDDockWidgets::Location_OnBottom, nullptr, QRect(0, 300 - 0, multispitterlength, expectedLength) };
-
-        setup.size = QSize(multispitterlength, multispitterlength);
-        QTest::newRow("empty") << setup << rects;
-    }
-}
-#if 0
-void TestDocks::tst_rectForDrop()
-{
-    EnsureTopLevelsDeleted e;
-    QFETCH(MultiSplitterSetup, multisplitterSetup);
-    QFETCH(ExpectedRectsForDrop, expectedRects);
-    QHash<QWidget*, Frame*> frameMap;
-    auto multisplitterWidget = createMultiSplitterFromSetup(multisplitterSetup, frameMap);
-    auto layout = multisplitterWidget->multiSplitterLayout();
-    qDebug() << "Created with contentsSize=" << layout->width() << layout->height()<< multisplitterSetup.size;
-    for (ExpectedRectForDrop expected : expectedRects) {
-        QRect actualRect = layout->rectForDrop(expected.widgetToDrop, expected.location, layout->itemForFrame(expected.relativeTo));
-        layout->dumpDebug();
-        QCOMPARE(actualRect, expected.expectedRect);
-        expected.widgetToDrop->deleteLater();
-        Testing::waitForDeleted(expected.widgetToDrop);
-    }
-}
-#endif
 void TestDocks::tst_crash()
 {
     EnsureTopLevelsDeleted e;
@@ -2619,7 +2255,7 @@ void TestDocks::tst_setFloatingWhenWasTabbed()
     auto window = m.release();
     Testing::waitForDeleted(window);
 }
-#if 0
+
 void TestDocks::tst_setFloatingWhenSideBySide()
 {
     // Tests DockWidget::setFloating(false|true) when side-by-side (it should put it where it was)
@@ -2667,13 +2303,9 @@ void TestDocks::tst_setFloatingWhenSideBySide()
         Testing::waitForDeleted(f2);
         dock2->show();
         Testing::waitForResize(dock2);
-        AnchorGroup group = item2->anchorGroup();
-        AnchorGroup staticGroup = layout->staticAnchorGroup();
-        QCOMPARE(group.right->followee(), staticGroup.right);
-        QCOMPARE(group.right->position(), staticGroup.right->position());
+
         QCOMPARE(item2->geometry(), dock2->frame()->geometry());
         layout->checkSanity();
-        QCOMPARE(item2->size(), group.itemSize());
 
         // Cleanup
         dock3->deleteLater();
@@ -2724,6 +2356,7 @@ void TestDocks::tst_setFloatingAfterDraggedFromTabToSideBySide()
 
         // Detach tab
         dock1->frame()->m_tabWidget->detachTab(dock2);
+        QVERIFY(layout->checkSanity());
         auto fw2 = dock2->floatingWindow();
         QVERIFY(fw2);
         QCOMPARE(dock2->lastPosition()->layoutItem(), oldItem2);
@@ -2734,20 +2367,25 @@ void TestDocks::tst_setFloatingAfterDraggedFromTabToSideBySide()
 
         // Move from tab to bottom
         layout->addWidget(fw2->dropArea(), KDDockWidgets::Location_OnRight, nullptr);
+        QVERIFY(layout->checkSanity());
         QVERIFY(dock2->lastPosition()->layoutItem());
         QCOMPARE(layout->count(), 2);
         QCOMPARE(layout->placeholderCount(), 0);
 
         dock2->setFloating(true);
+        QVERIFY(layout->checkSanity());
+
         dock2->setFloating(false);
 
         QCOMPARE(layout->count(), 2);
         QCOMPARE(layout->placeholderCount(), 0);
         QVERIFY(!dock2->isFloating());
+        QVERIFY(layout->checkSanity());
+
         Testing::waitForDeleted(fw2);
     }
 }
-#endif
+
 void TestDocks::tst_setFloatingAFrameWithTabs()
 {
     EnsureTopLevelsDeleted e;
