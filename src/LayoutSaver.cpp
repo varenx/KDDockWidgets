@@ -462,9 +462,11 @@ bool LayoutSaver::Frame::isValid() const
         return false;
     }
 
-    if (currentTabIndex >= dockWidgets.size() || currentTabIndex < 0) {
-        qWarning() << Q_FUNC_INFO << "Invalid tab index" << currentTabIndex << dockWidgets.size();
-        return false;
+    if (!dockWidgets.isEmpty()) {
+        if (currentTabIndex >= dockWidgets.size() || currentTabIndex < 0) {
+            qWarning() << Q_FUNC_INFO << "Invalid tab index" << currentTabIndex << dockWidgets.size();
+            return false;
+        }
     }
 
     for (auto &dw : dockWidgets) {

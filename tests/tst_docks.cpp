@@ -324,22 +324,22 @@ private Q_SLOTS:
     void tst_restoreEmpty();
     void tst_restoreSimplest();
     void tst_restoreSimple();
-//    void tst_restoreNestedAndTabbed();
-//    void tst_restoreCentralFrame();
-//    void tst_restoreCrash();
-//    void tst_restoreTwice();
-//    void tst_restoreSideBySide();
-//    void tst_restoreWithPlaceholder();
-//    void tst_restoreWithNonClosableWidget();
-//    void tst_restoreAfterResize();
-//    void tst_restoreWithAffinity();
-//    void tst_marginsAfterRestore();
-//    void tst_restoreEmbeddedMainWindow();
-//    void tst_restoreWithDockFactory();
-//    void tst_invalidLayoutAfterRestore();
+    void tst_restoreNestedAndTabbed();
+    void tst_restoreCentralFrame();
+    void tst_restoreCrash();
+    void tst_restoreTwice();
+    void tst_restoreSideBySide();
+    void tst_restoreWithPlaceholder();
+    void tst_restoreWithNonClosableWidget();
+    void tst_restoreAfterResize();
+    void tst_restoreWithAffinity();
+    void tst_marginsAfterRestore();
+    void tst_restoreEmbeddedMainWindow();
+    void tst_restoreWithDockFactory();
+    void tst_invalidLayoutAfterRestore();
 
     void tst_resizeWindow_data();
-//    void tst_resizeWindow();
+    void tst_resizeWindow();
     void tst_resizeWindow2();
     void tst_rectForDropCrash();
 
@@ -1224,7 +1224,7 @@ void TestDocks::tst_restoreSimple()
     dock3->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock3));
 }
-#if 0
+
 void TestDocks::tst_restoreNestedAndTabbed()
 {
     // Just a more involved test
@@ -1296,8 +1296,9 @@ void TestDocks::tst_restoreCentralFrame()
     QCOMPARE(layout->count(), 1);
     Item *item = m->dropArea()->centralFrame();
     QVERIFY(item);
-    QCOMPARE(item->frame()->options(), FrameOption_IsCentralFrame | FrameOption_AlwaysShowsTabs);
-    QVERIFY(!item->frame()->titleBar()->isVisible());
+    auto frame = static_cast<Frame *>(item->frame());
+    QCOMPARE(frame->options(), FrameOption_IsCentralFrame | FrameOption_AlwaysShowsTabs);
+    QVERIFY(!frame->titleBar()->isVisible());
 
     LayoutSaver saver;
     QVERIFY(saver.saveToFile(QStringLiteral("layout.json")));
@@ -1306,8 +1307,9 @@ void TestDocks::tst_restoreCentralFrame()
     QCOMPARE(layout->count(), 1);
     item = m->dropArea()->centralFrame();
     QVERIFY(item);
-    QCOMPARE(item->frame()->options(), FrameOption_IsCentralFrame | FrameOption_AlwaysShowsTabs);
-    QVERIFY(!item->frame()->titleBar()->isVisible());
+    frame = static_cast<Frame *>(item->frame());
+    QCOMPARE(frame->options(), FrameOption_IsCentralFrame | FrameOption_AlwaysShowsTabs);
+    QVERIFY(!frame->titleBar()->isVisible());
 }
 
 void TestDocks::tst_restoreCrash()
@@ -1391,7 +1393,7 @@ void TestDocks::tst_restoreSideBySide()
         auto dock3 = createDockWidget("3", new QPushButton("3"));
         dock2->addDockWidgetToContainingWindow(dock3, Location_OnRight);
         auto fw2 = dock2->floatingWindow();
-        item2MinSize = fw2->multiSplitterLayout()->itemForFrame(dock2->frame())->minimumSize();
+        item2MinSize = fw2->multiSplitterLayout()->itemForFrame(dock2->frame())->minSize();
         LayoutSaver saver;
         QVERIFY(saver.saveToFile(QStringLiteral("layout.json")));
         QVERIFY(layout->checkSanity());
@@ -1407,7 +1409,7 @@ void TestDocks::tst_restoreSideBySide()
         QVERIFY(restorer.restoreFromFile(QStringLiteral("layout.json")));
 
         auto fw2 = dock2->floatingWindow();
-        QCOMPARE(item2MinSize, fw2->multiSplitterLayout()->itemForFrame(dock2->frame())->minimumSize());
+        QCOMPARE(item2MinSize, fw2->multiSplitterLayout()->itemForFrame(dock2->frame())->minSize());
 
         QCOMPARE(dock1->window(), m.get());
         QCOMPARE(dock2->window(), dock3->window());
@@ -1474,7 +1476,7 @@ void TestDocks::tst_restoreWithPlaceholder()
 void TestDocks::tst_restoreWithNonClosableWidget()
 {
     EnsureTopLevelsDeleted e;
-    auto m = createMainWindow(QSize(500, 500), {}, "tst_marginsAfterRestore");
+    auto m = createMainWindow(QSize(500, 500), {}, "tst_restoreWithNonClosableWidget");
     auto dock1 = createDockWidget("1", new NonClosableWidget(), DockWidgetBase::Option_NotClosable);
     m->addDockWidget(dock1, Location_OnLeft);
     auto layout = m->multiSplitterLayout();
@@ -1572,7 +1574,7 @@ void TestDocks::tst_marginsAfterRestore()
         layout->checkSanity();
     }
 }
-#endif
+
 void TestDocks::tst_addDockWidgetAsTabToDockWidget()
 {
     EnsureTopLevelsDeleted e;
@@ -4665,7 +4667,7 @@ void TestDocks::tst_sizeConstraintWarning()
 
     Testing::waitForDeleted(lastDock);
 }
-#if 0
+
 void TestDocks::tst_invalidLayoutAfterRestore()
 {
     EnsureTopLevelsDeleted e;
@@ -4680,8 +4682,6 @@ void TestDocks::tst_invalidLayoutAfterRestore()
     m->addDockWidget(dock2, Location_OnRight);
     m->addDockWidget(dock3, Location_OnRight);
 
-    Anchor *rightAnchor = layout->staticAnchorGroup().right;
-    const int oldRightAnchorPos = rightAnchor->position();
     const int oldContentsWidth = layout->width();
 
     auto f1 = dock1->frame();
@@ -4696,20 +4696,8 @@ void TestDocks::tst_invalidLayoutAfterRestore()
     Testing::waitForEvent(m.get(), QEvent::LayoutRequest); // So MainWindow min size is updated
 
     Item *item1 = layout->itemForFrame(dock1->frame());
-    Item *item2 = layout->itemForFrame(dock2->frame());
     Item *item3 = layout->itemForFrame(dock3->frame());
     Item *item4 = dropArea->centralFrame();
-    const int oldAvailableWidth = layout->availableLengthForOrientation(Qt::Horizontal);
-
-    qDebug() << "; Item3 min=" << item3->minSize().width()
-             << "; Item2 min=" << item2->minSize().width()
-             << "; Item1 min=" << item1->minSize().width()
-             << "; Item4 min=" << item4->minSize().width()
-             << "; oldAvailableWidth=" << oldAvailableWidth
-             << "; old window.minWidth=" << layout->minSize().width();
-
-    qDebug() << "Item3 width=" << item3->width()
-             << "Item2 width=" << item2->width();
 
     QCOMPARE(layout->count(), 4);
     QCOMPARE(layout->placeholderCount(), 0);
@@ -4720,30 +4708,16 @@ void TestDocks::tst_invalidLayoutAfterRestore()
     QVERIFY(!f2.data());
     QTest::qWait(200); // Not sure why. Some event we're waiting for. TODO: Investigate
     auto fw2 = dock2->floatingWindow();
-    const int newAvailableWidth = layout->availableLengthForOrientation(Qt::Horizontal);
     QCOMPARE(layout->minimumSize().width(), 2*Item::separatorThickness() + item1->minSize().width() + item3->minSize().width() + item4->minSize().width());
-
-    MultiSplitterLayout::Length availableForDock2 = layout->availableLengthForDrop(Location_OnLeft, item3);
-
-    qDebug() << "Item3 width after=" << item3->width()
-             << "; newAvailableWidth=" << newAvailableWidth
-             << "; new window.minWidth=" << layout->minimumSize().width()
-             << "; availableforDock2=" << availableForDock2.length()
-             << availableForDock2.side1Length << availableForDock2.side2Length;
-
-    const int item3AvailableSqueeze = item3->width() - item3->minSize().width();
-    QVERIFY(availableForDock2.side2Length <= item3AvailableSqueeze);
-
 
     // Drop left of dock3
     layout->addWidget(fw2->dropArea(), Location_OnLeft, dock3->frame());
 
     QVERIFY(Testing::waitForDeleted(fw2));
-    QCOMPARE(rightAnchor->position(), oldRightAnchorPos);
     QCOMPARE(layout->width(), oldContentsWidth);
     layout->checkSanity();
 }
-#endif
+
 void TestDocks::tst_stealFrame()
 {
     // Tests using addWidget() with dock widgets which are already in a layout
@@ -5116,7 +5090,7 @@ void TestDocks::tst_clear()
     dock3->deleteLater();
     QVERIFY(Testing::waitForDeleted(dock3));
 }
-#if 0
+
 void TestDocks::tst_restoreEmbeddedMainWindow()
 {
     EnsureTopLevelsDeleted e;
@@ -5189,14 +5163,14 @@ void TestDocks::tst_restoreWithDockFactory()
     QCOMPARE(layout->visibleCount(), 1);
     layout->checkSanity();
 }
-#endif
+
 void TestDocks::tst_resizeWindow_data()
 {
     QTest::addColumn<bool>("doASaveRestore");
     QTest::newRow("false") << false;
     QTest::newRow("true") << true;
 }
-#if 0
+
 void TestDocks::tst_resizeWindow()
 {
     QFETCH(bool, doASaveRestore);
@@ -5210,11 +5184,20 @@ void TestDocks::tst_resizeWindow()
 
     auto layout = m->multiSplitterLayout();
     Item *item1 = layout->itemForFrame(dock1->frame());
-    Anchor *anchor = item1->anchorGroup().right;
+    Item *item2 = layout->itemForFrame(dock2->frame());
 
     // Move the separator so both dock widgets have the same space
     const int delta = dock1->width() - dock2->width();
-    anchor->setPosition(anchor->position() - delta / 2);
+
+
+    ItemContainer *root = item2->parentContainer();
+    if (delta > 0) {
+        root->growItem(item2, delta / 2, GrowthStrategy::BothSidesEqually);
+    } else {
+        root->growItem(item1, delta / 2, GrowthStrategy::BothSidesEqually);
+    }
+
+    layout->checkSanity();
 
     const int oldWidth1 = dock1->width();
     const int oldWidth2 = dock2->width();
@@ -5247,7 +5230,7 @@ void TestDocks::tst_resizeWindow()
     QCOMPARE(oldWidth2, newWidth2);
     layout->checkSanity();
 }
-#endif
+
 void TestDocks::tst_resizeWindow2()
 {
     // Tests that resizing the width of the main window will never move horizontal anchors

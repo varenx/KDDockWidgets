@@ -552,8 +552,13 @@ void Item::setGeometry(QRect rect)
         m_geometry = rect;
 
         if (rect.isEmpty()) {
-            root()->dumpLayout();
-            Q_ASSERT(false);
+            // Just a sanity check...
+            if (isRoot() && asContainer()->isEmpty()) {
+                // Well why not ? conceptually it's fine, even if not very useful
+            } else {
+                root()->dumpLayout();
+                Q_ASSERT(false);
+            }
         }
 
         const QSize minSz = minSize();
