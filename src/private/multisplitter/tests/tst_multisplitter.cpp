@@ -173,6 +173,7 @@ private Q_SLOTS:
     void tst_numSeparators();
     void tst_separatorMinMax();
     void tst_separatorRecreatedOnParentChange();
+    void tst_containerReducesSize();
 };
 
 void TestMultiSplitter::tst_createRoot()
@@ -1045,6 +1046,31 @@ void TestMultiSplitter::tst_separatorRecreatedOnParentChange()
 
     root1->insertItem(root2.get(), Location_OnTop);
     QVERIFY(root1->checkSanity());
+}
+
+void TestMultiSplitter::tst_containerReducesSize()
+{
+    // Tests that the container reduces size when its children get hidden
+
+    auto root = createRoot();
+    Item *item1 = createItem();
+    Item *item2 = createItem();
+    root->insertItem(item1, Location_OnLeft);
+    root->insertItem(item2, Location_OnLeft);
+    Item *item21 = createItem();
+    Item *item22= createItem();
+    item2->insertItem(item21, Location_OnTop);
+    item2->insertItem(item22, Location_OnTop);
+    QVERIFY(root->checkSanity());
+
+    item2->turnIntoPlaceholder();
+    QVERIFY(root->checkSanity());
+
+    item21->turnIntoPlaceholder();
+    QVERIFY(root->checkSanity());
+
+    item22->turnIntoPlaceholder();
+    QVERIFY(root->checkSanity());
 }
 
 QTEST_MAIN(TestMultiSplitter)

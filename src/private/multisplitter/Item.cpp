@@ -244,8 +244,16 @@ bool Item::isBeingInserted() const
 
 void Item::setBeingInserted(bool is)
 {
-    if (is != m_sizingInfo.isBeingInserted) {
-        m_sizingInfo.isBeingInserted = is;
+    m_sizingInfo.isBeingInserted = is;
+
+    // Trickle up the hierarchy too, as the parent might be hidden due to not having visible children
+    if (auto parent = parentContainer()) {
+        if (is) {
+            if (!parent->hasVisibleChildren())
+                parent->setBeingInserted(true);
+        } else {
+            parent->setBeingInserted(false);
+        }
     }
 }
 
@@ -553,9 +561,8 @@ void Item::setGeometry(QRect rect)
 
         if (rect.isEmpty()) {
             // Just a sanity check...
-            if (isRoot() && asContainer()->isEmpty()) {
-                // Well why not ? conceptually it's fine, even if not very useful
-            } else {
+            ItemContainer *c = asContainer();
+            if (c->hasVisibleChildren()) {
                 root()->dumpLayout();
                 Q_ASSERT(false);
             }
@@ -785,7 +792,7 @@ bool ItemContainer::checkSanity()
             if (!rect().contains(item->geometry())) {
                 root()->dumpLayout();
                 qWarning() << Q_FUNC_INFO << "Item geo is out of bounds. item=" << item << "; geo="
-                           << item->geometry() << "; container.rect=" << rect();
+                           << item->geometry() << "; parent.rect=" << rect();
                 return false;
             }
         }
@@ -795,7 +802,8 @@ bool ItemContainer::checkSanity()
     }
 
     const Item::List visibleChildren = this->visibleChildren();
-    if (!visibleChildren.isEmpty()) {
+    const bool isEmptyRoot = isRoot() && visibleChildren.isEmpty();
+    if (!isEmptyRoot) {
         int occupied = qMax(0, Item::separatorThickness() * (visibleChildren.size() - 1));
         for (Item *item : visibleChildren) {
             occupied += item->length(m_orientation);
@@ -810,12 +818,14 @@ bool ItemContainer::checkSanity()
 
         const QVector<double> percentages = childPercentages();
         const double totalPercentage = std::accumulate(percentages.begin(), percentages.end(), 0.0);
-        if (!qFuzzyCompare(totalPercentage, 1.0)) {
+        const double expectedPercentage = visibleChildren.isEmpty() ? 0.0 : 1.0;
+        if (!qFuzzyCompare(totalPercentage, expectedPercentage)) {
             root()->dumpLayout();
             qWarning() << Q_FUNC_INFO << "Percentages don't add up"
                        << totalPercentage << percentages;
             const_cast<ItemContainer*>(this)->updateSeparators_recursive();
             qWarning() << Q_FUNC_INFO << childPercentages();
+            return false;
         }
     }
 
@@ -921,48 +931,54 @@ int ItemContainer::indexOfVisibleChild(const Item *item) const
 void ItemContainer::removeItem(Item *item, bool hardRemove)
 {
     Q_ASSERT(!item->isRoot());
-    if (contains(item)) {
-        Item *side1Item = visibleNeighbourFor(item, Side1);
-        Item *side2Item = visibleNeighbourFor(item, Side2);
 
-        const bool isContainer = item->isContainer();
-        const bool wasVisible = !isContainer && item->isVisible();
-
-        if (hardRemove) {
-            m_children.removeOne(item);
-            item->setParentContainer(nullptr);
-            delete item;
-            if (!isContainer)
-                Q_EMIT root()->numItemsChanged();
-        } else {
-            item->setIsVisible(false);
-            item->setFrame(nullptr);
-
-            if (!wasVisible && !isContainer) {
-                // Was already hidden
-                return;
-            }
-        }
-
-        if (wasVisible) {
-            Q_EMIT root()->numVisibleItemsChanged(root()->numVisibleChildren());
-        }
-
-        const bool containerShouldBeRemoved = !isRoot() && ((hardRemove && isEmpty()) ||
-                                                            (!hardRemove && !hasVisibleChildren()));
-
-        if (containerShouldBeRemoved) {
-            parentContainer()->removeItem(this, hardRemove);
-        } else {
-            // Neighbours will occupy the space of the deleted item
-            growNeighbours(side1Item, side2Item);
-            Q_EMIT itemsChanged();
-            updateSizeConstraints();
-            updateSeparators_recursive();
-        }
-    } else {
+    if (!contains(item)) {
         // Not ours, ask parent
         item->parentContainer()->removeItem(item, hardRemove);
+        return;
+    }
+
+    Item *side1Item = visibleNeighbourFor(item, Side1);
+    Item *side2Item = visibleNeighbourFor(item, Side2);
+
+    const bool isContainer = item->isContainer();
+    const bool wasVisible = !isContainer && item->isVisible();
+
+    if (hardRemove) {
+        m_children.removeOne(item);
+        delete item;
+        if (!isContainer)
+            Q_EMIT root()->numItemsChanged();
+    } else {
+        item->setIsVisible(false);
+        item->setFrame(nullptr);
+
+        if (!wasVisible && !isContainer) {
+            // Was already hidden
+            return;
+        }
+    }
+
+    if (wasVisible) {
+        Q_EMIT root()->numVisibleItemsChanged(root()->numVisibleChildren());
+    }
+
+    if (isEmpty()) {
+        // Empty container is useless, delete it
+        if (auto p = parentContainer())
+            p->removeItem(this, /*hardDelete=*/ true);
+    } else if (!hardRemove && !hasVisibleChildren()) {
+        if (auto p = parentContainer()) {
+            p->removeItem(this, /*hardDelete=*/ false);
+            setGeometry(QRect());
+        }
+    } else {
+        // Neighbours will occupy the space of the deleted item
+        growNeighbours(side1Item, side2Item);
+        Q_EMIT itemsChanged();
+
+        updateSizeConstraints();
+        updateSeparators_recursive();
     }
 }
 
@@ -1751,9 +1767,20 @@ void ItemContainer::restoreChild(Item *item)
 {
     Q_ASSERT(contains(item));
 
+    const bool hadVisibleChildren = hasVisibleChildren();
     item->setIsVisible(true);
     item->setBeingInserted(true);
+
+    if (!hadVisibleChildren) {
+        // This container was hidden and will now be restored too, since a child was restored
+        if (auto c = parentContainer()) {
+            c->restoreChild(this);
+        }
+    }
+
+    // Make sure root() is big enough to respect all item's min-sizes
     updateSizeConstraints();
+
     item->setBeingInserted(false);
 
     if (numVisibleChildren() == 1) {

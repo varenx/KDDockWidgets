@@ -4050,7 +4050,6 @@ void TestDocks::tst_availableSizeWithPlaceholders()
     QCOMPARE(layout1->size(), layout2->size());
     QCOMPARE(layout1->size(), layout3->size());
 
-    qDebug() << "CONTENTS SIZE" << layout1->size();
     QCOMPARE(layout1->availableSize(), layout2->availableSize());
     QCOMPARE(layout1->availableSize(), layout3->availableSize());
 
