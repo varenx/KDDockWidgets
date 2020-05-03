@@ -289,7 +289,7 @@ private Q_SLOTS:
     void tst_placeholdersAreRemovedProperly();
     void tst_embeddedMainWindow();
     void tst_toggleMiddleDockCrash(); // tests some crash I got
-//    void tst_28NestedWidgets();
+    void tst_28NestedWidgets();
     void tst_28NestedWidgets_data();
     void tst_invalidPlaceholderPosition_data();
     void tst_invalidPlaceholderPosition();
@@ -2936,7 +2936,7 @@ void TestDocks::tst_28NestedWidgets_data()
         {Location_OnRight, -1, nullptr, AddingOption_None }
     };
 
-    QTest::newRow("28") << docks << QVector<int>{11, 0};
+    //QTest::newRow("28") << docks << QVector<int>{11, 0};
 
     docks = {
         {Location_OnLeft, -1, nullptr, AddingOption_None },
@@ -3023,7 +3023,7 @@ void TestDocks::tst_28NestedWidgets_data()
             docksToHide << i;
     }
 
-    QTest::newRow("bug_with_holes") << docks << docksToHide;
+    // QTest::newRow("bug_with_holes") << docks << docksToHide;
 
     docks = {
         {Location_OnLeft, -1, nullptr, AddingOption_StartHidden },
@@ -3057,14 +3057,14 @@ void TestDocks::tst_28NestedWidgets_data()
         {Location_OnRight, -1, nullptr, AddingOption_None } };
 
     docksToHide.clear();
-    QTest::newRow("add_as_placeholder") << docks << docksToHide;
+    //QTest::newRow("add_as_placeholder") << docks << docksToHide;
 
     docks = {
         {Location_OnLeft, -1, nullptr, AddingOption_StartHidden },
         {Location_OnBottom, -1, nullptr, AddingOption_StartHidden },
         {Location_OnRight, -1, nullptr, AddingOption_StartHidden } };
 
-    QTest::newRow("add_as_placeholder_simple") << docks << docksToHide;
+    //QTest::newRow("add_as_placeholder_simple") << docks << docksToHide;
 
 
     docks = {
@@ -3110,9 +3110,9 @@ void TestDocks::tst_28NestedWidgets_data()
         {Location_OnRight, -1, nullptr, AddingOption_None } };
 
     docksToHide.clear();
-    QTest::newRow("bug3") << docks << docksToHide;
+    //QTest::newRow("bug3") << docks << docksToHide;
 }
-#if 0
+
 void TestDocks::tst_28NestedWidgets()
 {
     QFETCH(QVector<DockDescriptor>, docksToCreate);
@@ -3182,7 +3182,7 @@ void TestDocks::tst_28NestedWidgets()
         QVERIFY(Testing::waitForDeleted(dock));
     }
 }
-#endif
+
 void TestDocks::tst_invalidAnchorGroup()
 {
     // Tests a bug I got. Should not warn.
