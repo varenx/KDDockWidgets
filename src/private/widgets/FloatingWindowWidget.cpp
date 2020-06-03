@@ -23,7 +23,6 @@
 #include "Utils_p.h"
 #include "DropArea_p.h"
 #include "TitleBar_p.h"
-
 #include <QApplication>
 #include <QPainter>
 #include <QVBoxLayout>
@@ -60,6 +59,21 @@ bool FloatingWindowWidget::event(QEvent *ev)
     return FloatingWindow::event(ev);
 }
 
+#ifdef Q_OS_WIN
+bool FloatingWindowWidget::nativeEvent(const QByteArray &eventType, void *message, long *result)
+{
+    if (!KDDockWidgets::usesAeroSnapWithCustomDecos() || eventType != "windows_generic_MSG")
+        return QWidget::nativeEvent(eventType, message, result);
+
+    auto m = static_cast<MSG*>(message);
+    if (m->message != WM_DPICHANGED)
+        return QWidget::nativeEvent(eventType, message, result);
+
+    KDDockWidgets::extendClientAreaOverTitleBar(windowHandle());
+    return QWidget::nativeEvent(eventType, message, result);
+}
+#endif
+
 void FloatingWindowWidget::init()
 {
     m_vlayout->setSpacing(0);
@@ -69,4 +83,7 @@ void FloatingWindowWidget::init()
 
     if (!KDDockWidgets::usesNativeDraggingAndResizing())
         m_vlayout->setContentsMargins(4, 4, 4, 4);
+
+    if (KDDockWidgets::usesAeroSnapWithCustomDecos())
+        KDDockWidgets::extendClientAreaOverTitleBar(windowHandle());
 }

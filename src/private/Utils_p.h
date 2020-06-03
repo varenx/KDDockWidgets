@@ -32,6 +32,14 @@
 # include <QtX11Extras/QX11Info>
 #endif
 
+#ifdef Q_OS_WIN
+# include <QMargins>
+# include <QWindow>
+# include <QVariant>
+# include <qpa/qplatformnativeinterface.h>
+# include <Windows.h>
+#endif
+
 namespace KDDockWidgets {
 
 inline bool isLeftButtonPressed()
@@ -92,6 +100,33 @@ inline int screenNumberForWidget(const QWidget *w)
     return -1;
 }
 
-};
+inline void extendClientAreaOverTitleBar(QWindow *window)
+{
+    if (!window)
+        return;
+#ifdef Q_OS_WIN
+    QPlatformWindow *platformWindow = window->handle();
+    if (!platformWindow)
+        return;
+
+    auto hwnd = HWND(window->winId());
+    const auto style = GetWindowLongPtr(hwnd, GWL_STYLE);
+    const auto exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+
+    const RECT arbitraryClientRect = { 0, 0, 800, 800 };
+    RECT ncRect = arbitraryClientRect;  
+
+    AdjustWindowRectEx(&ncRect, style, FALSE, exStyle);
+    const int titleBarHeight = arbitraryClientRect.top - ncRect.top;
+
+    const QVariant newMargins = QVariant::fromValue(QMargins(0, -titleBarHeight, 0, 0));
+    window->setProperty("_q_windowsCustomMargins", newMargins);
+    QGuiApplication::platformNativeInterface()->setWindowProperty(platformWindow, QStringLiteral("WindowsCustomMargins"), newMargins);
+#endif
+}
+
+}
+
+Q_DECLARE_METATYPE(QMargins);
 
 #endif

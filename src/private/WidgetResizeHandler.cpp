@@ -215,8 +215,8 @@ bool WidgetResizeHandler::handleWindowsNativeEvent(FloatingWindow *w, const QByt
 
     auto msg = static_cast<MSG *>(message);
     if (msg->message == WM_NCCALCSIZE) {
-        *result = 0;
-        return true;
+        // Let's use Qt's "WindowCustomMargins" instead, otherwise QWindow won't know
+        return false;
     } else if (msg->message == WM_NCHITTEST) {
 
         if (DragController::instance()->isInClientDrag()) {

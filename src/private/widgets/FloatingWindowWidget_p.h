@@ -39,6 +39,10 @@ public:
 protected:
     void paintEvent(QPaintEvent *) override;
     bool event(QEvent *ev) override;
+#ifdef Q_OS_WIN
+    bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
+#endif
+
 private:
     void init();
     Q_DISABLE_COPY(FloatingWindowWidget)

@@ -154,6 +154,10 @@ if (NOT WIN32 AND NOT APPLE)
     target_link_libraries(kddockwidgets PUBLIC Qt5::X11Extras)
 endif()
 
+if (WIN32)
+    target_link_libraries(kddockwidgets PUBLIC Qt5::GuiPrivate)
+endif()
+
 install (TARGETS kddockwidgets kddockwidgets_multisplitter
          EXPORT kddockwidgetsTargets
          RUNTIME DESTINATION bin
