@@ -140,7 +140,6 @@ FloatingWindow::~FloatingWindow()
 {
     m_inDtor = true;
     disconnect(m_layoutDestroyedConnection);
-    delete m_nchittestFilter;
 
     DockRegistry::self()->unregisterFloatingWindow(this);
 }

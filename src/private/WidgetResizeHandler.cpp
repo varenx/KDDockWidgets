@@ -28,6 +28,7 @@
 # include <QtGui/private/qhighdpiscaling_p.h>
 # include <windowsx.h>
 # include <windows.h>
+# include <dwmapi.h>
 # if defined(Q_CC_MSVC)
 #  pragma comment(lib,"User32.lib")
 # endif
@@ -497,11 +498,10 @@ void WidgetResizeHandler::setupWindow(QWindow *window)
 #if defined(Q_OS_WIN)
     if (KDDockWidgets::usesAeroSnapWithCustomDecos()) {
 #ifdef KDDOCKWIDGETS_QTWIDGETS
-        m_nchittestFilter = new NCHITTESTEventFilter(this);
-        qApp->installNativeEventFilter(m_nchittestFilter);
+        qApp->installNativeEventFilter(new NCHITTESTEventFilter(window));
 #endif
         const auto wid = HWND(window->winId());
-        connect(window, &QWindow::screenChanged, this, [this] {
+        connect(window, &QWindow::screenChanged, window, [window, wid] {
             // Qt honors our frame hijacking usually... but when screen changes we must give it a
             // nudge. Otherwise what Qt thinks is the client area is not what Windows knows it is.
             // SetWindowPos() will trigger an NCCALCSIZE message, which Qt will intercept and take
