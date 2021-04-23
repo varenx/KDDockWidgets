@@ -536,10 +536,6 @@ void WidgetResizeHandler::setupWindow(QWindow *window)
             SetWindowPos(wid, 0, 0, 0, 0, 0,
                          SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
         });
-
-        // Show drop-shadow:
-        MARGINS margins = { 0, 0, 0, 1 }; // arbitrary, just needs to be > 0 it seems
-        DwmExtendFrameIntoClientArea(wid, &margins);
     }
 #else
     Q_UNUSED(window);
