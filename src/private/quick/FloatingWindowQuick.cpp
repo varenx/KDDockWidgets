@@ -205,5 +205,7 @@ void FloatingWindowQuick::init()
 
     m_quickWindow->setFlags(windowFlags());
 
+    updateTitleAndIcon();
+
     m_quickWindow->show();
 }
