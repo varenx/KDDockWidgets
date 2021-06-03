@@ -1,6 +1,6 @@
 env:
   global:
-    - secure: "NlWO/NTPlOU6cowOMuPOvjAprXVwIjmpHHf9CoMR71E2c/eBFFKIHj10kXuyFwz2KihHAIExmo9OlGtGniNWobvIrVrabO3dsOSb6UGbPAQkzQiyQLKsDNQAZx3nMuWEKBtMsVRee6rd7/2uGTY4WB5Ot3VhrUYcN1FoRgQQ9gk="
+    - secure: "M7JpMIJyag2wuyABerN2aw"
 
 branches:
   only:
@@ -61,6 +61,6 @@ addons:
     project:
       name: KDAB/KDDockWidgets
     notification_email: allen.winter@kdab.com
-    build_command_prepend: cd build && cmake ..
+    build_command_prepend: cd build && cmake -DCMAKE_BUILD_TYPE=Release -DKDDockWidgets_TESTS=True -KDDockWidgets_EXAMPLES=True  -DKDDockWidgets_DEVELOPER_MODE=True ..
     build_command: make
     branch_pattern: coverity_scan
