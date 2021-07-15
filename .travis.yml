@@ -5,6 +5,7 @@ env:
 branches:
   only:
     - master
+    - coverity_scan
 
 matrix:
   include:
