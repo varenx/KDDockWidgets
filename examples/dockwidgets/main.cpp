@@ -116,8 +116,12 @@ int main(int argc, char **argv)
     parser.addOption(closeOnlyCurrentTab);
 
     QCommandLineOption dontCloseBeforeRestore("dont-close-widget-before-restore", //krazy:exclude=spelling
-                                              QCoreApplication::translate("main", "DockWidget #5 wont be closed before a restore. Illustrates LayoutSaverOption::DontCloseBeforeRestore"));
+                                              QCoreApplication::translate("main", "DockWidget #5 won't be closed before a restore. Illustrates LayoutSaverOption::DontCloseBeforeRestore"));
     parser.addOption(dontCloseBeforeRestore);
+
+    QCommandLineOption showButtonsInTabBarIfTitleBarHidden("show-buttons-in-tabbar-if-titlebar-hidden",
+                                              QCoreApplication::translate("main", "If we're not using title bars we'll still show the close and float button in the tab bar"));
+    parser.addOption(showButtonsInTabBarIfTitleBarHidden);
 
 #if defined(DOCKS_DEVELOPER_MODE)
     parser.addOption(centralFrame);
@@ -187,6 +191,9 @@ int main(int argc, char **argv)
 
     if (parser.isSet(closeOnlyCurrentTab))
         flags |= Config::Flag_CloseOnlyCurrentTab;
+
+    if (parser.isSet(showButtonsInTabBarIfTitleBarHidden))
+        flags |= Config::Flag_ShowButtonsOnTabBarIfTitleBarHidden;
 
     if (parser.isSet(noTitleBars))
         flags |= KDDockWidgets::Config::Flag_HideTitleBarWhenTabsVisible;

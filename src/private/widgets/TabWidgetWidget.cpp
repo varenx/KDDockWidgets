@@ -17,12 +17,16 @@
  */
 
 #include "TabWidgetWidget_p.h"
-#include "Frame_p.h"
 #include "Config.h"
 #include "FrameworkWidgetFactory.h"
+#include "../Frame_p.h"
+#include "../TitleBar_p.h"
+#include "../DockRegistry_p.h"
 
 #include <QMouseEvent>
 #include <QTabBar>
+#include <QHBoxLayout>
+#include <QAbstractButton>
 
 using namespace KDDockWidgets;
 
@@ -31,11 +35,11 @@ TabWidgetWidget::TabWidgetWidget(Frame *parent)
     , TabWidget(this, parent)
     , m_tabBar(Config::self().frameworkWidgetFactory()->createTabBar(this))
 {
-    setTabBar(static_cast<QTabBar*>(m_tabBar->asWidget()));
+    setTabBar(static_cast<QTabBar *>(m_tabBar->asWidget()));
     setTabsClosable(Config::self().flags() & Config::Flag_TabsHaveCloseButton);
 
     // In case tabs closable is set by the factory, a tabClosedRequested() is emitted when the user presses [x]
-    connect(this, &QTabWidget::tabCloseRequested, this, [this] (int index) {
+    connect(this, &QTabWidget::tabCloseRequested, this, [this](int index) {
         if (DockWidgetBase *dw = dockwidgetAt(index)) {
             if (dw->options() & DockWidgetBase::Option_NotClosable) {
                 qWarning() << "QTabWidget::tabCloseRequested: Refusing to close dock widget with Option_NotClosable option. name=" << dw->uniqueName();
@@ -47,7 +51,7 @@ TabWidgetWidget::TabWidgetWidget(Frame *parent)
         }
     });
 
-    connect(this, &QTabWidget::currentChanged, this, [this] (int index) {
+    connect(this, &QTabWidget::currentChanged, this, [this](int index) {
         onCurrentTabChanged(index);
         Q_EMIT currentTabChanged(index);
         Q_EMIT currentDockWidgetChanged(currentDockWidget());
@@ -55,6 +59,8 @@ TabWidgetWidget::TabWidgetWidget(Frame *parent)
 
     if (!QTabWidget::tabBar()->isVisible())
         setFocusProxy(nullptr);
+
+    setupTabBarButtons();
 }
 
 TabBar *TabWidgetWidget::tabBar() const
@@ -74,7 +80,7 @@ void TabWidgetWidget::removeDockWidget(DockWidgetBase *dw)
 
 int TabWidgetWidget::indexOfDockWidget(const DockWidgetBase *dw) const
 {
-    return indexOf(const_cast<DockWidgetBase*>(dw));
+    return indexOf(const_cast<DockWidgetBase *>(dw));
 }
 
 void TabWidgetWidget::mouseDoubleClickEvent(QMouseEvent *ev)
@@ -151,4 +157,47 @@ DockWidgetBase *TabWidgetWidget::dockwidgetAt(int index) const
 int TabWidgetWidget::currentIndex() const
 {
     return QTabWidget::currentIndex();
+}
+
+void TabWidgetWidget::setupTabBarButtons()
+{
+    if (!(Config::self().flags() & Config::Flag_ShowButtonsOnTabBarIfTitleBarHidden))
+        return;
+
+    auto factory = Config::self().frameworkWidgetFactory();
+    m_closeButton = factory->createTitleBarButton(this, TitleBarButtonType::Close);
+    m_floatButton = factory->createTitleBarButton(this, TitleBarButtonType::Float);
+
+    auto cornerWidget = new QWidget(this);
+    cornerWidget->setObjectName(QStringLiteral("Corner Widget"));
+
+    setCornerWidget(cornerWidget, Qt::TopRightCorner);
+
+    m_cornerWidgetLayout = new QHBoxLayout(cornerWidget);
+
+    m_cornerWidgetLayout->addWidget(m_floatButton);
+    m_cornerWidgetLayout->addWidget(m_closeButton);
+
+    connect(m_floatButton, &QAbstractButton::clicked, this, [this] {
+        TitleBar *tb = frame()->titleBar();
+        tb->onFloatClicked();
+    });
+
+    connect(m_closeButton, &QAbstractButton::clicked, this, [this] {
+        TitleBar *tb = frame()->titleBar();
+        tb->onCloseClicked();
+    });
+
+    updateMargins();
+    connect(DockRegistry::self(), &DockRegistry::windowChangedScreen, this, [this](QWindow *w) {
+        if (w == window()->windowHandle())
+            updateMargins();
+    });
+}
+
+void TabWidgetWidget::updateMargins()
+{
+    const qreal factor = logicalDpiFactor(this);
+    m_cornerWidgetLayout->setContentsMargins(QMargins(0, 0, 2, 0) * factor);
+    m_cornerWidgetLayout->setSpacing(int(2 * factor));
 }

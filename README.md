@@ -71,10 +71,6 @@ Screen capture
 ![Screen capture](./screencap.gif?raw=true "The docking system in action")
 
 
-Roadmap
-========
-  - QtQuick support
-
 Trying out the examples
 =======================
 A full demo that showcases most of the features lives in [examples/dockwidgets](examples/dockwidgets).
@@ -119,7 +115,7 @@ From your CMake project, add
 and link to the imported target `KDAB::kddockwidgets`.
 That's all you need to do (the imported target also brings in the include directories)
 
-You may also need to modify the `CMAKE_MODULE_PATH` environment variable depending
+You may also need to modify the `CMAKE_PREFIX_PATH` environment variable depending
 on where you installed KDDockWidgets.
 
 
@@ -144,9 +140,9 @@ your application whenever updating KDDW.
 
 Supported Qt versions and toolchains
 =====================================
-KDDockWidgets requires Qt >= 5.9 (or >=5.12 if Python bindings are enabled).
-The QtQuick support will require Qt >= 5.15.
-Qt 6 is supported.
+KDDockWidgets requires Qt5 >= 5.12 or Qt6 >= 6.1.
+The QtQuick support requires Qt5 >= 5.15 or Qt6 >= 6.1.
+
 
 Regarding compilers, whatever toolchain is able to build Qt 5.9 should also be
 fine. Note however that MSVC 2013 isn't supported anymore due to compiler crashes.

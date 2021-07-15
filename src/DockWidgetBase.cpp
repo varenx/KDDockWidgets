@@ -10,20 +10,21 @@
 */
 
 #include "DockWidgetBase.h"
-#include "DockWidgetBase_p.h"
-#include "Config.h"
-#include "DockRegistry_p.h"
-#include "FloatingWindow_p.h"
-#include "Frame_p.h"
-#include "FrameworkWidgetFactory.h"
-#include "LayoutSaver_p.h"
-#include "Logging_p.h"
-#include "MDILayoutWidget_p.h"
-#include "SideBar_p.h"
-#include "TitleBar_p.h"
-#include "Utils_p.h"
-#include "WindowBeingDragged_p.h"
+#include "private/DockWidgetBase_p.h"
+#include "private/DockRegistry_p.h"
+#include "private/FloatingWindow_p.h"
+#include "private/Frame_p.h"
+#include "private/LayoutSaver_p.h"
+#include "private/Logging_p.h"
+#include "private/MDILayoutWidget_p.h"
+#include "private/SideBar_p.h"
+#include "private/TitleBar_p.h"
+#include "private/Utils_p.h"
+#include "private/WindowBeingDragged_p.h"
 #include "private/Position_p.h"
+
+#include "Config.h"
+#include "FrameworkWidgetFactory.h"
 
 #include <QEvent>
 #include <QCloseEvent>
@@ -77,8 +78,7 @@ void DockWidgetBase::addDockWidgetAsTab(DockWidgetBase *other, InitialOption opt
         return;
     }
 
-    if ((other->options() & DockWidgetBase::Option_NotDockable) ||
-        (options() & DockWidgetBase::Option_NotDockable)) {
+    if ((other->options() & DockWidgetBase::Option_NotDockable) || (options() & DockWidgetBase::Option_NotDockable)) {
         qWarning() << Q_FUNC_INFO << "Refusing to dock non-dockable widget" << other;
         return;
     }
@@ -111,7 +111,7 @@ void DockWidgetBase::addDockWidgetToContainingWindow(DockWidgetBase *other,
                                                      DockWidgetBase *relativeTo,
                                                      InitialOption initialOption)
 {
-    if (auto mainWindow = qobject_cast<MainWindowBase*>(window())) {
+    if (auto mainWindow = qobject_cast<MainWindowBase *>(window())) {
         // It's inside a main window. Simply use the main window API.
         mainWindow->addDockWidget(other, location, relativeTo, initialOption);
         return;
@@ -123,8 +123,7 @@ void DockWidgetBase::addDockWidgetToContainingWindow(DockWidgetBase *other,
         return;
     }
 
-    if ((other->options() & DockWidgetBase::Option_NotDockable) ||
-        (options() & DockWidgetBase::Option_NotDockable)) {
+    if ((other->options() & DockWidgetBase::Option_NotDockable) || (options() & DockWidgetBase::Option_NotDockable)) {
         qWarning() << Q_FUNC_INFO << "Refusing to dock non-dockable widget" << other;
         return;
     }
@@ -288,7 +287,7 @@ bool DockWidgetBase::isTabbed() const
 bool DockWidgetBase::isCurrentTab() const
 {
     if (Frame *frame = d->frame()) {
-        return frame->currentIndex() == frame->indexOfDockWidget(const_cast<DockWidgetBase*>(this));
+        return frame->currentIndex() == frame->indexOfDockWidget(const_cast<DockWidgetBase *>(this));
     } else {
         return true;
     }
@@ -388,7 +387,7 @@ void DockWidgetBase::raise()
 
 bool DockWidgetBase::isMainWindow() const
 {
-    return qobject_cast<MainWindowBase*>(widget());
+    return qobject_cast<MainWindowBase *>(widget());
 }
 
 bool DockWidgetBase::isInMainWindow() const
@@ -396,7 +395,7 @@ bool DockWidgetBase::isInMainWindow() const
     return d->mainWindow() != nullptr;
 }
 
-MainWindowBase* DockWidgetBase::mainWindow() const
+MainWindowBase *DockWidgetBase::mainWindow() const
 {
     return d->mainWindow();
 }
@@ -494,7 +493,7 @@ FloatingWindow *DockWidgetBase::Private::morphIntoFloatingWindow()
             geo = q->geometry();
 
             if (!q->testAttribute(Qt::WA_PendingMoveEvent)) { // If user already moved it, we don't
-                                                              // interfere
+                // interfere
                 const QPoint center = defaultCenterPosForFloating();
                 if (!center.isNull())
                     geo.moveCenter(center);
@@ -503,8 +502,9 @@ FloatingWindow *DockWidgetBase::Private::morphIntoFloatingWindow()
 
         auto frame = Config::self().frameworkWidgetFactory()->createFrame();
         frame->addWidget(q);
-        auto floatingWindow = Config::self().frameworkWidgetFactory()->createFloatingWindow(frame);
-        floatingWindow->setSuggestedGeometry(geo);
+        geo.setSize(geo.size().boundedTo(frame->maxSizeHint()));
+        auto floatingWindow =
+            Config::self().frameworkWidgetFactory()->createFloatingWindow(frame, nullptr, geo);
         floatingWindow->show();
 
         return floatingWindow;
@@ -639,8 +639,8 @@ void DockWidgetBase::Private::close()
 
     // Do some cleaning. Widget is hidden, but we must hide the tab containing it.
     if (Frame *frame = this->frame()) {
-        frame->removeWidget(q);
         q->setParent(nullptr);
+        frame->removeWidget(q);
 
         if (SideBar *sb = DockRegistry::self()->sideBarForDockWidget(q)) {
             sb->removeDockWidget(q);
@@ -796,9 +796,6 @@ DockWidgetBase *DockWidgetBase::deserialize(const LayoutSaver::DockWidget::Ptr &
                        << "; to" << saved->affinities;
             dw->d->affinities = saved->affinities;
         }
-
-    } else {
-        qWarning() << Q_FUNC_INFO << "Couldn't find dock widget" << saved->uniqueName;
     }
 
     return dw;
@@ -868,8 +865,8 @@ DockWidgetBase::Private::Private(const QString &dockName, DockWidgetBase::Option
     q->connect(toggleAction, &QAction::toggled, q, [this](bool enabled) {
         if (!m_updatingToggleAction) { // guard against recursiveness
             toggleAction->blockSignals(true); // and don't emit spurious toggle. Like when a dock
-                                              // widget is inserted into a tab widget it might get
-                                              // hide events, ignore those. The Dock Widget is open.
+                // widget is inserted into a tab widget it might get
+                // hide events, ignore those. The Dock Widget is open.
             m_processingToggleAction = true;
             toggle(enabled);
             toggleAction->blockSignals(false);

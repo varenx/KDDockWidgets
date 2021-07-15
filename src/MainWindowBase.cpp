@@ -18,22 +18,22 @@
  */
 
 #include "MainWindowBase.h"
-#include "DockRegistry_p.h"
-#include "MDILayoutWidget_p.h"
-#include "DropArea_p.h"
-#include "Frame_p.h"
-#include "Utils_p.h"
-#include "SideBar_p.h"
-#include "Logging_p.h"
-#include "WidgetResizeHandler_p.h"
+#include "private/DockRegistry_p.h"
+#include "private/MDILayoutWidget_p.h"
+#include "private/DropArea_p.h"
+#include "private/Frame_p.h"
+#include "private/Utils_p.h"
+#include "private/SideBar_p.h"
+#include "private/Logging_p.h"
+#include "private/WidgetResizeHandler_p.h"
 #include "FrameworkWidgetFactory.h"
-#include "DropAreaWithCentralFrame_p.h"
-#include "LayoutSaver_p.h"
-#include "DockWidgetBase_p.h"
+#include "private/DropAreaWithCentralFrame_p.h"
+#include "private/LayoutSaver_p.h"
+#include "private/DockWidgetBase_p.h"
 
 using namespace KDDockWidgets;
 
-static LayoutWidget* createLayoutWidget(MainWindowBase *mainWindow, MainWindowOptions options)
+static LayoutWidget *createLayoutWidget(MainWindowBase *mainWindow, MainWindowOptions options)
 {
     if (options & MainWindowOption_MDI)
         return new MDILayoutWidget(mainWindow);
@@ -611,7 +611,7 @@ bool MainWindowBase::closeDockWidgets(bool force)
 
             // Empty frames are historically deleted later since they are triggered by mouse click
             // on the title bar, and the title bar is inside the frame.
-            // When doing it programatically we can delete immediately.
+            // When doing it programmatically we can delete immediately.
 
             delete frame;
         }
@@ -678,7 +678,7 @@ bool MainWindowBase::deserialize(const LayoutSaver::MainWindow &mw)
         }
     }
 
-    // Commented-out for now, we dont' want to restore the popup/overlay. popups are perishable
+    // Commented-out for now, we don't want to restore the popup/overlay. popups are perishable
     //if (!mw.overlayedDockWidget.isEmpty())
     //    overlayOnSideBar(DockRegistry::self()->dockByName(mw.overlayedDockWidget));
 

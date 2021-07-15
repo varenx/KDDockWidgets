@@ -44,8 +44,12 @@
 #  Forces the test harness to be built.
 #  Default=false
 #
+# -DKDDockWidgets_WERROR=[true|false]
+#  Compile with the -Werror gcc/clang option (always true for developer-mode)
+#  Default=false
+#
 # -DKDDockWidgets_QTQUICK=[true|false]
-#  Build for QtQuick instead of QtWidgets. Experimental!
+#  Build for QtQuick instead of QtWidgets.
 #  Default=false
 #
 # -DKDDockWidgets_PYTHON_BINDINGS=[true|false]
@@ -78,6 +82,9 @@ if(NOT DEFINED SHIBOKEN_CUSTOM_PREFIX) #look for shiboken in a custom location
 endif()
 if(NOT DEFINED PYSIDE2_CUSTOM_PREFIX) #look for pyside in a custom location
   set(PYSIDE2_CUSTOM_PREFIX "")
+endif()
+if(NOT DEFINED PYSIDE6_CUSTOM_PREFIX) #look for pyside in a custom location
+  set(PYSIDE6_CUSTOM_PREFIX "")
 endif()
 
 # Allow using a non-KDAB install location
@@ -116,6 +123,7 @@ if(${PROJECT_NAME}_PYTHON_BINDINGS AND (CMAKE_BUILD_TYPE MATCHES "^[Dd]eb" OR ${
 endif()
 
 option(${PROJECT_NAME}_UNINSTALL "Enable the uninstall target" ON)
+option(${PROJECT_NAME}_STATIC "Build statically" OFF)
 option(${PROJECT_NAME}_TESTS "Build the tests" OFF)
 option(${PROJECT_NAME}_EXAMPLES "Build the examples" ON)
 option(${PROJECT_NAME}_DOCS "Build the API documentation" OFF)
@@ -135,16 +143,27 @@ endif()
 
 option(${PROJECT_NAME}_QTQUICK "Build for QtQuick instead of QtWidgets" OFF)
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(IS_CLANG_BUILD TRUE)
+else()
+  set(IS_CLANG_BUILD FALSE)
+endif()
+
 if(${PROJECT_NAME}_QT6)
   find_package(Qt6Widgets REQUIRED)
   find_package(Qt6Test REQUIRED)
   set(QT_MAJOR_VERSION 6)
   set(KDDockWidgets_LIBRARY_QTID "-qt6")
 else()
-  find_package(Qt5Widgets 5.9 REQUIRED)
-  find_package(Qt5Test 5.9 REQUIRED)
+  find_package(Qt5Widgets 5.12 REQUIRED)
+  find_package(Qt5Test 5.12 REQUIRED)
   set(QT_MAJOR_VERSION 5)
   set(KDDockWidgets_LIBRARY_QTID "")
+endif()
+
+if(${PROJECT_NAME}_QTQUICK)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 set(CMAKE_AUTOMOC ON)
@@ -170,8 +189,8 @@ macro(set_compiler_flags targetName)
   endif()
 
   # Enable -Werror
-  if(NOT MSVC AND ${PROJECT_NAME}_WERROR)
-    target_compile_options(${targetName} PRIVATE -Werror -Wno-error=deprecated-declarations)
+  if(${PROJECT_NAME}_WERROR AND (NOT MSVC OR IS_CLANG_BUILD)) # clang-cl accepts these too
+    target_compile_options(${targetName} PRIVATE -Werror -Wundef -Wno-error=deprecated-declarations)
   endif()
 
 endmacro()
@@ -212,15 +231,18 @@ endif()
 
 # Generate .pri file for qmake users
 if(CMAKE_VERSION VERSION_GREATER "3.11.99" AND NOT CMAKE_CONFIGURATION_TYPES) # Not working with VS generator or older cmake versions
-  include(ECMGeneratePriFile)
-  set(PROJECT_VERSION_STRING ${${PROJECT_NAME}_VERSION})
-  ecm_generate_pri_file(BASE_NAME KDDockWidgets
-    LIB_NAME kddockwidgets
-    DEPS ${${PROJECT_NAME}_DEPS}
-    FILENAME_VAR pri_filename
-    INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}
-  )
-  install(FILES ${pri_filename} DESTINATION ${ECM_MKSPECS_INSTALL_DIR})
+  #TODO: ECM does not support Qt6 yet
+  if(QT_MAJOR_VERSION EQUAL 5)
+    include(ECMGeneratePriFile)
+    set(PROJECT_VERSION_STRING ${${PROJECT_NAME}_VERSION})
+    ecm_generate_pri_file(BASE_NAME KDDockWidgets
+      LIB_NAME kddockwidgets
+      DEPS ${${PROJECT_NAME}_DEPS}
+      FILENAME_VAR pri_filename
+      INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+    install(FILES ${pri_filename} DESTINATION ${ECM_MKSPECS_INSTALL_DIR})
+  endif()
 else()
   message(WARNING "Unable to generate the pri file for qmake users. Try updating CMake.")
 endif()
@@ -290,6 +312,8 @@ if(${PROJECT_NAME}_DOCS)
 endif()
 
 if(${PROJECT_NAME}_UNINSTALL)
-    # Add uninstall target
-    include(ECMUninstallTarget)
+  # Add uninstall target
+  include(ECMUninstallTarget)
 endif()
+
+feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)

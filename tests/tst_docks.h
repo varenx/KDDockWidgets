@@ -148,6 +148,7 @@ private Q_SLOTS:
     void tst_placeholderCount();
     void tst_availableLengthForOrientation();
     void tst_closeShowWhenNoCentralFrame();
+    void tst_closeTabOfCentralFrame();
     void tst_setAsCurrentTab();
     void tst_placeholderDisappearsOnReadd();
     void tst_placeholdersAreRemovedProperly();
@@ -232,6 +233,8 @@ private Q_SLOTS:
     void tst_deleteOnClose();
     void tst_toggleAction();
     void tst_redocksToPreviousTabIndex();
+    void tst_toggleTabbed();
+    void tst_toggleTabbed2();
 
     void tst_addMDIDockWidget();
     void tst_redockToMDIRestoresPosition();
