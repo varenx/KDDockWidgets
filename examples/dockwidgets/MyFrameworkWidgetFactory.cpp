@@ -15,6 +15,7 @@
 #include <kddockwidgets/FrameworkWidgetFactory.h>
 
 #include <kddockwidgets/private/TabWidget_p.h>
+#include <kddockwidgets/private/FloatingWindow_p.h>
 #include <kddockwidgets/private/widgets/FrameWidget_p.h>
 #include <kddockwidgets/private/widgets/TabBarWidget_p.h>
 #include <kddockwidgets/private/widgets/TabWidgetWidget_p.h>
@@ -28,6 +29,7 @@
 class MyTitleBar : public KDDockWidgets::TitleBarWidget
 {
 public:
+    bool m_isSpecialType = false;
     explicit MyTitleBar(KDDockWidgets::Frame *frame)
         : KDDockWidgets::TitleBarWidget(frame)
     {
@@ -45,24 +47,73 @@ public:
     void init()
     {
         setFixedHeight(60);
+
+        if (auto tb = tabBar()) {
+            if (auto tbWidget = qobject_cast<KDDockWidgets::TabBarWidget *>(tb->asWidget())) {
+                // 1.  Be notified when dock widgets are added/removed from the tabbar and when current changes
+
+                connect(tbWidget, &KDDockWidgets::TabBarWidget::dockWidgetInserted, this, &MyTitleBar::updateType);
+                connect(tbWidget, &KDDockWidgets::TabBarWidget::dockWidgetRemoved, this, &MyTitleBar::updateType);
+                connect(tbWidget, &KDDockWidgets::TabBarWidget::currentChanged, this, &MyTitleBar::updateType);
+            }
+        }
+
+        if (KDDockWidgets::FloatingWindow *fw = floatingWindow()) {
+            // 2. Floating Windows with more than 1 Frame (more than 1 tabbar) won't have a special titlebar.
+            // during runtime a FloatingWindow can have frames removed/added, so update its title bar type.
+            connect(fw, &KDDockWidgets::FloatingWindow::numFramesChanged, this, &MyTitleBar::updateType);
+        }
     }
 
-    void paintEvent(QPaintEvent *) override
+    void updateType()
     {
-        QPainter p(this);
-        QPen pen(Qt::black);
-        const QColor focusedBackgroundColor = Qt::yellow;
-        const QColor backgroundColor = focusedBackgroundColor.darker(115);
-        QBrush brush(isFocused() ? focusedBackgroundColor : backgroundColor);
-        pen.setWidth(4);
-        p.setPen(pen);
-        p.setBrush(brush);
-        p.drawRect(rect().adjusted(4, 4, -4, -4));
-        QFont f = qApp->font();
-        f.setPixelSize(30);
-        f.setBold(true);
-        p.setFont(f);
-        p.drawText(QPoint(10,40), title());
+        m_isSpecialType = false;
+
+        if (tabBar() != nullptr) { // Will be null for floating windows with several frames.
+            const auto dws = dockWidgets();
+            for (auto dw : dws) {
+                // 3. If this TitleBar contains dock widget #1 or #2 it's special and will have custom painting
+                if (dw->uniqueName() == QLatin1String("DockWidget #1") ||
+                    dw->uniqueName() == QLatin1String("DockWidget #2")) {
+                    m_isSpecialType = true;
+                    break;
+                }
+            }
+
+            QWidget::update();
+        }
+    }
+
+    void paintEvent(QPaintEvent *ev) override
+    {
+        KDDockWidgets::DockWidgetBase *currentDW = nullptr;
+        if (auto tb = tabBar()) {
+            if (auto tbWidget = qobject_cast<KDDockWidgets::TabBarWidget *>(tb->asWidget())) {
+                // 4. Know the current tab, so it can influence the title bar
+                currentDW = tbWidget->currentDockWidget();
+            }
+        }
+
+        if (m_isSpecialType) {
+            QPainter p(this);
+            QPen pen(Qt::black);
+            const bool isDw2 = currentDW && currentDW->uniqueName() == QLatin1String("DockWidget #2");
+            const QColor focusedBackgroundColor = isDw2 ? Qt::cyan : Qt::yellow;
+
+            const QColor backgroundColor = focusedBackgroundColor.darker(115);
+            QBrush brush(isFocused() ? focusedBackgroundColor : backgroundColor);
+            pen.setWidth(4);
+            p.setPen(pen);
+            p.setBrush(brush);
+            p.drawRect(rect().adjusted(4, 4, -4, -4));
+            QFont f = qApp->font();
+            f.setPixelSize(30);
+            f.setBold(true);
+            p.setFont(f);
+            p.drawText(QPoint(10, 40), title());
+        } else {
+            KDDockWidgets::TitleBarWidget::paintEvent(ev);
+        }
     }
 };
 
