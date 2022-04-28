@@ -250,8 +250,8 @@ QQmlEngine *Config::qmlEngine() const
 void Config::Private::fixFlags()
 {
 #if defined(Q_OS_WIN)
-    if (QOperatingSystemVersion::current().majorVersion() < 10) {
-        // Aero-snap requires Windows 10
+    if (QOperatingSystemVersion::current().majorVersion() < 8) {
+        // Untested on Windows 7. Windows 8 doesn't have aerosnap but at least it can get native resizing
         m_flags = m_flags & ~Flag_AeroSnapWithClientDecos;
     } else {
         // Unconditional now
