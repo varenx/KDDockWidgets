@@ -20,6 +20,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QCommandLineParser>
+#include <qnamespace.h>
 
 // clazy:excludeall=qstring-allocations
 
@@ -139,6 +140,10 @@ int main(int argc, char **argv)
     QCommandLineOption hideCertainDockingIndicators("hide-certain-docking-indicators",
                                                     QCoreApplication::translate("main", "Illustrates usage of Config::setDropIndicatorAllowedFunc()"));
     parser.addOption(hideCertainDockingIndicators);
+
+    QCommandLineOption requireControlKey("require-control-key",
+                                         QCoreApplication::translate("main", "The user will have to hold the ctrl key to see drop indicators while dragging"));
+    parser.addOption(requireControlKey);
 
 #if defined(DOCKS_DEVELOPER_MODE)
     parser.addOption(centralFrame);
@@ -280,9 +285,19 @@ int main(int argc, char **argv)
         };
 
         KDDockWidgets::Config::self().setDropIndicatorAllowedFunc(func);
+    } else if (parser.isSet(requireControlKey)) {
+        auto func = [](KDDockWidgets::DropLocation,
+                       const KDDockWidgets::DockWidgetBase::List &,
+                       const KDDockWidgets::DockWidgetBase::List &,
+                       KDDockWidgets::DropArea *) -> bool {
+            return qApp->keyboardModifiers() & Qt::ControlModifier;
+        };
+
+        KDDockWidgets::Config::self().setDropIndicatorAllowedFunc(func);
     }
 
     KDDockWidgets::Config::self().setFlags(flags);
+
 
     const bool nonClosableDockWidget0 = parser.isSet(nonClosableDockWidget);
     const bool restoreIsRelative = parser.isSet(relativeRestore);
